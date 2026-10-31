@@ -35,6 +35,7 @@ fun AdvancedScreen(game: String?, onBack: () -> Unit) {
   var keys by remember { mutableStateOf(store.keys()) }
   var ff by remember { mutableStateOf(Controllers.load(context).fastForwardKey) }
   var hold by remember { mutableStateOf(store.holdFastForward) }
+  var frameSkip by remember { mutableStateOf(store.allowFrameSkip) }
   var slot by remember { mutableStateOf(store.quickSlot) }
   var quirk by remember { mutableStateOf<String?>(null) }
   var slotPicker by remember { mutableStateOf(false) }
@@ -106,6 +107,9 @@ fun AdvancedScreen(game: String?, onBack: () -> Unit) {
         Hint("Keys are reserved before Xbox input routing. Assign spare buttons. Quick save/load use the selected slot and require savestate support.")
         SwitchItem("Hold to fast forward", "Off: press once to toggle. On: restores the previous mode when released or focus is lost.", hold) {
           runCatching { store.holdFastForward = it; hold = it }.onFailure { message("Could not save") }
+        }
+        SwitchItem("Allow frame skipping in fast forward", "Default off. While fast forwarding, keep up to 30 display frames per second and drop excess scanout work. Game rendering and movie/audio clocks remain intact.", frameSkip) {
+          runCatching { store.allowFrameSkip = it; frameSkip = it }.onFailure { message("Could not save") }
         }
         ListItem(headlineContent = { Text("Quick-save slot: $slot") }, supportingContent = { Text("Quick save overwrites this slot without a prompt.") }, modifier = Modifier.clickable { slotPicker = true })
         for (action in EmulatorAction.entries) {

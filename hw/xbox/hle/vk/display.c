@@ -3,6 +3,9 @@
  * the render thread writes at its swaps (top row first) and the window's
  * presenter (vk/swapchain.c) samples.
  */
+#ifdef HAKUX_NATIVE_CORE
+#include "native/core/fast_forward.h"
+#endif
 #include "hw/xbox/hle/base.h"
 #include "hw/xbox/hle/hle.h"
 #include "hw/xbox/hle/hitch.h"
@@ -179,7 +182,7 @@ static void to_front(int i, uint32_t swap_id)
     hle_hitch_frame(swap_id, HLE_FR_FRONT);
 }
 
-int hle_disp_begin_write(uint32_t swap_id, uint64_t value)
+int hle_disp_begin_write(uint32_t swap_id, uint64_t value, bool allow_drop)
 {
     static unsigned s_none;
     hle_mutex_lock(&g_disp.lock);
@@ -207,6 +210,15 @@ int hle_disp_begin_write(uint32_t swap_id, uint64_t value)
             if (s->img && s->state == SLOT_FREE && !s->held) {
                 pick = i;
             }
+        }
+        if (pick < 0 && allow_drop) {
+            /* Fast forward may keep the last image rather than blocking on
+             * four held/in-flight slots. Never reclaim a held GPU image. */
+            g_disp.st.dropped++;
+#ifdef HAKUX_NATIVE_CORE
+            nc_ff_note_drop();
+#endif
+            break;
         }
         int64_t waited = g_get_monotonic_time() - t0;
         if (pick >= 0 || waited >= 300000) {

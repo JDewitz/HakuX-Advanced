@@ -432,6 +432,8 @@ class NativeCoreActivity : SDLActivity(), InputManager.InputDeviceListener {
       for ((action, code) in advanced.keys()) if (code != ffKey) put(action, code)
     }
     emulatorHotkeys.holdFastForward = advanced.holdFastForward
+    fastForwardFrameSkip = advanced.allowFrameSkip
+    nativeSetFastForwardFrameSkip(fastForwardFrameSkip)
     activityPaused = false
     syncPause() /* where it stopped (onPause), unless the menu is open */
     hideSystemBars()
@@ -725,6 +727,7 @@ class NativeCoreActivity : SDLActivity(), InputManager.InputDeviceListener {
   private var controlsShown: Boolean? = null
   private var editorBar: View? = null
   private var fastForward = false
+  private var fastForwardFrameSkip = false
   private var holdBaseline = false
   private var advancedMenu: AdvancedMenu? = null
   private fun tools(): AdvancedMenu = advancedMenu ?: AdvancedMenu(this, ::showMenuDialog, ::captureFrame, ::gameKey,
@@ -741,6 +744,13 @@ class NativeCoreActivity : SDLActivity(), InputManager.InputDeviceListener {
     Toast.makeText(this, getString(if (on) R.string.fast_forward_on else R.string.fast_forward_off), Toast.LENGTH_SHORT).show()
   }
   private fun toggleFastForward() = setFastForward(!fastForward)
+  private fun setFastForwardFrameSkip(on: Boolean) {
+    runCatching { AdvancedStore(this).allowFrameSkip = on }.onSuccess {
+      fastForwardFrameSkip = on
+      nativeSetFastForwardFrameSkip(on)
+    }.onFailure { Toast.makeText(this, "Could not save frame-skip setting", Toast.LENGTH_LONG).show() }
+  }
+
   private fun activateAction(action: EmulatorAction) {
     when (action) {
       EmulatorAction.FAST_FORWARD -> toggleFastForward()
@@ -773,37 +783,35 @@ class NativeCoreActivity : SDLActivity(), InputManager.InputDeviceListener {
    * or leave the game. The game stops while it is open; Resume, a tap outside
    * it or back closes it and the game goes on (showMenuDialog).
    */
+  private var pauseWindow: PauseMenu? = null
   private fun showMenu() {
-    if (editorBar != null) return
-    val shown = controlsShown ?: !hasGamepad()
-    /* savestates: push-buffer mode only (native/state) */
-    val states = nativeStatesAvailable()
-    val items = mutableListOf<Pair<String, () -> Unit>>(
-      getString(if (fastForward) R.string.fast_forward_disable else R.string.fast_forward_enable) to ::toggleFastForward,
+    if (editorBar != null || menuDialogs > 0) return
+    val actions = mutableListOf<Pair<String, () -> Unit>>(
       "Advanced & experimental" to { tools().show() },
-      (if (manualPaused) "Resume manually paused game" else "Pause game") to { activateAction(EmulatorAction.PAUSE) },
-      getString(R.string.overlay_menu_edit) to ::editControls,
-      getString(if (shown) R.string.overlay_menu_hide else R.string.overlay_menu_show) to {
-        controlsShown = !shown
-        updateControllerVisibility()
+      getString(R.string.overlay_menu_edit) to {
+        /* The editor operates on the surface itself, after closing this window. */
+        closePauseWindow?.invoke(); editControls()
+      },
+      "Show / hide touch controls" to {
+        controlsShown = !(controlsShown ?: !hasGamepad()); updateControllerVisibility()
       },
       getString(R.string.overlay_menu_controllers) to ::showPlayers,
     )
-    if (states) {
-      items += getString(R.string.overlay_menu_save_state) to { saveStates.showSlots(save = true) }
-      items += getString(R.string.overlay_menu_load_state) to { saveStates.showSlots(save = false) }
-    }
-    if (runCheats.isNotEmpty()) {
-      items += getString(R.string.overlay_menu_cheats) to ::showCheats
-    }
+    if (runCheats.isNotEmpty()) actions += getString(R.string.overlay_menu_cheats) to ::showCheats
     val exit = if (launchedExternally) R.string.overlay_menu_exit_frontend else R.string.overlay_menu_exit
-    items += getString(exit) to ::exitGame
-    showMenuDialog(
-      AlertDialog.Builder(this)
-        .setItems(items.map { it.first }.toTypedArray()) { _, which -> items[which].second() }
-        .setNegativeButton(R.string.overlay_menu_resume, null)
-    )
+    actions += getString(exit) to ::exitGame
+    lateinit var window: PauseMenu
+    window = PauseMenu(this, saveStates, nativeStatesAvailable(), { builder ->
+      showMenuDialog(builder).also { dialog -> closePauseWindow = { dialog.dismiss(); closePauseWindow = null } }
+    }, { fastForward }, ::setFastForward, { fastForwardFrameSkip }, ::setFastForwardFrameSkip, actions, {
+      if (pauseWindow === window) { pauseWindow = null; closePauseWindow = null }
+    }) {
+      manualPaused = false; syncPause()
+    }
+    pauseWindow = window
+    window.show()
   }
+  private var closePauseWindow: (() -> Unit)? = null
 
   /** The players the core has a controller plugged in for (bit n: player n + 1). */
   private var plugged = 1
@@ -1267,6 +1275,10 @@ class NativeCoreActivity : SDLActivity(), InputManager.InputDeviceListener {
     external fun nativeSetPaused(paused: Boolean)
     @JvmStatic
     external fun nativeSetFastForward(enabled: Boolean)
+    @JvmStatic
+    external fun nativeSetFastForwardFrameSkip(allowed: Boolean)
+    @JvmStatic
+    external fun nativeFastForwardSkipped(): Long
     @JvmStatic
     external fun nativeSetAdvanced(name: String, value: String): Boolean
     @JvmStatic

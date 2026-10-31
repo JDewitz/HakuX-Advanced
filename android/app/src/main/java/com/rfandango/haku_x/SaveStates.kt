@@ -40,6 +40,8 @@ class SaveStates(
   private val store = SaveStateStore(activity, gameKey, discUri)
 
   fun state(slot: Int) = store.state(slot)
+  fun info(slot: Int) = SaveSlotInfo.read(slot, store.state(slot), store.thumb(slot))
+  fun deleteSlot(slot: Int, done: () -> Unit) = confirmDelete(slot, done)
 
   /** The slots for Save state (all of them) or Load state (the saved ones). */
   fun showSlots(save: Boolean) {
@@ -67,7 +69,7 @@ class SaveStates(
     }
   }
 
-  fun save(slot: Int) {
+  fun save(slot: Int, done: () -> Unit = {}) {
     store.prepare()
     val progress = showDialog(
       AlertDialog.Builder(activity)
@@ -75,7 +77,7 @@ class SaveStates(
         .setCancelable(false)
     )
     Thread {
-      val err = NativeCoreActivity.nativeSaveState(store.state(slot).absolutePath)
+      val err = runCatching { NativeCoreActivity.nativeSaveState(store.state(slot).absolutePath) }.getOrElse { it.message ?: "Save failed" }
       activity.runOnUiThread {
         if (err != null) {
           progress.dismiss()
@@ -85,17 +87,30 @@ class SaveStates(
               .setMessage(err)
               .setPositiveButton(android.R.string.ok, null)
           )
+          done()
           return@runOnUiThread
         }
         /* the frame the state shows: the game stopped on it again */
         captureFrame { frame ->
           Thread {
-            if (frame != null) {
-              runCatching { store.thumb(slot).outputStream().use { frame.compress(Bitmap.CompressFormat.JPEG, 90, it) } }
-            }
+            val thumb = store.thumb(slot)
+            val tmp = java.io.File(thumb.parentFile, thumb.name + ".tmp")
+            val imageSaved = if (frame == null) false else runCatching {
+              val ratio = minOf(1f, 480f / frame.width, 270f / frame.height)
+              val preview = Bitmap.createScaledBitmap(frame, maxOf(1, (frame.width * ratio).toInt()), maxOf(1, (frame.height * ratio).toInt()), true)
+              try {
+                tmp.outputStream().use { check(preview.compress(Bitmap.CompressFormat.JPEG, 88, it)) }
+                check(tmp.renameTo(thumb))
+              } finally {
+                if (preview !== frame) preview.recycle()
+                frame.recycle()
+              }
+            }.isSuccess
+            if (!imageSaved) { tmp.delete(); thumb.delete() } // never pair a new state with an old screenshot
             activity.runOnUiThread {
               progress.dismiss()
               Toast.makeText(activity, activity.getString(R.string.state_saved, slot), Toast.LENGTH_SHORT).show()
+              done()
             }
           }.start()
         }
@@ -105,10 +120,13 @@ class SaveStates(
 
   fun load(slot: Int) {
     val file = store.state(slot)
+    val progress = showDialog(AlertDialog.Builder(activity)
+      .setView(BusyView(activity, activity.getString(R.string.state_loading, slot)).view).setCancelable(false))
     Thread {
-      val err = NativeCoreActivity.nativeStateCheck(file.absolutePath)
+      val err = runCatching { NativeCoreActivity.nativeStateCheck(file.absolutePath) }.getOrElse { it.message ?: "Load failed" }
       activity.runOnUiThread {
         if (err != null) {
+          progress.dismiss()
           showDialog(
             AlertDialog.Builder(activity)
               .setTitle(R.string.state_load_failed_title)
@@ -120,6 +138,7 @@ class SaveStates(
         /* the state's frame on screen while the core starts again */
         val held = RelaunchActivity.heldFrame(activity)
         runCatching { store.thumb(slot).copyTo(held, overwrite = true) }.onFailure { held.delete() }
+        progress.dismiss()
         activity.restartInto(file.absolutePath)
       }
     }.start()

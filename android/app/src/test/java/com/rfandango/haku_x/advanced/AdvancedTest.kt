@@ -50,13 +50,17 @@ class AdvancedTest {
       assertFalse(second.hasProfile("game-a"))
       assertEquals(second.profile(), second.profile("game-a"))
       first.bind(EmulatorAction.QUICK_SAVE, KeyEvent.KEYCODE_F5)
+      assertFalse(first.allowFrameSkip)
+      first.allowFrameSkip = true
       first.holdFastForward = true; first.quickSlot = 999
       assertEquals(KeyEvent.KEYCODE_F5, second.keys()[EmulatorAction.QUICK_SAVE])
       assertTrue(second.holdFastForward)
+      assertTrue(second.allowFrameSkip)
       assertEquals(10, second.quickSlot)
       second.resetProfile(null)
       assertEquals(AdvancedProfile(), first.profile())
       assertTrue(first.holdFastForward) // startup reset must preserve controls
+      assertTrue(first.allowFrameSkip)
       second.bind(EmulatorAction.QUICK_SAVE, null)
       assertTrue(first.keys().isEmpty())
     } finally { dir.deleteRecursively() }
