@@ -14,6 +14,7 @@ Validation for changes in these areas:
 
 ```bash
 bash tests/native/advanced/run.sh
+bash tests/native/slang/run.sh /path/to/librashader-source
 cd android
 ./gradlew -Dorg.gradle.java.home="$JAVA_HOME" -Pkotlin.incremental=false testDebugUnitTest assembleDebug
 ```

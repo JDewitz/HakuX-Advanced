@@ -27,4 +27,8 @@ for h in main_hook file_redirect_hook gsl_alloc_hook kgsl_context_hook hook_impl
     "$strip" -o "$out/lib$h.so" "$build/adrenotools/src/hook/lib$h.so"
   fi
 done
+slang=$(sed -n 's/^HAKUX_LIBRASHADER:FILEPATH=//p' "$build/CMakeCache.txt")
+: "${slang:?Missing HAKUX_LIBRASHADER in native CMake cache}"
+"$strip" -o "$out/liblibrashader_capi.so" "$slang"
+"$strip" -o "$out/libc++_shared.so" "$ndk/toolchains/llvm/prebuilt/$host/sysroot/usr/lib/aarch64-linux-android/libc++_shared.so"
 ls -la "$out"

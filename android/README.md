@@ -1,3 +1,5 @@
+> Shader test build: also build the pinned Slang runtime using `tools/native/build-slang.sh` before CMake. See [Advanced4](../docs/ADVANCED4.md).
+
 # Building hakuX
 
 The app (this directory) builds no native code itself: it packs the native

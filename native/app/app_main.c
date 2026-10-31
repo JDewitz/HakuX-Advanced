@@ -21,6 +21,7 @@
 #include "native/app/app.h"
 #include "native/core/cheats.h"
 #include "native/core/advanced.h"
+#include "hw/xbox/hle/vk/slang.h"
 #include "native/core/core.h"
 #include "native/core/mods.h"
 #include "native/core/options.h"
@@ -177,6 +178,34 @@ EXPORT JNIEXPORT jboolean JNICALL Java_com_rfandango_haku_1x_NativeCoreActivity_
     if (name) (*env)->ReleaseStringUTFChars(env, jname, name);
     if (value) (*env)->ReleaseStringUTFChars(env, jvalue, value);
     return ok ? JNI_TRUE : JNI_FALSE;
+}
+
+EXPORT JNIEXPORT jboolean JNICALL Java_com_rfandango_haku_1x_NativeCoreActivity_nativeSetShader(
+ JNIEnv *env,jclass cls,jstring path,jobjectArray names,jfloatArray values)
+{
+ HleSlangConfig c={0}; if (!path || !names || !values) return JNI_FALSE;
+ jsize count=(*env)->GetArrayLength(env,names);
+ if (count>HLE_SLANG_PARAMS || count!=(*env)->GetArrayLength(env,values)) return JNI_FALSE;
+ const char *p=(*env)->GetStringUTFChars(env,path,NULL); if (!p) return JNI_FALSE;
+ bool ok=strlen(p)<sizeof(c.path); if (ok) strcpy(c.path,p);
+ (*env)->ReleaseStringUTFChars(env,path,p);
+ jfloat nums[HLE_SLANG_PARAMS]; (*env)->GetFloatArrayRegion(env,values,0,count,nums);
+ for (jsize i=0;ok && i<count;++i) {
+  jstring name=(*env)->GetObjectArrayElement(env,names,i); if (!name) { ok=false; break; }
+  const char *n=(*env)->GetStringUTFChars(env,name,NULL); ok=n && strlen(n)<HLE_SLANG_NAME;
+  if (ok) { strcpy(c.params[i].name,n); c.params[i].value=nums[i]; }
+  if (n) (*env)->ReleaseStringUTFChars(env,name,n); (*env)->DeleteLocalRef(env,name);
+ }
+ c.count=(unsigned)count; return ok && hle_slang_set(&c)?JNI_TRUE:JNI_FALSE;
+}
+EXPORT JNIEXPORT void JNICALL Java_com_rfandango_haku_1x_NativeCoreActivity_nativeRetryShader(JNIEnv *env,jclass cls) { hle_slang_retry(); }
+EXPORT JNIEXPORT jstring JNICALL Java_com_rfandango_haku_1x_NativeCoreActivity_nativeShaderStatus(JNIEnv *env,jclass cls)
+{ char text[2048]; hle_slang_status(text,sizeof(text)); return (*env)->NewStringUTF(env,text); }
+EXPORT JNIEXPORT jstring JNICALL Java_com_rfandango_haku_1x_NativeCoreActivity_nativeShaderParameters(JNIEnv *env,jclass cls,jstring path)
+{
+ if (!path) return NULL; const char *p=(*env)->GetStringUTFChars(env,path,NULL); if (!p) return NULL;
+ char text[32768]; bool ok=hle_slang_parameters(p,text,sizeof(text)); (*env)->ReleaseStringUTFChars(env,path,p);
+ return ok?(*env)->NewStringUTF(env,text):NULL;
 }
 
 EXPORT JNIEXPORT jstring JNICALL Java_com_rfandango_haku_1x_NativeCoreActivity_nativeAdvancedReport(

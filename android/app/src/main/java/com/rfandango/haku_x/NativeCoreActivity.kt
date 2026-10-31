@@ -432,6 +432,7 @@ class NativeCoreActivity : SDLActivity(), InputManager.InputDeviceListener {
       for ((action, code) in advanced.keys()) if (code != ffKey) put(action, code)
     }
     emulatorHotkeys.holdFastForward = advanced.holdFastForward
+    runCatching { com.rfandango.haku_x.advanced.ShaderStore(this).apply(gameKey()) }
     activityPaused = false
     syncPause() /* where it stopped (onPause), unless the menu is open */
     hideSystemBars()
@@ -1265,6 +1266,14 @@ class NativeCoreActivity : SDLActivity(), InputManager.InputDeviceListener {
     external fun nativeSetPaused(paused: Boolean)
     @JvmStatic
     external fun nativeSetFastForward(enabled: Boolean)
+    @JvmStatic
+    external fun nativeSetShader(path: String, names: Array<String>, values: FloatArray): Boolean
+    @JvmStatic
+    external fun nativeRetryShader()
+    @JvmStatic
+    external fun nativeShaderStatus(): String
+    @JvmStatic
+    external fun nativeShaderParameters(path: String): String?
     @JvmStatic
     external fun nativeSetAdvanced(name: String, value: String): Boolean
     @JvmStatic

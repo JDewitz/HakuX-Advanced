@@ -80,6 +80,19 @@ class AdvancedStore internal constructor(private val dir: File) {
   fun resetProfile(game: String?) = change { o ->
     if (game == null) o.remove("global") else o.optJSONObject("games")?.remove(game)
   }
+  fun hasShader(game: String) = read().optJSONObject("shaderGames")?.has(game) == true
+  fun shader(game: String?): ShaderSelection {
+    val o = read()
+    return ShaderSelection.parse(game?.let { o.optJSONObject("shaderGames")?.optJSONObject(it) }
+      ?: o.optJSONObject("shaderGlobal") ?: JSONObject())
+  }
+  fun saveShader(game: String?, selection: ShaderSelection) = change { o ->
+    if (game == null) o.put("shaderGlobal", selection.json()) else {
+      val games = o.optJSONObject("shaderGames") ?: JSONObject()
+      games.put(game, selection.json()); o.put("shaderGames", games)
+    }
+  }
+  fun resetShader(game: String) = change { it.optJSONObject("shaderGames")?.remove(game) }
   fun keys(): Map<EmulatorAction, Int> {
     val o = read().optJSONObject("keys") ?: JSONObject()
     return EmulatorAction.entries.filter { it != EmulatorAction.FAST_FORWARD }.mapNotNull {

@@ -60,6 +60,7 @@ add_library(hakux_hle STATIC
   ${NC_HLE}/vk/back.c
   ${NC_HLE}/vk/display.c
   ${NC_HLE}/vk/swapchain.c
+  ${NC_HLE}/vk/slang.c
   ${NC_HLE}/vk/batch.c
   ${NC_HLE}/vk/compat.c
   ${NC_HLE}/vk/draw.c
@@ -108,3 +109,11 @@ target_include_directories(hakux_apu PRIVATE "${NC_REPO}")
 target_compile_options(hakux_apu PRIVATE -Wno-unused-parameter -Wno-unused-function -Wno-sign-compare
                        -Wno-unused-variable)
 target_link_libraries(hakux_apu PUBLIC hakux_hle aaudio log)
+
+set(HAKUX_LIBRASHADER "${NC_DEPS}/librashader/target/aarch64-linux-android/release/liblibrashader_capi.so" CACHE FILEPATH "Android Slang runtime")
+if(NOT EXISTS "${HAKUX_LIBRASHADER}")
+ message(FATAL_ERROR "Run tools/native/build-slang.sh first, or set HAKUX_LIBRASHADER")
+endif()
+add_library(nc_librashader SHARED IMPORTED GLOBAL)
+set_target_properties(nc_librashader PROPERTIES IMPORTED_LOCATION "${HAKUX_LIBRASHADER}" IMPORTED_NO_SONAME TRUE)
+target_link_libraries(hakux_hle PUBLIC nc_librashader)

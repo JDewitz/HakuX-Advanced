@@ -28,9 +28,10 @@ if [ -z "$heads" ] && [ "$(git rev-parse --is-shallow-repository)" = true ]; the
   echo "For an empty repository, first run: git fetch --unshallow upstream" >&2
   exit 1
 fi
-git push -u origin refs/heads/advanced:refs/heads/advanced
-for tag in advanced-1.2.0-fastforward1 advanced-1.2.0-1 advanced-1.2.0-2 advanced-1.2.0-3; do
+branch=$(git symbolic-ref --quiet --short HEAD)
+git push -u origin "refs/heads/$branch:refs/heads/$branch"
+for tag in advanced-1.2.0-fastforward1 advanced-1.2.0-1 advanced-1.2.0-2 advanced-1.2.0-3 advanced-1.2.0-4-slang; do
   git push origin "refs/tags/$tag:refs/tags/$tag"
 done
-echo "Pushed advanced and four fork-specific tags."
-echo "Set advanced as your fork's default branch if you want it shown on the repository home page."
+echo "Pushed $branch and five fork-specific tags."
+echo "Set $branch as your fork's default branch if you want it shown on the repository home page."

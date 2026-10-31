@@ -35,6 +35,7 @@
 #include "hw/xbox/hle/vk/display.h"
 #include "hw/xbox/hle/vk/quirks.h"
 #include "hw/xbox/hle/vk/swapchain.h"
+#include "hw/xbox/hle/vk/slang.h"
 
 #include <android/native_window.h>
 
@@ -643,7 +644,7 @@ static void lose_window(void)
 
 bool hle_present_unchanged(struct ANativeWindow *win, uint64_t key)
 {
-    if (!g_ps.shown || !win || win != g_ps.win || g_ps.stale || !g_ps.sc || key != g_ps.shown_key ||
+    if (hle_slang_pending() || !g_ps.shown || !win || win != g_ps.win || g_ps.stale || !g_ps.sc || key != g_ps.shown_key ||
         (uint32_t)ANativeWindow_getWidth(win) != g_ps.wsize.width ||
         (uint32_t)ANativeWindow_getHeight(win) != g_ps.wsize.height || hle_disp_gamma_seq() != g_ps.ramp_gen) {
         return false;
@@ -865,6 +866,8 @@ static void log_path(unsigned p, bool fxaa, uint32_t vw, uint32_t vh)
             p == P_AREA ? "averaged down" : p == P_SGSR ? "scaled up by SGSR" : "bilinear");
 }
 
+static bool shader_wait(void) { return wait_value(g_ps.submitted); }
+
 void hle_present_end(float sx, float sy, bool fxaa, int upscale, bool average, uint64_t key)
 {
     g_ps.shown = false;
@@ -886,6 +889,7 @@ void hle_present_end(float sx, float sy, bool fxaa, int upscale, bool average, u
         memcpy(g_ps.ubo_map + (size_t)g_ps.cur * PS_RAMP, g_ps.ramp, 768);
         f->ramp_stale = false;
     }
+    hle_slang_prepare((uint32_t)(sx * ww + 0.5f), (uint32_t)(sy * wh + 0.5f), shader_wait);
     T.vkResetCommandPool(g_hvk.dev, f->pool, 0);
     VkCommandBuffer cb = f->cb;
     VkCommandBufferBeginInfo bi = { .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
@@ -893,6 +897,16 @@ void hle_present_end(float sx, float sy, bool fxaa, int upscale, bool average, u
     T.vkBeginCommandBuffer(cb, &bi);
     VkImageView src = g_ps.have ? g_ps.f.view : VK_NULL_HANDLE;
     bool fxaa_done = false;
+    bool slang_done = false;
+    if (g_ps.have && hle_slang_active()) {
+        slang_done = hle_slang_draw(cb, g_ps.f.img, g_ps.f.w, g_ps.f.h, g_ps.serial, &src);
+        if (!slang_done) {
+            /* Discard partial runtime commands before recording normal presentation. */
+            T.vkResetCommandPool(g_hvk.dev, f->pool, 0);
+            T.vkBeginCommandBuffer(cb, &bi);
+            src = g_ps.f.view;
+        }
+    }
     /* The frame's writes need no barrier here: each writer of a display
      * image (the swap's blit, the gamma pass, the overlay) ends with one
      * into SHADER_READ_ONLY over all later commands of the queue, ours too
@@ -901,7 +915,7 @@ void hle_present_end(float sx, float sy, bool fxaa, int upscale, bool average, u
      * wait on the render timeline at the frame's value sent the submit down
      * a slow path on Qualcomm's driver (Halo 2 at 30 fps, Adreno 830). */
     if (g_ps.have) {
-        if (fxaa && g_ps.pipe[P_FXAA] && fxaa_target(g_ps.f.w, g_ps.f.h)) {
+        if (!slang_done && fxaa && g_ps.pipe[P_FXAA] && fxaa_target(g_ps.f.w, g_ps.f.h)) {
             if (g_ps.fx_serial != g_ps.serial) {
                 barrier(cb, g_ps.fx_img, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
                         VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT, 0,
@@ -932,11 +946,11 @@ void hle_present_end(float sx, float sy, bool fxaa, int upscale, bool average, u
         const float rx = (float)g_ps.f.w / vw, ry = (float)g_ps.f.h / vh;
         unsigned p = P_BILINEAR;
         float pc[12] = { -sx, -sy, sx, sy, 0.0f, 0.0f, 0.0f, 0.0f, g_ps.rot[0], g_ps.rot[1], g_ps.rot[2], g_ps.rot[3] };
-        if ((rx > 1.01f || ry > 1.01f) && average && g_ps.pipe[P_AREA]) {
+        if (!slang_done && (rx > 1.01f || ry > 1.01f) && average && g_ps.pipe[P_AREA]) {
             p = P_AREA;
             pc[4] = rx;
             pc[5] = ry;
-        } else if ((rx < 0.99f || ry < 0.99f) && upscale == HLE_UPSCALE_SGSR && g_ps.pipe[P_SGSR]) {
+        } else if (!slang_done && (rx < 0.99f || ry < 0.99f) && upscale == HLE_UPSCALE_SGSR && g_ps.pipe[P_SGSR]) {
             p = P_SGSR;
             pc[4] = 1.0f / (float)g_ps.f.w;
             pc[5] = 1.0f / (float)g_ps.f.h;

@@ -18,9 +18,12 @@ MCPX audio implementation ported from xemu. See the original
 - Mappable quick save/load, pause, screenshot and benchmark actions.
 - Live presentation filters, benchmark CSVs, memory tools and renderer dumps.
 - A two-pane pause menu with a ten-slot screenshot/date savestate browser.
+- Experimental RetroArch Slang runtime, ZIP import, global/per-game presets and parameters.
 
-Current build: **1.2.0-advanced3**, versionCode **11**. The Android application ID
-is `com.rfandango.haku_x.fastforward`; its displayed name is **hakuX Advanced**.
+Current shader test build: **1.2.0-advanced4-shaders**, versionCode **12**. The Android application ID
+is `com.rfandango.haku_x.shaders`; its displayed name is **hakuX Shaders Test**.
+This installs alongside Advanced3 because its original debug signing key was lost
+when the workspace reset. It has separate app data; Advanced3 remains installed.
 The original official app uses its own identity. The dashboard/kernel experiment
 is excluded: `native/kernel/` matches official v1.2.0.
 
@@ -29,13 +32,14 @@ is excluded: `native/kernel/` matches official v1.2.0.
 The initial mappable fast-forward build was reported working on a user's
 Android device. The later Advanced controls and pause
 browser have build and automated-test coverage; device behavior and per-game
-compatibility still need testing. The current source passed 27 Android JVM
+compatibility still need testing. The current source passed 31 Android JVM
 tests and native policy/queue/memory checks. These are not Android UI tests.
 
 Advanced3 removes the experimental fast-forward frame skipping. Fast forward
 uses the original uncapped path; it does not overclock movie decoding or audio clocks.
 Start with default settings and compare one experiment at a time.
 
+- [Shader implementation and device testing](docs/ADVANCED4.md)
 - [Advanced features and implementation](docs/ADVANCED.md)
 - [Advanced3 removal and shader integration assessment](docs/ADVANCED3.md)
 - [Advanced2 historical notes](docs/ADVANCED2.md)
@@ -47,7 +51,8 @@ Start with default settings and compare one experiment at a time.
 ## Build and test
 
 Android builds require an **x86_64 Linux Android toolchain**: JDK 21, SDK 36,
-Build Tools 36.1.0, NDK 29.0.14206865, CMake and Ninja. The DietPi package is
+Build Tools 36.1.0, NDK 29.0.14206865, CMake, Ninja, and Rust 1.99.1
+with its `aarch64-linux-android` standard library target. The DietPi package is
 intended for Git publishing; it does not promise an Android build on an ARM Pi.
 
 ```bash
@@ -55,6 +60,7 @@ bash tools/native/prepare-deps.sh /path/to/native-deps
 export JAVA_HOME=/path/to/jdk21
 export ANDROID_HOME=/path/to/android-sdk
 export ANDROID_NDK="$ANDROID_HOME/ndk/29.0.14206865"
+bash tools/native/build-slang.sh /path/to/native-deps
 cmake -S native -B build/native/core -G Ninja \
   -DCMAKE_TOOLCHAIN_FILE="$ANDROID_NDK/build/cmake/android.toolchain.cmake" \
   -DANDROID_ABI=arm64-v8a -DANDROID_PLATFORM=android-28 \
@@ -76,7 +82,7 @@ Source distributions and releases must retain the applicable licenses.
 
 ## Git layout
 
-`upstream` points to the original project. Our work is on **advanced**, descended
+`upstream` points to the original project. The Slang work is on **advanced-slang**, descended
 from the official v1.2.0 commit. Fork-specific tags use **advanced-** prefixes.
 Do not force-push or replace the original project's history. The portable
 DietPi archive has a compact/shallow boundary at the unchanged official base;

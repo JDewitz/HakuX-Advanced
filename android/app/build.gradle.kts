@@ -31,8 +31,8 @@ android {
     minSdk = 28
     targetSdk = 36
 
-    versionCode = 11
-    versionName = "1.2.0-advanced3"
+    versionCode = 12
+    versionName = "1.2.0-advanced4-shaders"
 
     ndk {
       abiFilters += listOf("arm64-v8a")
@@ -56,8 +56,8 @@ android {
 
   buildTypes {
     debug {
-      applicationIdSuffix = ".fastforward"
-      resValue("string", "app_name", "hakuX Advanced")
+      applicationIdSuffix = ".shaders"
+      resValue("string", "app_name", "hakuX Shaders Test")
       ndk {
         debugSymbolLevel = "NONE"
       }

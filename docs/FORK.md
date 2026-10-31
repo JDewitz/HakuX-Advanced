@@ -23,3 +23,8 @@ The FEX submodule remains pinned to the original project's fork at
 52018bf46a8279b22bce738548ab3f40db467064. It has not been modified by this fork.
 Native dependencies are pinned in tools/native/prepare-deps.sh. For earlier
 implementation details see ADVANCED.md, ADVANCED2.md, ADVANCED3.md and FAST_FORWARD.md.
+
+The Advanced4 Slang test uses librashader 0.12.1 and a separate Android application
+identity. Google's supplied Advanced4 was reviewed; its dependencies and build
+setup were reused. Its single-pass adapter and preset implementations were not
+merged into this runtime. See ADVANCED4.md.

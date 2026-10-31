@@ -31,6 +31,7 @@ class AdvancedMenu(
   private val fastForward: () -> Boolean,
 ) {
   private val store = AdvancedStore(activity)
+  private val shaders by lazy { ShaderMenu(activity, show, game) }
   private val handler = Handler(Looper.getMainLooper())
   private val root get() = File(activity.getExternalFilesDir(null) ?: activity.filesDir, "advanced").apply { mkdirs() }
   private var token = 0L
@@ -55,6 +56,7 @@ class AdvancedMenu(
   fun show() = choice("Advanced & experimental", listOf(
     "Startup profile for this game · restart required" to ::startup,
     "GPU driver workaround overrides · restart required" to ::quirks,
+    "RetroArch Slang shaders" to { shaders.show() },
     "Live presentation filters" to ::presentation,
     "Record 10-second benchmark" to ::recordBenchmark,
     "Save screenshot" to ::screenshot,
@@ -212,6 +214,7 @@ class AdvancedMenu(
       .onFailure { exporting = false; toast("Could not open file picker") }
   }
   fun activityResult(request: Int, result: Int, data: Intent?): Boolean {
+    if (shaders.activityResult(request, result, data)) return true
     if (request != EXPORT_REQUEST) return false
     exporting = false
     val uri = if (result == android.app.Activity.RESULT_OK) data?.data else null
