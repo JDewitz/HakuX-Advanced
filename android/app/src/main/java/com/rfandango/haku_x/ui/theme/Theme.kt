@@ -20,68 +20,43 @@ import com.rfandango.haku_x.data.AppPrefs
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
-/** hakuX's look: white surfaces and the Xbox-era green, as the app had before Compose. */
-private val HakuXColors = lightColorScheme(
-  primary = Color(0xFF2E7D32),
-  onPrimary = Color.White,
-  primaryContainer = Color(0xFFC8E6C9),
-  onPrimaryContainer = Color(0xFF1B5E20),
-  secondary = Color(0xFF2E7D32),
-  onSecondary = Color.White,
-  secondaryContainer = Color(0xFFE8F5E9),
-  onSecondaryContainer = Color(0xFF1B5E20),
-  background = Color.White,
-  onBackground = Color(0xFF1C1B1F),
-  surface = Color.White,
-  onSurface = Color(0xFF1C1B1F),
-  surfaceVariant = Color(0xFFF5F5F5),
-  onSurfaceVariant = Color(0xFF5F6368),
-  surfaceContainerLowest = Color.White,
-  surfaceContainerLow = Color(0xFFFAFAFA),
-  surfaceContainer = Color(0xFFF5F5F5),
-  surfaceContainerHigh = Color(0xFFEEEEEE),
-  surfaceContainerHighest = Color(0xFFE8E8E8),
-  outline = Color(0xFFDADCE0),
-  outlineVariant = Color(0xFFE0E0E0),
-  error = Color(0xFFD32F2F),
-)
-
-/** The same at night: near-black surfaces, the green lightened to read on them. */
-private val HakuXDarkColors = darkColorScheme(
-  primary = Color(0xFF81C784),
-  onPrimary = Color(0xFF003A0B),
-  primaryContainer = Color(0xFF1B5E20),
-  onPrimaryContainer = Color(0xFFC8E6C9),
-  secondary = Color(0xFF81C784),
-  onSecondary = Color(0xFF003A0B),
-  secondaryContainer = Color(0xFF23392A),
-  onSecondaryContainer = Color(0xFFC8E6C9),
-  background = Color(0xFF121212),
-  onBackground = Color(0xFFE6E6E6),
-  surface = Color(0xFF121212),
-  onSurface = Color(0xFFE6E6E6),
-  surfaceVariant = Color(0xFF2B2B2B),
-  onSurfaceVariant = Color(0xFFB4B8BC),
-  surfaceContainerLowest = Color(0xFF0E0E0E),
-  surfaceContainerLow = Color(0xFF1A1A1A),
-  surfaceContainer = Color(0xFF1F1F1F),
-  surfaceContainerHigh = Color(0xFF262626),
-  surfaceContainerHighest = Color(0xFF2F2F2F),
-  outline = Color(0xFF6E7378),
-  outlineVariant = Color(0xFF3A3A3A),
-  error = Color(0xFFEF9A9A),
-)
+/** One mapping for every Compose screen. Framework views use the same palette. */
+private fun ThemePalette.scheme(dark: Boolean): androidx.compose.material3.ColorScheme {
+  fun c(k: String) = Color(color(k))
+  val base = if (dark) darkColorScheme() else lightColorScheme()
+  val error = if (dark) Color(0xFFFFB4AB) else Color(0xFFB3261E)
+  return base.copy(
+    primary=c("accent"), onPrimary=Color(on("accent")), primaryContainer=c("raised"), onPrimaryContainer=c("text"),
+    secondary=c("secondary"), onSecondary=Color(on("secondary")), secondaryContainer=c("raised"), onSecondaryContainer=c("text"),
+    tertiary=c("secondary"), onTertiary=Color(on("secondary")), tertiaryContainer=c("raised"), onTertiaryContainer=c("text"),
+    background=c("background"), onBackground=c("text"), surface=c("surface"), onSurface=c("text"),
+    surfaceVariant=c("raised"), onSurfaceVariant=c("muted"), surfaceTint=c("accent"),
+    surfaceContainerLowest=c("background"), surfaceContainerLow=c("surface"), surfaceContainer=c("surface"),
+    surfaceContainerHigh=c("raised"), surfaceContainerHighest=c("raised"), surfaceBright=c("raised"), surfaceDim=c("background"),
+    inverseSurface=c("text"), inverseOnSurface=c("background"), inversePrimary=c("accent"),
+    outline=c("outline"), outlineVariant=c("outline"), error=error,
+  )
+}
 
 /**
  * The app's theme setting (AppPrefs.theme: the phone's, light or dark), held for the screens to
  * follow as it changes (the settings set it).
  */
 object AppTheme {
+  private val _spec = MutableStateFlow(BuiltInThemes.xbox)
+  val spec: StateFlow<ThemeSpec> = _spec
+
+  fun select(context: Context, value: ThemeSpec) {
+    ThemeStore.save(context, value)
+    _spec.value = value
+  }
+
   private val _mode = MutableStateFlow(AppPrefs.THEME_SYSTEM)
   val mode: StateFlow<String> = _mode
 
   fun load(context: Context) {
     _mode.value = AppPrefs(context).theme
+    _spec.value = ThemeStore.read(context)
   }
 
   fun set(context: Context, value: String) {
@@ -126,7 +101,10 @@ private val FocusRipple = RippleDefaults.RippleAlpha.let {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HakuXTheme(dark: Boolean = appInDarkTheme(), content: @Composable () -> Unit) {
-  MaterialTheme(colorScheme = if (dark) HakuXDarkColors else HakuXColors) {
+  val context = androidx.compose.ui.platform.LocalContext.current
+  androidx.compose.runtime.LaunchedEffect(context) { AppTheme.load(context) }
+  val spec by AppTheme.spec.collectAsState()
+  MaterialTheme(colorScheme = spec.palette(dark).scheme(dark)) {
     CompositionLocalProvider(LocalRippleConfiguration provides FocusRipple, content = content)
   }
 }

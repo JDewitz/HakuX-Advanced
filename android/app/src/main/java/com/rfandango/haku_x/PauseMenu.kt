@@ -37,17 +37,20 @@ class PauseMenu(
   private var closed = false
   private var syncing = false
   private var firstSave: Button? = null
-  private val white = Color.rgb(237, 242, 250)
-  private val muted = Color.rgb(170, 185, 204)
+  private val palette = com.rfandango.haku_x.ui.theme.ThemeViews.palette(activity)
+  private val white = palette.color("text")
+  private val muted = palette.color("muted")
   private fun dp(n: Int) = (n * activity.resources.displayMetrics.density + 0.5f).toInt()
   private fun text(label: String, size: Float = 16f) = TextView(activity).apply {
     this.text = label; setTextSize(size); setTextColor(white); setPadding(dp(8), dp(6), dp(8), dp(6))
   }
   private fun button(label: String, action: () -> Unit) = Button(activity).apply {
     text = label; isAllCaps = false; minHeight = dp(44); setTextSize(14f)
+    com.rfandango.haku_x.ui.theme.ThemeViews.button(this, palette)
     setOnClickListener { action() }
   }
   private fun toggle(label: String, value: Boolean, action: (Boolean) -> Unit) = Switch(activity).apply {
+    com.rfandango.haku_x.ui.theme.ThemeViews.toggle(this, palette)
     text = label; isChecked = value; setTextColor(white); setTextSize(14f)
     setPadding(dp(8), dp(10), dp(8), dp(10)); minHeight = dp(52)
     setOnCheckedChangeListener { _, on -> if (!syncing) action(on) }
@@ -55,7 +58,8 @@ class PauseMenu(
   fun show() {
     val row = LinearLayout(activity).apply {
       orientation = LinearLayout.HORIZONTAL; setPadding(dp(12), dp(12), dp(12), dp(12))
-      setBackgroundColor(Color.rgb(20, 27, 38))
+      tag = com.rfandango.haku_x.ui.theme.ThemeViews.CUSTOM
+      setBackgroundColor(palette.color("background"))
     }
     val left = LinearLayout(activity).apply { orientation = LinearLayout.VERTICAL; setPadding(0, 0, dp(12), 0) }
     val leftScroll = ScrollView(activity).apply { isFillViewport = true; addView(left) }
@@ -111,11 +115,11 @@ class PauseMenu(
       val info = states.info(slot)
       val card = LinearLayout(activity).apply {
         orientation = LinearLayout.VERTICAL; setPadding(dp(8), dp(8), dp(8), dp(8))
-        setBackgroundColor(Color.rgb(32, 43, 59))
+        setBackgroundColor(palette.color("surface"))
       }
       val head = LinearLayout(activity).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
       val image = ImageView(activity).apply {
-        scaleType = ImageView.ScaleType.FIT_CENTER; setBackgroundColor(Color.rgb(13, 18, 26))
+        scaleType = ImageView.ScaleType.FIT_CENTER; setBackgroundColor(palette.color("raised"))
         contentDescription = if (info.thumbnail != null) "Screenshot for slot $slot" else "No screenshot for slot $slot"
         setImageResource(android.R.drawable.ic_menu_gallery)
       }

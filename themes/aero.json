@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "name": "Frutiger Aero",
+  "light": {
+    "background": "#E9F7FF",
+    "surface": "#F7FDFF",
+    "raised": "#D3EDF3",
+    "text": "#143A4A",
+    "muted": "#365B6B",
+    "accent": "#006B96",
+    "secondary": "#33731A",
+    "outline": "#5D8999"
+  },
+  "dark": {
+    "background": "#0D2435",
+    "surface": "#14394B",
+    "raised": "#1D4B5E",
+    "text": "#EFFBFF",
+    "muted": "#BCDCE8",
+    "accent": "#6EDCF5",
+    "secondary": "#B3E975",
+    "outline": "#669EAD"
+  }
+}

@@ -370,7 +370,7 @@ class NativeCoreActivity : SDLActivity(), InputManager.InputDeviceListener {
       menuDialogs--
       syncPause()
     }
-    return b.show()
+    return b.show().also { com.rfandango.haku_x.ui.theme.ThemeViews.dialog(it, this) }
   }
 
   /** Savestates (push-buffer mode): the menu's Save state and Load state. */

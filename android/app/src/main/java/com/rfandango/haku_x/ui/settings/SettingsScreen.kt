@@ -181,6 +181,7 @@ fun SettingsScreen(
       )
 
       Section(stringResource(R.string.settings_section_display))
+      com.rfandango.haku_x.ui.theme.ThemeSettings()
       ListItem(
         headlineContent = { Text(stringResource(R.string.settings_theme)) },
         supportingContent = { Text(stringResource(themeLabel(theme))) },
@@ -554,11 +555,12 @@ private fun pickClock(context: Context, dark: Boolean, from: Long, onSet: (Long)
       c.set(year, month, day, hour, minute, 0)
       c.set(Calendar.MILLISECOND, 0)
       onSet(c.timeInMillis)
-    }, c.get(Calendar.HOUR_OF_DAY), c.get(Calendar.MINUTE), DateFormat.is24HourFormat(context)).show()
+    }, c.get(Calendar.HOUR_OF_DAY), c.get(Calendar.MINUTE), DateFormat.is24HourFormat(context)).also { it.show(); com.rfandango.haku_x.ui.theme.ThemeViews.dialog(it, context) }
   }, c.get(Calendar.YEAR), c.get(Calendar.MONTH), c.get(Calendar.DAY_OF_MONTH))
   date.datePicker.minDate = GregorianCalendar(2001, Calendar.JANUARY, 1).timeInMillis
   date.datePicker.maxDate = GregorianCalendar(2099, Calendar.DECEMBER, 31).timeInMillis
   date.show()
+  com.rfandango.haku_x.ui.theme.ThemeViews.dialog(date, context)
 }
 
 internal fun formatLabel(value: String) = when (value) {

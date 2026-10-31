@@ -102,3 +102,5 @@ requires making its complete corresponding source available under its license.
 Experimental trainer branch: see [Advanced4.3 trainer notes](docs/ADVANCED4.3.md) for classic EvoX ETM import, per-game options and boot execution. Android game testing is pending.
 
 Advanced5 integrates official v1.3.0 while retaining the shader, fast-forward, save browser and experimental ETM work. See [integration notes](docs/ADVANCED5.md).
+
+Advanced5.1 adds shared Xbox, Satisfactory, Halo-inspired and Frutiger Aero palettes with JSON import/export. See [theme notes](docs/THEMES.md).

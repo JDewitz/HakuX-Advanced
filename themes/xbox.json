@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "name": "Xbox",
+  "light": {
+    "background": "#FFFFFF",
+    "surface": "#FAFAFA",
+    "raised": "#E8E8E8",
+    "text": "#1C1B1F",
+    "muted": "#5F6368",
+    "accent": "#2E7D32",
+    "secondary": "#457A28",
+    "outline": "#757575"
+  },
+  "dark": {
+    "background": "#121212",
+    "surface": "#1A1A1A",
+    "raised": "#2B2B2B",
+    "text": "#E6E6E6",
+    "muted": "#B4B8BC",
+    "accent": "#81C784",
+    "secondary": "#A6D57A",
+    "outline": "#6E7378"
+  }
+}

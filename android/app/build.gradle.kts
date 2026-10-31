@@ -31,8 +31,8 @@ android {
     minSdk = 28
     targetSdk = 36
 
-    versionCode = 16
-    versionName = "1.3.0-advanced5"
+    versionCode = 17
+    versionName = "1.3.0-advanced5.1-themes"
 
     ndk {
       abiFilters += listOf("arm64-v8a")
@@ -41,6 +41,10 @@ android {
     // src/main/jniLibs from native/ (tools/native/app-libs.sh); the app
     // builds no native code of its own.
 
+  }
+
+  if (providers.gradleProperty("themeTestApp").isPresent) {
+    packaging { jniLibs.keepDebugSymbols.add("**/*.so") }
   }
 
   signingConfigs {
@@ -56,8 +60,8 @@ android {
 
   buildTypes {
     debug {
-      applicationIdSuffix = ".shaders"
-      resValue("string", "app_name", "hakuX Shaders Test")
+      applicationIdSuffix = if (providers.gradleProperty("themeTestApp").isPresent) ".themes" else ".shaders"
+      resValue("string", "app_name", if (providers.gradleProperty("themeTestApp").isPresent) "hakuX Themes Test" else "hakuX Shaders Test")
       ndk {
         debugSymbolLevel = "NONE"
       }

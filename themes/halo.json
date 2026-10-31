@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "name": "Halo inspired",
+  "light": {
+    "background": "#EDF2E6",
+    "surface": "#FAFDF6",
+    "raised": "#DAE4D2",
+    "text": "#162D2B",
+    "muted": "#4B6258",
+    "accent": "#4C6527",
+    "secondary": "#18647A",
+    "outline": "#75876B"
+  },
+  "dark": {
+    "background": "#101B20",
+    "surface": "#19282D",
+    "raised": "#26373B",
+    "text": "#E5F5EA",
+    "muted": "#A9C4BD",
+    "accent": "#ADC776",
+    "secondary": "#75CFE7",
+    "outline": "#6A8B80"
+  }
+}

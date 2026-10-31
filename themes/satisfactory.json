@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "name": "Satisfactory",
+  "light": {
+    "background": "#F5F0E8",
+    "surface": "#FFFCF7",
+    "raised": "#E7DED1",
+    "text": "#272A30",
+    "muted": "#59534A",
+    "accent": "#A84900",
+    "secondary": "#796019",
+    "outline": "#857667"
+  },
+  "dark": {
+    "background": "#141B26",
+    "surface": "#202B3B",
+    "raised": "#2A3749",
+    "text": "#EDF2FA",
+    "muted": "#AAB9CC",
+    "accent": "#FFA144",
+    "secondary": "#E3B879",
+    "outline": "#788BA4"
+  }
+}
