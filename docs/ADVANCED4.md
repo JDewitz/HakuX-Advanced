@@ -114,3 +114,25 @@ remains outstanding. This is a shader test build, not a compatibility guarantee.
 References:
 - https://github.com/SnowflakePowered/librashader/tree/07ac790cdb9826f37cf8e1daf5011f03e3c4daa7
 - https://docs.libretro.com/development/shader/slang-shaders/
+
+## Advanced4.1: download official shaders
+
+VersionCode 13 updates the existing hakuX Shaders Test installation, with the same
+signing key. RetroArch Slang shaders → Download shaders (Libretro) downloads
+https://codeload.github.com/libretro/slang-shaders/zip/refs/heads/master over HTTPS.
+Progress, cancellation and retry-on-error are available. Once installed, choose
+a preset from Preset for this game or Global preset; download does not activate it.
+
+The compressed download is limited to 256 MiB; installation permits up to 20,000
+entries, 256 MiB expanded total and 64 MiB per file. Manual import retains its
+4,096-entry limit. Paths and duplicate entries are checked. Network timeouts,
+failed imports and cancellation clean up temporary files. No authentication or
+GitHub account is required.
+
+Snapshots use a content hash in their folder name: downloading the identical
+ZIP reuses its installation. A changed upstream pack installs as another snapshot,
+leaving older selections valid. Includes, lookup textures, licenses and relative
+paths are retained. All preset files are listed (up to 50,000 across packs).
+
+For the real-archive extraction test, set HAKUX_SHADER_TEST_ZIP to a downloaded
+ZIP before running JVM tests. It is skipped when no archive is supplied.

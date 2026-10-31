@@ -23,7 +23,9 @@ internal object ShaderPack {
   const val MAX_ENTRIES = 4096
   const val MAX_BYTES = 256L * 1024 * 1024
   const val MAX_FILE_BYTES = 64L * 1024 * 1024
-  fun extract(input: InputStream, directory: File) {
+  fun extract(input: InputStream, directory: File,
+    maxEntries: Int = MAX_ENTRIES, maxBytes: Long = MAX_BYTES,
+    maxFileBytes: Long = MAX_FILE_BYTES, cancelled: () -> Boolean = { false }) {
     check(directory.isDirectory || directory.mkdirs())
     val root = directory.canonicalFile
     val names = HashSet<String>()
@@ -31,7 +33,8 @@ internal object ShaderPack {
     ZipInputStream(input).use { zip ->
       while (true) {
         val e = zip.nextEntry ?: break
-        require(++entries <= MAX_ENTRIES) { "Too many files (maximum $MAX_ENTRIES)" }
+        check(!cancelled()) { "Cancelled" }
+        require(++entries <= maxEntries) { "Too many files (maximum $maxEntries)" }
         val name = e.name
         require(name.isNotBlank() && !name.startsWith('/') && '\\' !in name && ':' !in name &&
           name.split('/').none { it == ".." || it == "." } && names.add(name)) { "Unsafe or duplicate ZIP path" }
@@ -43,9 +46,10 @@ internal object ShaderPack {
           dest.outputStream().use { output ->
             val buffer = ByteArray(32768)
             while (true) {
+              check(!cancelled()) { "Cancelled" }
               val n = zip.read(buffer); if (n < 0) break
               size += n; total += n
-              require(size <= MAX_FILE_BYTES && total <= MAX_BYTES) { "Shader pack exceeds size limit" }
+              require(size <= maxFileBytes && total <= maxBytes) { "Shader pack exceeds size limit" }
               output.write(buffer, 0, n)
             }
           }
@@ -57,6 +61,7 @@ internal object ShaderPack {
   }
 }
 class ShaderStore(private val context: Context) {
+  companion object { const val OFFICIAL_MAX_ENTRIES = 20000 }
   private val store = AdvancedStore(context)
   val root = File(context.filesDir, "shaders")
   fun installBuiltins() {
@@ -79,8 +84,28 @@ class ShaderStore(private val context: Context) {
       return count
     } finally { stage.deleteRecursively() }
   }
+  /** Content-addressed snapshots keep selected presets valid across later downloads. */
+  fun importOfficial(archive: File, cancelled: () -> Boolean): Int {
+    val digest = java.security.MessageDigest.getInstance("SHA-256")
+    archive.inputStream().use { input ->
+      val b = ByteArray(32768)
+      while (true) { check(!cancelled()) { "Cancelled" }; val n = input.read(b); if (n < 0) break; digest.update(b, 0, n) }
+    }
+    val key = digest.digest().joinToString("") { "%02x".format(it.toInt() and 255) }
+    val dest = File(root, "libretro-${key.take(16)}")
+    if (dest.isDirectory) return dest.walkTopDown().count { it.isFile && it.extension.equals("slangp", true) }
+    val stage = File(root, ".download-${UUID.randomUUID()}")
+    try {
+      archive.inputStream().use { ShaderPack.extract(it, stage, OFFICIAL_MAX_ENTRIES, ShaderPack.MAX_BYTES,
+        ShaderPack.MAX_FILE_BYTES, cancelled) }
+      check(!cancelled()) { "Cancelled" }
+      val count = stage.walkTopDown().count { it.isFile && it.extension.equals("slangp", true) }
+      check(stage.renameTo(dest)) { "Could not install downloaded shaders" }
+      return count
+    } finally { stage.deleteRecursively() }
+  }
   fun presets(): List<String> = root.walkTopDown().onEnter { !it.name.startsWith('.') }
-    .filter { it.isFile && it.extension.equals("slangp", true) }.take(4096)
+    .filter { it.isFile && it.extension.equals("slangp", true) }.take(50000)
     .map { it.relativeTo(root).invariantSeparatorsPath }.sorted().toList()
   fun file(relative: String): File {
     val f = File(root, relative).canonicalFile

@@ -20,7 +20,7 @@ MCPX audio implementation ported from xemu. See the original
 - A two-pane pause menu with a ten-slot screenshot/date savestate browser.
 - Experimental RetroArch Slang runtime, ZIP import, global/per-game presets and parameters.
 
-Current shader test build: **1.2.0-advanced4-shaders**, versionCode **12**. The Android application ID
+Current shader test build: **1.2.0-advanced4.1-shaders**, versionCode **13**. The Android application ID
 is `com.rfandango.haku_x.shaders`; its displayed name is **hakuX Shaders Test**.
 This installs alongside Advanced3 because its original debug signing key was lost
 when the workspace reset. It has separate app data; Advanced3 remains installed.

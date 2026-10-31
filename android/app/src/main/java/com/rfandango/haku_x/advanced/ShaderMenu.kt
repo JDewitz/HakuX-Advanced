@@ -28,6 +28,7 @@ class ShaderMenu(private val activity: NativeCoreActivity,
       "Parameters for this game" to { parameters(game()) },
       "Global parameters" to { parameters(null) },
       "Use global settings for this game" to { change { store.reset(game()) } },
+      "Download shaders (Libretro)" to ::download,
       "Import shader pack ZIP" to ::import,
       "Retry selected preset" to { NativeCoreActivity.nativeRetryShader(); store.apply(game()); toast("Retry queued; resume the game") },
       "Turn shaders Off for this game" to { change { store.save(game(), ShaderSelection()) } },
@@ -83,6 +84,32 @@ class ShaderMenu(private val activity: NativeCoreActivity,
         change { store.save(scope, selection.copy(parameters = selection.parameters + (p.name to n))) }; window.dismiss()
       }
     }
+  }
+  private fun download() {
+    if (busy) { toast("Shader operation in progress"); return }
+    busy = true
+    val cancelled = java.util.concurrent.atomic.AtomicBoolean(false)
+    val progress = dialog(AlertDialog.Builder(activity).setTitle("Downloading shaders")
+      .setMessage("Connecting to Libretro's official shader repository…")
+      .setNegativeButton("Cancel") { _, _ -> cancelled.set(true) })
+    progress.setCanceledOnTouchOutside(false)
+    progress.setOnCancelListener { cancelled.set(true) }
+    Thread {
+      val outcome = runCatching {
+        ShaderDownload.fetch(activity.cacheDir,
+          { cancelled.get() || activity.isDestroyed },
+          { message -> activity.runOnUiThread { if (progress.isShowing) progress.setMessage(message) } },
+          { file -> store.importOfficial(file) { cancelled.get() || activity.isDestroyed } })
+      }
+      activity.runOnUiThread {
+        busy = false
+        if (activity.isFinishing || activity.isDestroyed) return@runOnUiThread
+        progress.dismiss()
+        if (!cancelled.get()) toast(outcome.fold(
+          { "Installed $it Libretro presets. Choose one from Preset for this game or Global preset." },
+          { "Download failed: ${it.message}. You can retry or import a ZIP." }))
+      }
+    }.start()
   }
   private fun import() {
     if (busy) { toast("Shader operation in progress"); return }

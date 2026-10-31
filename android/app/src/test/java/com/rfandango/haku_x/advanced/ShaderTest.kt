@@ -37,4 +37,26 @@ class ShaderTest {
     a.resetShader("game");assertFalse(b.hasShader("game"));assertEquals(0.7f,b.shader("game").parameters["Amount"])
     assertEquals(AdvancedProfile(),a.profile("game"))
   }
+  @Test fun downloadCopyPreservesBytesAndHonorsCancellation() {
+    val bytes = ByteArray(100000) { (it % 251).toByte() }
+    val output = ByteArrayOutputStream()
+    assertEquals(bytes.size.toLong(), ShaderDownload.copy(ByteArrayInputStream(bytes), output, { false }, {}))
+    assertArrayEquals(bytes, output.toByteArray())
+    var cancel = false
+    val partial = ByteArrayOutputStream()
+    try {
+      ShaderDownload.copy(ByteArrayInputStream(bytes), partial, { cancel }, { cancel = true })
+      fail("Expected cancellation")
+    } catch (_: IllegalStateException) { assertTrue(partial.size() < bytes.size) }
+  }
+  @Test fun officialArchiveExtractsWhenProvided() {
+    val path = System.getenv("HAKUX_SHADER_TEST_ZIP")
+    org.junit.Assume.assumeNotNull(path)
+    dir { root ->
+      java.io.File(path!!).inputStream().use { ShaderPack.extract(it, root, ShaderStore.OFFICIAL_MAX_ENTRIES) }
+      assertTrue(java.io.File(root, "slang-shaders-master/bilinear.slangp").isFile)
+      assertTrue(root.walkTopDown().count { it.extension == "slangp" } > 1000)
+    }
+  }
+
 }
