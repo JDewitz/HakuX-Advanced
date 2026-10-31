@@ -17,10 +17,9 @@ MCPX audio implementation ported from xemu. See the original
 - Advanced global/per-game RAM, CPU-precision and GPU-workaround profiles.
 - Mappable quick save/load, pause, screenshot and benchmark actions.
 - Live presentation filters, benchmark CSVs, memory tools and renderer dumps.
-- Optional presentation-frame skipping during fast forward.
 - A two-pane pause menu with a ten-slot screenshot/date savestate browser.
 
-Current build: **1.2.0-advanced2**, versionCode **10**. The Android application ID
+Current build: **1.2.0-advanced3**, versionCode **11**. The Android application ID
 is `com.rfandango.haku_x.fastforward`; its displayed name is **hakuX Advanced**.
 The original official app uses its own identity. The dashboard/kernel experiment
 is excluded: `native/kernel/` matches official v1.2.0.
@@ -28,17 +27,18 @@ is excluded: `native/kernel/` matches official v1.2.0.
 ## Status
 
 The initial mappable fast-forward build was reported working on a user's
-Android device. The later Advanced controls, frame-skip integration and pause
+Android device. The later Advanced controls and pause
 browser have build and automated-test coverage; device behavior and per-game
 compatibility still need testing. The current source passed 27 Android JVM
 tests and native policy/queue/memory checks. These are not Android UI tests.
 
-Frame skipping omits excess host scanout copies, preserves guest rendering and
-fence submissions, and does not overclock movie decoding or audio clocks.
+Advanced3 removes the experimental fast-forward frame skipping. Fast forward
+uses the original uncapped path; it does not overclock movie decoding or audio clocks.
 Start with default settings and compare one experiment at a time.
 
 - [Advanced features and implementation](docs/ADVANCED.md)
-- [Advanced2 frame skipping and pause browser](docs/ADVANCED2.md)
+- [Advanced3 removal and shader integration assessment](docs/ADVANCED3.md)
+- [Advanced2 historical notes](docs/ADVANCED2.md)
 - [Original fast-forward handoff](docs/FAST_FORWARD.md)
 - [Fork history and release notes](docs/FORK.md)
 - [Building the Android app](android/README.md)
@@ -62,7 +62,7 @@ cmake -S native -B build/native/core -G Ninja \
   -DCMAKE_POLICY_VERSION_MINIMUM=3.5
 cmake --build build/native/core --target hakuxcore --parallel 6
 bash tools/native/app-libs.sh
-bash tests/native/frame_skip/run.sh
+bash tests/native/advanced/run.sh
 cd android
 ./gradlew -Dorg.gradle.java.home="$JAVA_HOME" -Pkotlin.incremental=false \
   testDebugUnitTest assembleDebug

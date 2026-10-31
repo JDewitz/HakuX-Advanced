@@ -118,7 +118,7 @@ class AdvancedMenu(
   fun recordBenchmark() {
     if (bench != null) { toast("A benchmark is already recording"); return }
     started = 0; warmup = 0; samples = 0; fpsSum = 0.0
-    bench = StringBuilder("# hakuX ${BuildConfig.VERSION_NAME}\n# device=${Build.MANUFACTURER} ${Build.MODEL}\n# game=${game()}\n# launch=${launchDescription()}\n# filters=$filters\n# fast_forward=${fastForward()}\n# allow_frame_skip=${store.allowFrameSkip}\n# sampled native frame statistics, not individual frame events\nelapsed_ms,fps,avg_frame_ms,last_frame_ms,gpu_busy_ms,fast_forward,ff_scanout_skips\n")
+    bench = StringBuilder("# hakuX ${BuildConfig.VERSION_NAME}\n# device=${Build.MANUFACTURER} ${Build.MODEL}\n# game=${game()}\n# launch=${launchDescription()}\n# filters=$filters\n# fast_forward=${fastForward()}\n# sampled native frame statistics, not individual frame events\nelapsed_ms,fps,avg_frame_ms,last_frame_ms,gpu_busy_ms,fast_forward\n")
     toast("Benchmark armed. Resume the game; recording begins after a brief warmup.")
     handler.postDelayed(sample, 250)
   }
@@ -135,7 +135,7 @@ class AdvancedMenu(
       }
       val s = NativeCoreActivity.nativeGetFrameStats()
       if (s != null && s.size >= 3) {
-        csv.append(String.format(Locale.ROOT, "%d,%.3f,%.3f,%.3f,%d,%s,%d\n", now - started, s[0], s[1], s[2], NativeCoreActivity.nativeGpuBusyMs(), fastForward(), NativeCoreActivity.nativeFastForwardSkipped()))
+        csv.append(String.format(Locale.ROOT, "%d,%.3f,%.3f,%.3f,%d,%s\n", now - started, s[0], s[1], s[2], NativeCoreActivity.nativeGpuBusyMs(), fastForward()))
         samples++; fpsSum += s[0]
       }
       if (now - started >= 10000) stopBenchmark("complete") else handler.postDelayed(this, 100)

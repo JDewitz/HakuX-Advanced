@@ -22,7 +22,6 @@
  * Vblank comes from the host clock at 60 Hz. The interrupt goes out on bus
  * level 3. Written from the register map, without the LLE device.
  */
-#include "native/core/fast_forward.h"
 #include "native/dev/dev.h"
 #include "hw/xbox/hle/host.h"
 #include "hw/xbox/hle/pb/pbdraw.h"
@@ -591,9 +590,7 @@ static bool g_fast_forward;
 void nc_dev_nv2a_set_fast_forward(bool enabled)
 {
     __atomic_store_n(&g_fast_forward, enabled, __ATOMIC_RELEASE);
-    nc_ff_active(enabled);
     nc_log("hakuX-native", "fast-forward %s (uncapped vblank)", enabled ? "on" : "off");
-    if (!enabled) nc_log("hakuX-native", "fast-forward scanout skips (cumulative): %llu", (unsigned long long)nc_ff_skipped());
 }
 
 static bool uncapped(void)

@@ -27,8 +27,6 @@ class PauseMenu(
   private val show: (AlertDialog.Builder) -> AlertDialog,
   private val fastForward: () -> Boolean,
   private val setFastForward: (Boolean) -> Unit,
-  private val frameSkip: () -> Boolean,
-  private val setFrameSkip: (Boolean) -> Unit,
   private val actions: List<Pair<String, () -> Unit>>,
   private val onClosed: () -> Unit,
   private val resume: () -> Unit,
@@ -73,17 +71,11 @@ class PauseMenu(
     val resumeButton = button("Resume") { resume(); dialog.dismiss() }.apply { id = View.generateViewId() }
     left.addView(resumeButton, LinearLayout.LayoutParams(-1, -2))
     val ff = toggle("Fast forward", fastForward()) { setFastForward(it) }
-    lateinit var skip: Switch
-    skip = toggle("Allow FF frame skipping", frameSkip()) {
-      setFrameSkip(it)
-      syncing = true; skip.isChecked = frameSkip(); syncing = false
-    }
-    left.addView(ff); left.addView(skip)
-    left.addView(text("Frame skip keeps up to 30 display FPS during fast forward. Movie/audio clocks are unchanged.", 12f).apply { setTextColor(muted) })
+    left.addView(ff)
     for ((label, action) in actions) left.addView(button(label) {
       action()
       syncing = true
-      ff.isChecked = fastForward(); skip.isChecked = frameSkip()
+      ff.isChecked = fastForward()
       syncing = false
     }, LinearLayout.LayoutParams(-1, -2))
     row.addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
@@ -104,7 +96,7 @@ class PauseMenu(
     refreshSlots(resumeButton)
     row.post {
       if (!closed) {
-        syncing = true; ff.isChecked = fastForward(); skip.isChecked = frameSkip(); syncing = false
+        syncing = true; ff.isChecked = fastForward(); syncing = false
         resumeButton.nextFocusRightId = firstSave?.id ?: View.NO_ID
         resumeButton.requestFocus()
       }

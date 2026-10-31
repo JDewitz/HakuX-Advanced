@@ -21,7 +21,6 @@
 #include "native/app/app.h"
 #include "native/core/cheats.h"
 #include "native/core/advanced.h"
-#include "native/core/fast_forward.h"
 #include "native/core/core.h"
 #include "native/core/mods.h"
 #include "native/core/options.h"
@@ -166,18 +165,6 @@ EXPORT JNIEXPORT void JNICALL Java_com_rfandango_haku_1x_NativeCoreActivity_nati
     JNIEnv *env, jclass cls, jboolean enabled)
 {
     nc_dev_nv2a_set_fast_forward(enabled != JNI_FALSE);
-}
-
-EXPORT JNIEXPORT void JNICALL Java_com_rfandango_haku_1x_NativeCoreActivity_nativeSetFastForwardFrameSkip(
-    JNIEnv *env, jclass cls, jboolean allowed)
-{
-    nc_ff_allow_skip(allowed != JNI_FALSE);
-    nc_log("hakuX-native", "fast-forward frame skipping %s (30 Hz scanout, clocks unchanged)", allowed ? "allowed" : "off");
-}
-EXPORT JNIEXPORT jlong JNICALL Java_com_rfandango_haku_1x_NativeCoreActivity_nativeFastForwardSkipped(
-    JNIEnv *env, jclass cls)
-{
-    return (jlong)nc_ff_skipped();
 }
 
 EXPORT JNIEXPORT jboolean JNICALL Java_com_rfandango_haku_1x_NativeCoreActivity_nativeSetAdvanced(

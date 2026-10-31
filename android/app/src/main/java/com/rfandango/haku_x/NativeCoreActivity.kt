@@ -432,8 +432,6 @@ class NativeCoreActivity : SDLActivity(), InputManager.InputDeviceListener {
       for ((action, code) in advanced.keys()) if (code != ffKey) put(action, code)
     }
     emulatorHotkeys.holdFastForward = advanced.holdFastForward
-    fastForwardFrameSkip = advanced.allowFrameSkip
-    nativeSetFastForwardFrameSkip(fastForwardFrameSkip)
     activityPaused = false
     syncPause() /* where it stopped (onPause), unless the menu is open */
     hideSystemBars()
@@ -727,7 +725,6 @@ class NativeCoreActivity : SDLActivity(), InputManager.InputDeviceListener {
   private var controlsShown: Boolean? = null
   private var editorBar: View? = null
   private var fastForward = false
-  private var fastForwardFrameSkip = false
   private var holdBaseline = false
   private var advancedMenu: AdvancedMenu? = null
   private fun tools(): AdvancedMenu = advancedMenu ?: AdvancedMenu(this, ::showMenuDialog, ::captureFrame, ::gameKey,
@@ -744,13 +741,6 @@ class NativeCoreActivity : SDLActivity(), InputManager.InputDeviceListener {
     Toast.makeText(this, getString(if (on) R.string.fast_forward_on else R.string.fast_forward_off), Toast.LENGTH_SHORT).show()
   }
   private fun toggleFastForward() = setFastForward(!fastForward)
-  private fun setFastForwardFrameSkip(on: Boolean) {
-    runCatching { AdvancedStore(this).allowFrameSkip = on }.onSuccess {
-      fastForwardFrameSkip = on
-      nativeSetFastForwardFrameSkip(on)
-    }.onFailure { Toast.makeText(this, "Could not save frame-skip setting", Toast.LENGTH_LONG).show() }
-  }
-
   private fun activateAction(action: EmulatorAction) {
     when (action) {
       EmulatorAction.FAST_FORWARD -> toggleFastForward()
@@ -803,7 +793,7 @@ class NativeCoreActivity : SDLActivity(), InputManager.InputDeviceListener {
     lateinit var window: PauseMenu
     window = PauseMenu(this, saveStates, nativeStatesAvailable(), { builder ->
       showMenuDialog(builder).also { dialog -> closePauseWindow = { dialog.dismiss(); closePauseWindow = null } }
-    }, { fastForward }, ::setFastForward, { fastForwardFrameSkip }, ::setFastForwardFrameSkip, actions, {
+    }, { fastForward }, ::setFastForward, actions, {
       if (pauseWindow === window) { pauseWindow = null; closePauseWindow = null }
     }) {
       manualPaused = false; syncPause()
@@ -1275,10 +1265,6 @@ class NativeCoreActivity : SDLActivity(), InputManager.InputDeviceListener {
     external fun nativeSetPaused(paused: Boolean)
     @JvmStatic
     external fun nativeSetFastForward(enabled: Boolean)
-    @JvmStatic
-    external fun nativeSetFastForwardFrameSkip(allowed: Boolean)
-    @JvmStatic
-    external fun nativeFastForwardSkipped(): Long
     @JvmStatic
     external fun nativeSetAdvanced(name: String, value: String): Boolean
     @JvmStatic

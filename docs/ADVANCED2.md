@@ -1,3 +1,5 @@
+> Historical release: Advanced3 removes the frame-skip option and native skipping path. The pause browser remains.
+
 # hakuX Advanced 2 — frame-skip fast forward and two-pane savestates
 
 **Version:** 1.2.0-advanced2, versionCode 10. **Package:**

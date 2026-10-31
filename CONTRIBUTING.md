@@ -13,7 +13,7 @@ guest execution speed. Do not attach copyrighted Xbox software or private data.
 Validation for changes in these areas:
 
 ```bash
-bash tests/native/frame_skip/run.sh
+bash tests/native/advanced/run.sh
 cd android
 ./gradlew -Dorg.gradle.java.home="$JAVA_HOME" -Pkotlin.incremental=false testDebugUnitTest assembleDebug
 ```

@@ -3,9 +3,6 @@
  * into lazily opened dynamic-rendering passes, submits at FENCE/SWAP/KICK/
  * READBACK with the front end's timeline value (spec §5.3, §5.10-5.12).
  */
-#ifdef HAKUX_NATIVE_CORE
-#include "native/core/fast_forward.h"
-#endif
 #include "hw/xbox/hle/base.h"
 #ifdef __ANDROID__
 #include <sys/system_properties.h>
@@ -1984,16 +1981,7 @@ static void cmd_swap_present(const HleCmdSwap *c)
     hle_pcache_save(false);
     hle_pipe_flush(false);              /* the pipelines made, recorded (at most once a second) */
     HleVkSurf *src = hle_surf_get(c->surf);
-    bool skip = false, allow_drop = false;
-#ifdef HAKUX_NATIVE_CORE
-    static NcScanoutGate scanout_gate;
-    const bool force = g_fh.armed || g_rtd.active || g_pix.active;
-    skip = nc_ff_skip_scanout(&scanout_gate, (uint64_t)hle_now_ns(), force);
-    allow_drop = nc_ff_skip_active() && !force;
-#endif
-    /* Even skipped display copies reach submit(c->value) below: all guest
-     * draws, render-target dependencies, fences and flip accounting remain. */
-    int slot = skip ? -1 : hle_disp_begin_write(c->swap_id, c->value, allow_drop);
+    int slot = hle_disp_begin_write(c->swap_id, c->value);
     if (src && slot >= 0 && hle_surf_ensure(src) &&
         (src->aspect & VK_IMAGE_ASPECT_COLOR_BIT)) {
         VkCommandBuffer cb = cb_get();

@@ -29,8 +29,8 @@ if [ -z "$heads" ] && [ "$(git rev-parse --is-shallow-repository)" = true ]; the
   exit 1
 fi
 git push -u origin refs/heads/advanced:refs/heads/advanced
-for tag in advanced-1.2.0-fastforward1 advanced-1.2.0-1 advanced-1.2.0-2; do
+for tag in advanced-1.2.0-fastforward1 advanced-1.2.0-1 advanced-1.2.0-2 advanced-1.2.0-3; do
   git push origin "refs/tags/$tag:refs/tags/$tag"
 done
-echo "Pushed advanced and three fork-specific tags."
+echo "Pushed advanced and four fork-specific tags."
 echo "Set advanced as your fork's default branch if you want it shown on the repository home page."

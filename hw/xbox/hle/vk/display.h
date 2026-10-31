@@ -21,7 +21,7 @@
 void hle_disp_setup(void);
 /* Render thread (CONFIG_VULKAN builds only). */
 int hle_disp_init(uint32_t w, uint32_t h);
-int hle_disp_begin_write(uint32_t swap_id, uint64_t value, bool allow_drop);
+int hle_disp_begin_write(uint32_t swap_id, uint64_t value);
 void hle_disp_size(uint32_t *w, uint32_t *h);
 /* Watcher thread. */
 void hle_disp_on_complete(uint64_t completed);

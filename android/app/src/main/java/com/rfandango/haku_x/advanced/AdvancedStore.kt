@@ -94,9 +94,6 @@ class AdvancedStore internal constructor(private val dir: File) {
   var holdFastForward: Boolean
     get() = read().optBoolean("holdFastForward", false)
     set(v) = change { it.put("holdFastForward", v) }
-  var allowFrameSkip: Boolean
-    get() = read().optBoolean("allowFrameSkip", false)
-    set(v) = change { it.put("allowFrameSkip", v) }
   var quickSlot: Int
     get() = read().optInt("quickSlot", 1).coerceIn(1, com.rfandango.haku_x.data.SaveStateStore.SLOTS)
     set(v) = change { it.put("quickSlot", v.coerceIn(1, com.rfandango.haku_x.data.SaveStateStore.SLOTS)) }
