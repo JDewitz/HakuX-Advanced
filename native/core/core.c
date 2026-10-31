@@ -7,6 +7,7 @@
 #include "native/hle/hle_native.h"
 #include "native/core/mmio.h"
 #include "native/core/mods.h"
+#include "native/core/trainer.h"
 #include "native/net/net.h"
 #include "native/state/save.h"
 
@@ -148,6 +149,12 @@ bool nc_core_boot(NcCore *c, int disc_fd)
     c->kernel.hle_hook = nc_hle_hook;
     c->kernel.hle_after_sysop = nc_hle_after_sysop;
     nc_hle_boot(&c->kernel, &c->vm, c->cpu, &g_boot->ctx);
+    if (!g_loadstate[0]) {
+        const char *error = nc_trainer_boot(&c->vm, &g_boot->ctx, c->xbe.info.title_id);
+        if (error) {
+            return boot_failed(error);
+        }
+    }
     nc_state_attach(c);
     if (g_loadstate[0]) {
         const char *err = nc_state_load(g_loadstate);

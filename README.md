@@ -98,3 +98,5 @@ This fork remains **GPL-3.0-or-later**, like hakuX. See [COPYING](COPYING),
 [LICENSE](LICENSE), and [licenses/](licenses/). Files and dependencies from
 other projects retain their original licenses. Distributing a modified binary
 requires making its complete corresponding source available under its license.
+
+Experimental trainer branch: see [Advanced4.3 trainer notes](docs/ADVANCED4.3.md) for classic EvoX ETM import, per-game options and boot execution. Android game testing is pending.

@@ -36,6 +36,8 @@ add_library(hakux_native STATIC
   core/xbe_load.c
   core/mods.c
   core/options.c
+  core/etm.c
+  core/trainer.c
   core/cheats.c
   core/memscan.c
   core/core.c

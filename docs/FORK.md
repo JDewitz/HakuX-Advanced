@@ -28,3 +28,5 @@ The Advanced4 Slang test uses librashader 0.12.1 and a separate Android applicat
 identity. Google's supplied Advanced4 was reviewed; its dependencies and build
 setup were reused. Its single-pass adapter and preset implementations were not
 merged into this runtime. See ADVANCED4.md.
+
+Experimental trainer branch `trainer-experimental` adds classic ETM import, per-game options and guest boot execution on top of Advanced4.2. See ADVANCED4.3.md for limitations and validation.

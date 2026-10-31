@@ -644,7 +644,6 @@ class NativeCoreActivity : SDLActivity(), InputManager.InputDeviceListener {
   private fun modsArg(): String? {
     if (discUri == null) return null
     val key = gameKey()
-    if (!ModCatalog.has(this, key)) return null
     return runCatching { ModRun.write(this, key) }
       .onFailure { Log.e(TAG, "mods: ${it.message}") }
       .getOrNull()

@@ -227,9 +227,11 @@ object ModRun {
   /** The manifest written (null: the game has none), and the run's cheats. */
   fun write(context: Context, gameKey: String): Pair<File, List<CheatInfo>>? {
     val game = ModCatalog.load(context, gameKey)
-    if (game.isEmpty) return null
+    val trainer = TrainerStore(context, gameKey).load()?.takeIf { it.enabled }
+    if (game.isEmpty && trainer == null) return null
     val choices = ModChoices(context, gameKey)
     val lines = mutableListOf<String>()
+    if (trainer != null) lines += "etm\t${trainer.file.absolutePath}\t${trainer.options}"
     val on = game.mods.filter { choices.mod(it.id) }
     for (mod in on) {
       for ((disc, file) in ModCatalog.extract(context, gameKey, mod.id)) {

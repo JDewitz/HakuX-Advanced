@@ -4,6 +4,7 @@
 #include "native/core/mods.h"
 
 #include "native/core/cheats.h"
+#include "native/core/trainer.h"
 #include "native/core/memscan.h"
 #include "native/cpu/cpu.h"
 #include "native/dev/dev.h"
@@ -389,6 +390,7 @@ static char *field(char **s)
 
 void nc_mods_install(NcDisc *disc)
 {
+    nc_trainer_config("", "");
     if (!g_manifest[0]) {
         return;
     }
@@ -404,6 +406,11 @@ void nc_mods_install(NcDisc *disc)
         line[strcspn(line, "\r\n")] = 0;
         char *s = line;
         const char *kind = field(&s);
+        if (!strcmp(kind, "etm")) {
+            const char *path = field(&s);
+            nc_trainer_config(path, s);
+            continue;
+        }
         if (!strcmp(kind, "refresh")) {
             const unsigned hz = (unsigned)atoi(s);
             nc_dev_nv2a_vblank_multiply((hz + 30) / 60);

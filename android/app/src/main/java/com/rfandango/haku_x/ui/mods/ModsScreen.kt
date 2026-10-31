@@ -37,6 +37,7 @@ fun ModsScreen(gameKey: String, title: String, onBack: () -> Unit) {
 
   SubScreen(title = stringResource(R.string.mods_title), subtitle = title, onBack = onBack) { padding ->
     Column(Modifier.padding(padding).fillMaxSize().verticalScroll(rememberScrollState())) {
+      TrainerSection(gameKey)
       if (game.isEmpty) {
         EmptyText(stringResource(R.string.mods_none))
       }

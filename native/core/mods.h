@@ -8,6 +8,8 @@
  *                        made with it on, its bytes go back to the disc's
  *   cheat <TAB> <0|1 on> <TAB> <0|1 once> <TAB> <name>
  *   code  <TAB> <a code line of the cheat above>
+ *   etm <TAB> <host .etm file> <TAB> <option bit string>
+ *                        one classic trainer, executed before a fresh XBE boot
  *   refresh <TAB> <Hz>   the vblank's rate for a 60 Hz video mode (a 50 Hz
  *                        one scales with it)
  *

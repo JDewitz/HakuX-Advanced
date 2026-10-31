@@ -242,8 +242,8 @@
   <string name="state_delete_title">Delete this state?</string>
   <string name="state_delete_message">The state in slot %1$d will be deleted.</string>
   <string name="library_menu_load_state">Load state</string>
-  <string name="library_menu_mods">Mods &amp; cheats</string>
-  <string name="mods_title">Mods &amp; cheats</string>
+  <string name="library_menu_mods">Mods, cheats &amp; trainers</string>
+  <string name="mods_title">Mods, cheats &amp; trainers</string>
   <string name="mods_none">This disc has no mods or cheats.</string>
   <string name="mods_section_mods">Mods</string>
   <string name="mods_mods_desc">Mods change the game\'s files. A change takes effect the next time the game starts.</string>
