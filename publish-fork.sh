@@ -30,8 +30,8 @@ if [ -z "$heads" ] && [ "$(git rev-parse --is-shallow-repository)" = true ]; the
 fi
 branch=$(git symbolic-ref --quiet --short HEAD)
 git push -u origin "refs/heads/$branch:refs/heads/$branch"
-for tag in advanced-1.2.0-fastforward1 advanced-1.2.0-1 advanced-1.2.0-2 advanced-1.2.0-3 advanced-1.2.0-4-slang; do
+for tag in advanced-1.2.0-fastforward1 advanced-1.2.0-1 advanced-1.2.0-2 advanced-1.2.0-3 advanced-1.2.0-4-slang advanced-1.2.0-4.1-slang advanced-1.2.0-4.2-slang; do
   git push origin "refs/tags/$tag:refs/tags/$tag"
 done
-echo "Pushed $branch and five fork-specific tags."
+echo "Pushed $branch and seven fork-specific tags."
 echo "Set $branch as your fork's default branch if you want it shown on the repository home page."

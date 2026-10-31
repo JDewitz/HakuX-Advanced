@@ -75,10 +75,10 @@ class ShaderStore(private val context: Context) {
       }
     }
   }
-  fun import(input: InputStream): Int {
+  fun import(input: InputStream, cancelled: () -> Boolean = { false }): Int {
     val id = UUID.randomUUID().toString(); val stage = File(root, ".import-$id")
     try {
-      ShaderPack.extract(input, stage)
+      ShaderPack.extract(input, stage, cancelled = cancelled)
       val count = stage.walkTopDown().count { it.isFile && it.extension.equals("slangp", true) }
       check(stage.renameTo(File(root, "pack-$id"))) { "Could not publish shader pack" }
       return count

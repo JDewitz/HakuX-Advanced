@@ -46,7 +46,7 @@ data class AdvancedProfile(
 
 enum class EmulatorAction(val label: String) {
   FAST_FORWARD("Fast forward"), QUICK_SAVE("Quick save"), QUICK_LOAD("Quick load"),
-  PAUSE("Pause / resume"), SCREENSHOT("Screenshot"), BENCHMARK("Record 10-second benchmark")
+  PAUSE("Pause / resume"), SCREENSHOT("Screenshot"), BENCHMARK("Record 10-second benchmark"), NEXT_SHADER("Next shader")
 }
 
 class AdvancedStore internal constructor(private val dir: File) {

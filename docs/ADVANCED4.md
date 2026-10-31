@@ -136,3 +136,35 @@ paths are retained. All preset files are listed (up to 50,000 across packs).
 
 For the real-archive extraction test, set HAKUX_SHADER_TEST_ZIP to a downloaded
 ZIP before running JVM tests. It is skipped when no archive is supplied.
+
+## Advanced4.2: Graphics browser and OSD actions
+
+VersionCode 14 updates the existing Shaders Test app with the same signing key.
+Open Settings → Graphics → Shaders, a game's Graphics → Shaders, or the
+in-game pause menu → Graphics. All open the same folder browser. Browse pack
+→ category → preset, use Up/Back, or search within the current folder. The
+selected preset is marked. GitHub's archive wrapper is skipped automatically.
+Packs provides Download and Import ZIP through the Android file picker.
+Global and per-game choices remain separate; Use global clears a game override.
+The browser is a separate normal Android activity and does not load the emulator
+in the launcher process. Returning to a game applies the selection via the existing
+onResume hook. Existing in-game parameter/status controls remain in Advanced.
+
+The fast-forward toast is removed. A static >> OSD label appears at the top right
+only while fast forward is active, independent of the FPS overlay setting.
+
+Keys in the browser opens existing global emulator-action mapping. Bind Next
+shader to any spare key/button; it is unbound by default. Each press advances
+through direct preset siblings in the selected folder, alphabetically, wrapping
+at the end. It does not jump between categories or descend into subfolders.
+With shaders Off it starts at the built-in examples, or the first installed folder
+if examples are absent. After choosing a category/preset, cycling stays there.
+A four-second OSD name identifies the requested preset. Hold repeats are ignored
+and both key edges are consumed before Xbox input. No shader-change toast is used.
+
+Preset enumeration and config changes for the key run on a single worker, off the
+UI thread. Requests are serialized. Shader compilation still happens when the
+presenter applies the request and can stall; shader history/save formats and the
+Vulkan runtime are unchanged. The next-shader request creates a per-game override.
+Native libraries are unchanged in this Android-only update. No device UI/GPU test
+was available here. See the release validation report for actual automated results.

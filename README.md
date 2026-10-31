@@ -20,7 +20,7 @@ MCPX audio implementation ported from xemu. See the original
 - A two-pane pause menu with a ten-slot screenshot/date savestate browser.
 - Experimental RetroArch Slang runtime, ZIP import, global/per-game presets and parameters.
 
-Current shader test build: **1.2.0-advanced4.1-shaders**, versionCode **13**. The Android application ID
+Current shader test build: **1.2.0-advanced4.2-shaders**, versionCode **14**. The Android application ID
 is `com.rfandango.haku_x.shaders`; its displayed name is **hakuX Shaders Test**.
 This installs alongside Advanced3 because its original debug signing key was lost
 when the workspace reset. It has separate app data; Advanced3 remains installed.
@@ -32,7 +32,7 @@ is excluded: `native/kernel/` matches official v1.2.0.
 The initial mappable fast-forward build was reported working on a user's
 Android device. The later Advanced controls and pause
 browser have build and automated-test coverage; device behavior and per-game
-compatibility still need testing. The current source passed 31 Android JVM
+compatibility still need testing. The current source passed 37 Android JVM
 tests and native policy/queue/memory checks. These are not Android UI tests.
 
 Advanced3 removes the experimental fast-forward frame skipping. Fast forward

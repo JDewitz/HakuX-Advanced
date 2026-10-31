@@ -98,6 +98,11 @@ fun GameSettingsScreen(gameKey: String, title: String, onBack: () -> Unit, onAdv
       Hint(stringResource(R.string.game_settings_desc))
       for ((section, items) in SECTIONS) {
         Section(stringResource(section))
+        if (section == R.string.settings_section_graphics) {
+          com.rfandango.haku_x.ui.common.ActionItem(title = "Shaders", summary = "Browse or override this game's preset", icon = null) {
+            com.rfandango.haku_x.ShaderSettingsActivity.open(context, gameKey)
+          }
+        }
         for (item in items) {
           val own = values[item.setting]
           ListItem(

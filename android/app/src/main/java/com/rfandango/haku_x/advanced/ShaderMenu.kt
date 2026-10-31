@@ -39,9 +39,7 @@ class ShaderMenu(private val activity: NativeCoreActivity,
       .onFailure { toast(it.message ?: "Could not save shader settings") }
   }
   private fun select(scope: String?) {
-    choice(if (scope == null) "Global preset" else "Preset for this game",
-      listOf("Off" to { change { store.save(scope, ShaderSelection()) } }) +
-      store.presets().map { p -> p to { change { store.save(scope, ShaderSelection(p)) } } })
+    com.rfandango.haku_x.ShaderSettingsActivity.open(activity, scope, returnToGame = true)
   }
   private data class Parameter(val name: String, val description: String, val initial: Float, val min: Float, val max: Float, val step: Float)
   private fun parameters(scope: String?) {
@@ -122,7 +120,7 @@ class ShaderMenu(private val activity: NativeCoreActivity,
     if (uri != null && !busy) {
       busy = true; toast("Importing shader pack…")
       Thread {
-        val outcome = runCatching { activity.contentResolver.openInputStream(uri)?.use(store::import) ?: error("Could not open ZIP") }
+        val outcome = runCatching { activity.contentResolver.openInputStream(uri)?.use { store.import(it) } ?: error("Could not open ZIP") }
         activity.runOnUiThread {
           busy = false
           if (!activity.isFinishing && !activity.isDestroyed) toast(outcome.fold({ "Imported $it presets. Choose one from the preset menu." }, { "Import failed: ${it.message}" }))

@@ -63,6 +63,10 @@ class NativeCoreActivity : SDLActivity(), InputManager.InputDeviceListener {
   private var discArg = ""
   private var onScreenController: OnScreenController? = null
   private var fpsView: TextView? = null
+  private var fastForwardView: TextView? = null
+  private var shaderNameView: TextView? = null
+  private val shaderWorker = java.util.concurrent.Executors.newSingleThreadExecutor()
+  private val hideShaderName = Runnable { shaderNameView?.visibility = View.GONE }
   private var hitchView: TextView? = null
   /* the settings' overlays, read as the game comes back (onResume) */
   private var fpsOn = false
@@ -500,6 +504,8 @@ class NativeCoreActivity : SDLActivity(), InputManager.InputDeviceListener {
     fpsHandler.removeCallbacks(fatalRunnable)
     fpsHandler.removeCallbacks(rumbleRunnable)
     loadingDialog?.dismiss()
+    shaderWorker.shutdownNow()
+    fpsHandler.removeCallbacks(hideShaderName)
     (getSystemService(Context.INPUT_SERVICE) as InputManager).unregisterInputDeviceListener(this)
     multicastLock?.release()
     super.onDestroy()
@@ -579,6 +585,29 @@ class NativeCoreActivity : SDLActivity(), InputManager.InputDeviceListener {
     }
     mLayout?.addView(fps, params)
     fpsView = fps
+    fun label(text: String, size: Float) = TextView(this).apply {
+      this.text = text; visibility = View.GONE
+      setTextColor(Color.WHITE); setTextSize(TypedValue.COMPLEX_UNIT_SP, size)
+      typeface = Typeface.MONOSPACE; setShadowLayer(2f, 1f, 1f, Color.BLACK)
+      setPadding(12, 6, 12, 6); setBackgroundColor(Color.argb(100, 0, 0, 0))
+      isClickable = false; isFocusable = false; maxLines = 2
+    }
+    fastForwardView = label(">>", 16f).also { indicator ->
+      indicator.contentDescription = "Fast forward"
+      indicator.visibility = if (fastForward) View.VISIBLE else View.GONE
+      mLayout?.addView(indicator, RelativeLayout.LayoutParams(-2, -2).apply {
+        addRule(RelativeLayout.ALIGN_PARENT_TOP); addRule(RelativeLayout.ALIGN_PARENT_END)
+        topMargin = (8 * resources.displayMetrics.density).toInt()
+        marginEnd = (8 * resources.displayMetrics.density).toInt()
+      })
+    }
+    shaderNameView = label("", 12f).also { indicator ->
+      indicator.maxWidth = (360 * resources.displayMetrics.density).toInt()
+      mLayout?.addView(indicator, RelativeLayout.LayoutParams(-2, -2).apply {
+        addRule(RelativeLayout.ALIGN_PARENT_TOP); addRule(RelativeLayout.CENTER_HORIZONTAL)
+        topMargin = (8 * resources.displayMetrics.density).toInt()
+      })
+    }
 
     if (!BuildConfig.DEBUG) {
       return
@@ -739,12 +768,38 @@ class NativeCoreActivity : SDLActivity(), InputManager.InputDeviceListener {
     if (fastForward == on) return
     fastForward = on
     nativeSetFastForward(on)
-    Toast.makeText(this, getString(if (on) R.string.fast_forward_on else R.string.fast_forward_off), Toast.LENGTH_SHORT).show()
+    fastForwardView?.visibility = if (on) View.VISIBLE else View.GONE
+  }
+  private fun shaderNotice(text: String) {
+    shaderNameView?.text = text
+    shaderNameView?.visibility = View.VISIBLE
+    fpsHandler.removeCallbacks(hideShaderName)
+    fpsHandler.postDelayed(hideShaderName, 4000)
+  }
+  private fun nextShader() {
+    val game = gameKey()
+    shaderWorker.submit {
+      val result = runCatching {
+        val store = com.rfandango.haku_x.advanced.ShaderStore(this)
+        store.installBuiltins()
+        val current = store.selected(game)
+        val next = com.rfandango.haku_x.advanced.ShaderCatalog.next(store.presets(), current.preset)
+          ?: error("No presets in this folder. Open Graphics → Shaders.")
+        if (isFinishing || isDestroyed || Thread.currentThread().isInterrupted) return@submit
+        if (next != current.preset) store.save(game, com.rfandango.haku_x.advanced.ShaderSelection(next))
+        store.apply(game)
+        next.substringAfterLast('/').removeSuffix(".slangp")
+      }
+      runOnUiThread {
+        if (!isFinishing && !isDestroyed) shaderNotice(result.getOrElse { it.message ?: "Shader change failed" })
+      }
+    }
   }
   private fun toggleFastForward() = setFastForward(!fastForward)
   private fun activateAction(action: EmulatorAction) {
     when (action) {
       EmulatorAction.FAST_FORWARD -> toggleFastForward()
+      EmulatorAction.NEXT_SHADER -> nextShader()
       EmulatorAction.PAUSE -> {
         manualPaused = !manualPaused
         if (manualPaused) advancedMenu?.stopBenchmark("manually paused")
@@ -778,6 +833,7 @@ class NativeCoreActivity : SDLActivity(), InputManager.InputDeviceListener {
   private fun showMenu() {
     if (editorBar != null || menuDialogs > 0) return
     val actions = mutableListOf<Pair<String, () -> Unit>>(
+      "Graphics" to { ShaderSettingsActivity.open(this, gameKey(), returnToGame = true); closePauseWindow?.invoke() },
       "Advanced & experimental" to { tools().show() },
       getString(R.string.overlay_menu_edit) to {
         /* The editor operates on the surface itself, after closing this window. */

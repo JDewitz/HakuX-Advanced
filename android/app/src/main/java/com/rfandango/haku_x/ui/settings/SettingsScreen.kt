@@ -280,6 +280,9 @@ fun SettingsScreen(
       )
 
       Section(stringResource(R.string.settings_section_graphics))
+      ActionItem(title = "Shaders", summary = "Browse packs, categories and presets; download or import shaders", icon = null) {
+        com.rfandango.haku_x.ShaderSettingsActivity.open(context)
+      }
       ListItem(
         headlineContent = { Text(stringResource(R.string.settings_scale)) },
         supportingContent = {

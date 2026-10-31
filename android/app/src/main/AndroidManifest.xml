@@ -60,6 +60,8 @@
       android:noHistory="true"
       android:exported="false" />
 
+    <activity android:name=".ShaderSettingsActivity" android:exported="false" />
+
     <!-- The system installer's answers about an update (data/Updates.kt). -->
     <receiver
       android:name=".data.UpdateInstallReceiver"
