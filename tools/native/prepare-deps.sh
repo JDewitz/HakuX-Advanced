@@ -23,6 +23,7 @@ git -C "$repo" submodule update --init external/fex
 git -C "$repo/external/fex" submodule update --init \
   External/fmt External/range-v3 External/rpmalloc External/unordered_dense \
   External/xxhash Source/Common/cpp-optparse
+fetch "$deps/libslirp" https://github.com/qemu/libslirp.git 26be815b86e8d49add8c9a8b320239b9594ff03d
 fetch "$deps/volk" https://github.com/zeux/volk.git 0b17a763ba5643e32da1b2152f8140461b3b7345
 fetch "$deps/glslang" https://github.com/KhronosGroup/glslang.git b5782e52ee2f7b3e40bb9c80d15b47016e008bc9
 fetch "$deps/spirv_reflect" https://github.com/KhronosGroup/SPIRV-Reflect.git ef913b3ab3da1becca3cf46b15a10667c67bebe5

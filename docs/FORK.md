@@ -30,3 +30,5 @@ setup were reused. Its single-pass adapter and preset implementations were not
 merged into this runtime. See ADVANCED4.md.
 
 Experimental trainer branch `trainer-experimental` adds classic ETM import, per-game options and guest boot execution on top of Advanced4.2. See ADVANCED4.3.md for limitations and validation.
+
+Advanced5 merges official v1.3.0 (a90f01e) into Advanced4.3. Branch: advanced-1.3-integration; details and validation limits: ADVANCED5.md.

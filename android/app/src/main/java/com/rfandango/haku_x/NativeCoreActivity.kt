@@ -45,6 +45,7 @@ import com.rfandango.haku_x.data.PlayerSlot
 import com.rfandango.haku_x.data.RunSettings
 import com.rfandango.haku_x.data.SaveStateStore
 import com.rfandango.haku_x.data.XboxDisc
+import com.rfandango.haku_x.data.hdd.Dashboard
 import com.rfandango.haku_x.input.PadRouter
 import com.rfandango.haku_x.overlay.OverlayEditorBar
 import com.rfandango.haku_x.ui.theme.AppTheme
@@ -227,6 +228,8 @@ class NativeCoreActivity : SDLActivity(), InputManager.InputDeviceListener {
   override fun getArguments(): Array<String> {
     val args = mutableListOf(discArg, hddDir().absolutePath)
     args += AdvancedStore(this).profile(gameKey()).arguments()
+    /* the dashboard: C:\xboxdash.xbe with no disc (discArg "none") */
+    if (dashboard) args += "dash"
     val state = intent.getStringExtra(EXTRA_LOADSTATE)
     if (state != null) {
       args += "loadstate=$state"
@@ -263,9 +266,13 @@ class NativeCoreActivity : SDLActivity(), InputManager.InputDeviceListener {
      * meanwhile), and the ones cached built before the game starts. */
     args += "asyncpipe=${if (settings.asyncShaders) 1 else 0}"
     args += "prebuild=${if (settings.prebuildShaders) 1 else 0}"
+    /* Reads take a quarter of the console's drives' time, their thread
+     * waiting (the game's other threads run meanwhile, as on the console). */
+    args += "devtime=${if (settings.consoleTiming) 1 else 0}"
     /* The console's network (native/net): system link with the consoles on
      * this network (their broadcasts reach it under the multicast lock), or
-     * through an XLink Kai engine; off, no cable. */
+     * through an XLink Kai engine; the Internet through NAT, Insignia's DNS
+     * server given by DHCP (Xbox Live); off, no cable. */
     val prefs = AppPrefs(this)
     when (prefs.networkMode) {
       AppPrefs.NET_LAN -> {
@@ -276,6 +283,10 @@ class NativeCoreActivity : SDLActivity(), InputManager.InputDeviceListener {
       AppPrefs.NET_KAI -> prefs.kaiEngine.trim().takeIf { it.isNotEmpty() }?.let {
         args += "net=kai"
         args += "kai=$it"
+      }
+      AppPrefs.NET_INSIGNIA -> {
+        args += "net=nat"
+        args += "dns=${prefs.insigniaDns.trim().ifEmpty { AppPrefs.INSIGNIA_DNS }}"
       }
     }
     /* The game's mods (their files and XBE patches) and cheats (mods/):
@@ -679,6 +690,7 @@ class NativeCoreActivity : SDLActivity(), InputManager.InputDeviceListener {
    * too): the disc opened and its XBE read once (it was three times before boot).
    */
   private fun gameKey(): String {
+    if (dashboard) return GameOverrides.gameKey(DASHBOARD_TITLE_ID, 0L, null)
     gameKeyMemo?.let { (uri, key) -> if (uri == discUri) return key }
     val (titleId, version) = discUri?.let { uri -> XboxDisc.open(this, uri) { it.titleId to it.version } } ?: (0L to 0L)
     val path = getSharedPreferences(AppPrefs.NAME, Context.MODE_PRIVATE).getString("current_game_relative_path", null)
@@ -691,14 +703,22 @@ class NativeCoreActivity : SDLActivity(), InputManager.InputDeviceListener {
 
   private var discUri: Uri? = null
 
+  /** The dashboard runs (EXTRA_DVD_URI Dashboard.URI, kept by every relaunch): no disc. */
+  private var dashboard = false
+
   /** The disc image's name without its extension (the game's log is named by it). */
   private fun gameName(): String =
-    discUri?.let { DocumentFile.fromSingleUri(this, it)?.name }
+    if (dashboard) "Dashboard"
+    else discUri?.let { DocumentFile.fromSingleUri(this, it)?.name }
       ?.replace(Regex("(\\.xiso)?\\.iso$", RegexOption.IGNORE_CASE), "") ?: "game"
 
   private fun openDisc(): String {
     val uri = intent.getStringExtra(EXTRA_DVD_URI)
       ?: getSharedPreferences("x1box_prefs", Context.MODE_PRIVATE).getString("dvdUri", null)
+    if (uri == Dashboard.URI) {
+      dashboard = true
+      return "none"
+    }
     discUri = uri?.takeIf { it.isNotBlank() }?.let(Uri::parse)
     if (uri.isNullOrBlank()) {
       Log.e(TAG, "no game to run")
@@ -1214,6 +1234,8 @@ class NativeCoreActivity : SDLActivity(), InputManager.InputDeviceListener {
     const val EXTRA_LOADSTATE = "loadstate"
     /** RelaunchActivity: the game started again from the start (no launch data, no savestate). */
     const val EXTRA_RESTART = "restart"
+    /** The dashboard's title ID (xboxdash.xbe's certificate): its settings and savestates' key. */
+    private const val DASHBOARD_TITLE_ID = 0xFFFE0000L
 
     /* native/dev/usb.h NC_PAD_* */
     private const val PAD_UP = 0x01
