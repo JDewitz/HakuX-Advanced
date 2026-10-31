@@ -20,6 +20,8 @@ void nc_dev_nv2a_refresh(unsigned hz);
 void nc_dev_nv2a_display_mode(uint32_t pitch, uint32_t xfmt, unsigned hz);
 /* A mod's vblank: n times the video mode's rate (1-4; before the title boots). */
 void nc_dev_nv2a_vblank_multiply(unsigned n);
+/* Runtime override of the existing uncapped mode; false restores settings. */
+void nc_dev_nv2a_set_fast_forward(bool enabled);
 /* A vsync of the panel the frames are shown on (host monotonic ns, the
  * Choreographer's frame time): the vblank locks to the panel's. */
 void nc_dev_nv2a_display_vsync(uint64_t ns);

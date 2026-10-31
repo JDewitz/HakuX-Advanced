@@ -32,7 +32,7 @@ android {
     targetSdk = 36
 
     versionCode = 8
-    versionName = "1.2.0"
+    versionName = "1.2.0-fastforward1"
 
     ndk {
       abiFilters += listOf("arm64-v8a")
@@ -56,8 +56,8 @@ android {
 
   buildTypes {
     debug {
-      applicationIdSuffix = ".debug"
-      resValue("string", "app_name", "hakuX Debug")
+      applicationIdSuffix = ".fastforward"
+      resValue("string", "app_name", "hakuX Fast Forward")
       ndk {
         debugSymbolLevel = "NONE"
       }
@@ -138,6 +138,7 @@ dependencies {
 
   // JVM unit tests (the hard disk image formats: data/hdd)
   testImplementation("junit:junit:4.13.2")
+  testImplementation("org.json:json:20240303")
 }
 
 kotlin {

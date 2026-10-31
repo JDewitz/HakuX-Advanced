@@ -10,7 +10,12 @@ set -euo pipefail
 here=$(cd "$(dirname "$0")/../.." && pwd)
 build=${1:-$here/build/native/core}
 ndk=${ANDROID_NDK:-/c/Users/USER/AppData/Local/Android/Sdk/ndk/29.0.14206865}
-strip="$ndk/toolchains/llvm/prebuilt/windows-x86_64/bin/llvm-strip.exe"
+case "$(uname -s)" in
+  Linux*) host=linux-x86_64; exe= ;;
+  Darwin*) host=darwin-x86_64; exe= ;;
+  *) host=windows-x86_64; exe=.exe ;;
+esac
+strip="$ndk/toolchains/llvm/prebuilt/$host/bin/llvm-strip$exe"
 out="$here/android/app/src/main/jniLibs/arm64-v8a"
 mkdir -p "$out"
 "$strip" -o "$out/libhakuxcore.so" "$build/libhakuxcore.so"

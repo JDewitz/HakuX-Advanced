@@ -585,8 +585,19 @@ static uint64_t next_vblank(uint64_t prev)
 
 /* Uncapped (the app's setting: HAKUX_HLE_UNCAP; debug.hakux.uncap 1 / 0
  * on demand), read by the vblank thread now and then. */
+static bool g_fast_forward;
+
+void nc_dev_nv2a_set_fast_forward(bool enabled)
+{
+    __atomic_store_n(&g_fast_forward, enabled, __ATOMIC_RELEASE);
+    nc_log("hakuX-native", "fast-forward %s (uncapped vblank)", enabled ? "on" : "off");
+}
+
 static bool uncapped(void)
 {
+    if (__atomic_load_n(&g_fast_forward, __ATOMIC_ACQUIRE)) {
+        return true;
+    }
     static int on = -1;
     static unsigned polls;
     if (on < 0) {

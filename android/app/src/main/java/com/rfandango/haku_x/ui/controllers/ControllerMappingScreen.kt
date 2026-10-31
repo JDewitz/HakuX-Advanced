@@ -155,7 +155,7 @@ fun ControllerMappingScreen(deviceId: Int, onBack: () -> Unit) {
   }
 
   DisposableEffect(deviceId) {
-    InputCapture.listener = { e ->
+    val listener: (android.view.InputEvent) -> Boolean = { e ->
       if (e.deviceId != deviceId) {
         false
       } else {
@@ -182,7 +182,8 @@ fun ControllerMappingScreen(deviceId: Int, onBack: () -> Unit) {
         }
       }
     }
-    onDispose { InputCapture.listener = null }
+    InputCapture.listener = listener
+    onDispose { if (InputCapture.listener === listener) InputCapture.listener = null }
   }
 
   /* a test ends a few seconds after the controller's last input (a controller-only user's way out) */

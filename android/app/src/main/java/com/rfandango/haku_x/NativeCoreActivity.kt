@@ -418,6 +418,7 @@ class NativeCoreActivity : SDLActivity(), InputManager.InputDeviceListener {
 
   override fun onResume() {
     super.onResume()
+    fastForwardHotkey.keyCode = Controllers.load(this).fastForwardKey
     activityPaused = false
     syncPause() /* where it stopped (onPause), unless the menu is open */
     hideSystemBars()
@@ -453,7 +454,7 @@ class NativeCoreActivity : SDLActivity(), InputManager.InputDeviceListener {
    */
   override fun onWindowFocusChanged(hasFocus: Boolean) {
     super.onWindowFocusChanged(hasFocus)
-    if (hasFocus) hideSystemBars()
+    if (hasFocus) hideSystemBars() else fastForwardHotkey.resetPressed()
   }
 
   /** SDL's window style stays full screen: its windowed start showed the status bar for a moment. */
@@ -469,6 +470,7 @@ class NativeCoreActivity : SDLActivity(), InputManager.InputDeviceListener {
   }
 
   override fun onPause() {
+    fastForwardHotkey.resetPressed()
     fpsHandler.removeCallbacks(fpsRunnable)
     fpsHandler.removeCallbacks(fatalRunnable)
     fpsHandler.removeCallbacks(rumbleRunnable)
@@ -708,6 +710,16 @@ class NativeCoreActivity : SDLActivity(), InputManager.InputDeviceListener {
   /** The user's choice from the menu; null: by whether a gamepad is attached. */
   private var controlsShown: Boolean? = null
   private var editorBar: View? = null
+  private var fastForward = false
+  private val fastForwardHotkey = com.rfandango.haku_x.input.FastForwardHotkey()
+
+  private fun toggleFastForward() {
+    fastForward = !fastForward
+    nativeSetFastForward(fastForward)
+    Toast.makeText(this,
+      getString(if (fastForward) R.string.fast_forward_on else R.string.fast_forward_off),
+      Toast.LENGTH_SHORT).show()
+  }
 
   /**
    * The jewel, the swipe up and the back key: edit, show or hide the controls,
@@ -720,6 +732,7 @@ class NativeCoreActivity : SDLActivity(), InputManager.InputDeviceListener {
     /* savestates: push-buffer mode only (native/state) */
     val states = nativeStatesAvailable()
     val items = mutableListOf<Pair<String, () -> Unit>>(
+      getString(if (fastForward) R.string.fast_forward_disable else R.string.fast_forward_enable) to ::toggleFastForward,
       getString(R.string.overlay_menu_edit) to ::editControls,
       getString(if (shown) R.string.overlay_menu_hide else R.string.overlay_menu_show) to {
         controlsShown = !shown
@@ -989,6 +1002,8 @@ class NativeCoreActivity : SDLActivity(), InputManager.InputDeviceListener {
    * it: Controllers.defaults).
    */
   override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+    if (fastForwardHotkey.handle(event.keyCode, event.deviceId, event.action,
+        event.repeatCount, event.isCanceled, editorBar == null, ::toggleFastForward)) return true
     if (event.keyCode == KeyEvent.KEYCODE_BACK && router?.bindsKey(event) != true) {
       if (event.action == KeyEvent.ACTION_UP && !event.isCanceled) {
         onBack()
@@ -1201,6 +1216,8 @@ class NativeCoreActivity : SDLActivity(), InputManager.InputDeviceListener {
     /** The emulation paused (onPause) or resumed (onResume). */
     @JvmStatic
     external fun nativeSetPaused(paused: Boolean)
+    @JvmStatic
+    external fun nativeSetFastForward(enabled: Boolean)
 
     /** Saves the running game to path (not on the UI thread): null, or why it couldn't. */
     @JvmStatic

@@ -23,6 +23,7 @@
 #include "native/core/core.h"
 #include "native/core/mods.h"
 #include "native/core/options.h"
+#include "native/dev/dev.h"
 #include "native/dev/usb.h"
 #include "native/kernel/kernel.h"
 #include "native/net/net.h"
@@ -156,6 +157,13 @@ EXPORT JNIEXPORT void JNICALL Java_com_rfandango_haku_1x_NativeCoreActivity_nati
 {
     nc_kernel_set_paused(&g_core.kernel, on != JNI_FALSE);
     nc_audio_set_paused(on != JNI_FALSE);
+}
+
+/* Runtime override; disabling returns to the normal vblank preference. */
+EXPORT JNIEXPORT void JNICALL Java_com_rfandango_haku_1x_NativeCoreActivity_nativeSetFastForward(
+    JNIEnv *env, jclass cls, jboolean enabled)
+{
+    nc_dev_nv2a_set_fast_forward(enabled != JNI_FALSE);
 }
 
 /* Savestates (native/state): the running game saved to path, on the

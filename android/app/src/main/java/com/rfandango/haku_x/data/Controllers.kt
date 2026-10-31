@@ -298,6 +298,7 @@ object Controllers {
     val slots: List<PlayerSlot> = List(PLAYERS) { PlayerSlot() },
     val profiles: Map<String, PadProfile> = emptyMap(),
     val names: Map<String, String> = emptyMap(),
+    val fastForwardKey: Int? = KeyEvent.KEYCODE_F9,
   ) {
     /** A controller's mapping: its own, else its model's, else the defaults. */
     fun profileFor(d: InputDevice): PadProfile =
@@ -342,12 +343,20 @@ object Controllers {
     }
 
     fun toJson(): JSONObject = JSONObject().apply {
+      put("fastForwardKey", fastForwardKey ?: JSONObject.NULL)
       put("slots", JSONArray(slots.map {
         JSONObject().put("mode", it.mode).put("key", it.key).put("name", it.name)
       }))
       put("profiles", JSONObject().apply { for ((k, v) in profiles) put(k, v.toJson()) })
       put("names", JSONObject().apply { for ((k, v) in names) put(k, v) })
     }
+  }
+
+  /** Missing: legacy defaults. Explicit null: the user cleared the hotkey. */
+  internal fun fastForwardKeyFromJson(o: JSONObject): Int? = when {
+    !o.has("fastForwardKey") -> KeyEvent.KEYCODE_F9
+    o.isNull("fastForwardKey") -> null
+    else -> o.optInt("fastForwardKey", KeyEvent.KEYCODE_F9).takeIf { it > KeyEvent.KEYCODE_UNKNOWN }
   }
 
   fun load(context: Context): Config {
@@ -364,7 +373,7 @@ object Controllers {
       val profiles = po.keys().asSequence().associateWith { PadProfile.fromJson(po.getJSONObject(it)) }
       val no = o.optJSONObject("names") ?: JSONObject()
       val names = no.keys().asSequence().associateWith { no.getString(it) }
-      Config(slots, profiles, names)
+      Config(slots, profiles, names, fastForwardKeyFromJson(o))
     } catch (_: Exception) {
       Config()
     }

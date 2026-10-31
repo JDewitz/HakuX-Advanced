@@ -482,4 +482,13 @@
   <string name="xinput_ls_y">Left stick, vertical</string>
   <string name="xinput_rs_x">Right stick, horizontal</string>
   <string name="xinput_rs_y">Right stick, vertical</string>
+  <string name="fast_forward_on">Fast forward on</string>
+  <string name="fast_forward_off">Fast forward off</string>
+  <string name="fast_forward_enable">Enable fast forward</string>
+  <string name="fast_forward_disable">Disable fast forward</string>
+  <string name="fast_forward_key">Fast-forward key</string>
+  <string name="fast_forward_key_desc">Tap to assign a keyboard key or controller button. Press once to toggle uncapped speed; press again to restore normal pacing.</string>
+  <string name="fast_forward_capture">Press and release a key or controller button</string>
+  <string name="fast_forward_capture_desc">This key is reserved for fast forward on every device, including controllers. It will not also press an Xbox button.</string>
+  <string name="fast_forward_restore">Restore F9</string>
 </resources>
