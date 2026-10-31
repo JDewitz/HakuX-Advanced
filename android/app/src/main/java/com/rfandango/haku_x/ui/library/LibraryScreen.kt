@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -58,6 +59,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
@@ -106,6 +108,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.rfandango.haku_x.R
 import com.rfandango.haku_x.data.DiscInfo
 import com.rfandango.haku_x.data.Game
+import com.rfandango.haku_x.data.GameFeatures
+import com.rfandango.haku_x.data.LibraryViewMode
 import com.rfandango.haku_x.data.GameOverrides
 import com.rfandango.haku_x.data.ModCatalog
 import com.rfandango.haku_x.data.SaveStateStore
@@ -133,6 +137,9 @@ fun LibraryScreen(
   vm: LibraryViewModel = viewModel(),
 ) {
   val state by vm.state.collectAsStateWithLifecycle()
+  val appContext = LocalContext.current
+  val displayPrefs = remember { appContext.getSharedPreferences("library_ui", android.content.Context.MODE_PRIVATE) }
+  var viewMode by rememberSaveable { mutableStateOf(LibraryViewMode.parse(displayPrefs.getString("view", null))) }
   val update by Updates.available.collectAsStateWithLifecycle()
   var updateDialog by remember { mutableStateOf(false) }
   var dashboardAsk by remember { mutableStateOf(false) }
@@ -173,9 +180,19 @@ fun LibraryScreen(
         IconButton(onClick = vm::refresh, modifier = Modifier.padding(start = 4.dp)) {
           Icon(Icons.Filled.Refresh, contentDescription = stringResource(R.string.library_refresh))
         }
+        LibraryViewPicker(viewMode) {
+          viewMode = it
+          displayPrefs.edit().putString("view", it.name).apply()
+        }
         IconButton(onClick = onOpenSettings) {
           Icon(Icons.Filled.Settings, contentDescription = stringResource(R.string.settings_title))
         }
+      }
+      Row(Modifier.padding(horizontal = 16.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        Icon(Icons.Filled.Build, null, Modifier.size(14.dp)); Text("Trainer enabled", style = MaterialTheme.typography.bodySmall)
+        Spacer(Modifier.width(8.dp))
+        Icon(Icons.Filled.Settings, null, Modifier.size(14.dp)); Text("Custom setup", style = MaterialTheme.typography.bodySmall)
       }
       // The pull's indicator follows the refresh (under the loading dialog):
       // it only goes once isRefreshing has been true.
@@ -191,7 +208,7 @@ fun LibraryScreen(
             TextButton(onClick = onOpenSettings) { Text(stringResource(R.string.settings_games_folder_title)) }
           }
           games.isEmpty() -> Message(stringResource(R.string.library_empty_games))
-          else -> GameList(games, state.info, state.icons, onLaunch, onGameSettings, onLoadState, onMods, vm::askConvert)
+          else -> GameList(games, state.info, state.icons, state.features, viewMode, onLaunch, onGameSettings, onLoadState, onMods, vm::askConvert)
         }
       }
     }
@@ -276,6 +293,8 @@ private fun GameList(
   games: List<Game>,
   info: Map<Uri, DiscInfo>,
   icons: Map<Uri, ImageBitmap>,
+  features: Map<Uri, GameFeatures>,
+  mode: LibraryViewMode,
   onLaunch: (Game) -> Unit,
   onGameSettings: (Game, DiscInfo?) -> Unit,
   onLoadState: (Game, SaveStateStore, Int) -> Unit,
@@ -296,52 +315,38 @@ private fun GameList(
   val titleStyle = MaterialTheme.typography.titleMedium.copy(color = colors.onSurface)
   val idStyle = SMALL_PRINT.copy(fontFamily = FontFamily.Monospace, color = colors.onSurfaceVariant)
   LazyVerticalGrid(
-    columns = GridCells.Fixed(if (landscape) 2 else 1),
+    columns = when (mode) {
+      LibraryViewMode.ICONS -> GridCells.Adaptive(112.dp)
+      LibraryViewMode.LIST, LibraryViewMode.STATS -> GridCells.Fixed(1)
+      else -> GridCells.Fixed(if (landscape) 2 else 1)
+    },
     modifier = Modifier.fillMaxSize(),
     contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 16.dp),
     horizontalArrangement = Arrangement.spacedBy(8.dp),
     verticalArrangement = Arrangement.spacedBy(6.dp),
   ) {
+    if (mode == LibraryViewMode.STATS) item(span = { GridItemSpan(maxLineSpan) }) { LibraryStatsHeader(games, features) }
     items(games, key = { it.uri.toString() }) { game ->
       val disc = info[game.uri]
       var focused by remember { mutableStateOf(false) }
       Box {
-        Row(
-          Modifier
-            .fillMaxWidth()
-            .clip(shape)
-            .background(colors.surface)
+        Box(
+          Modifier.fillMaxWidth().clip(shape).background(colors.surface)
             .border(if (focused) 2.dp else 1.dp, if (focused) colors.primary else colors.outlineVariant, shape)
-            .onFocusChanged { focused = it.isFocused }
-            // a controller's Y, or its select (sent as Menu), opens the menu
+            .onFocusChanged { focused = it.hasFocus }
             .onKeyEvent { e ->
               if (e.key != Key.ButtonY && e.key != Key.Menu) return@onKeyEvent false
               if (e.type == KeyEventType.KeyUp) menuFor = game.uri
               true
             }
-            .combinedClickable(
-              onClick = { onLaunch(game) },
-              onLongClick = {
-                haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-                menuFor = game.uri
-              },
-            )
-            .padding(start = 8.dp, end = 12.dp, top = 8.dp, bottom = 8.dp),
-          verticalAlignment = Alignment.CenterVertically,
+            .combinedClickable(onClick = { onLaunch(game) }, onLongClick = {
+              haptics.performHapticFeedback(HapticFeedbackType.LongPress); menuFor = game.uri
+            }).padding(8.dp),
         ) {
-          TitleIcon(game, icons[game.uri], iconShape, colors.surfaceVariant, colors.onSurfaceVariant)
-          Column(Modifier.weight(1f).padding(start = 12.dp, end = 8.dp)) {
-            // Landscape's two columns are narrow: one line, cut to fit.
-            Text(
-              game.title,
-              style = titleStyle,
-              maxLines = if (landscape) 1 else Int.MAX_VALUE,
-              overflow = TextOverflow.Ellipsis,
-            )
-            if (disc != null && disc.titleId != 0L) {
-              IdLine(disc, idStyle)
-            }
-          }
+          LibraryGameContent(game, disc, features[game.uri] ?: GameFeatures(), mode,
+            icon = { TitleIcon(game, icons[game.uri], iconShape, colors.surfaceVariant, colors.onSurfaceVariant,
+              if (mode == LibraryViewMode.ICONS) 80.dp else if (mode == LibraryViewMode.INFO) 64.dp else 48.dp) },
+            onPlay = { onLaunch(game) }, onMenu = { menuFor = game.uri })
         }
         if (menuFor == game.uri) {
           // the key its settings use: its savestates' (SaveStateStore) and its mods' (mods/)
@@ -522,10 +527,10 @@ private val REGIONS = listOf(
 
 /** The title image from the game's disc, or its initial while there is none. */
 @Composable
-private fun TitleIcon(game: Game, icon: ImageBitmap?, shape: Shape, background: Color, initialColor: Color) {
+private fun TitleIcon(game: Game, icon: ImageBitmap?, shape: Shape, background: Color, initialColor: Color, size: androidx.compose.ui.unit.Dp = 48.dp) {
   Box(
     Modifier
-      .size(48.dp)
+      .size(size)
       .clip(shape)
       .background(background),
     contentAlignment = Alignment.Center,

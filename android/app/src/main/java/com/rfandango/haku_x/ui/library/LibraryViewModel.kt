@@ -9,6 +9,8 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.rfandango.haku_x.data.GameFeatures
+import com.rfandango.haku_x.data.LibraryFeatureIndex
 import com.rfandango.haku_x.data.AppPrefs
 import com.rfandango.haku_x.data.DiscInfo
 import com.rfandango.haku_x.data.DiscInfoCache
@@ -59,6 +61,7 @@ data class LibraryState(
   val dashboard: Boolean = false,
   /** The dashboard's install from its zip: under way (done of total), or its outcome. */
   val dashboardInstall: DashboardInstall? = null,
+  val features: Map<Uri, GameFeatures> = emptyMap(),
 ) {
   val visibleGames: List<Game>
     get() {
@@ -123,6 +126,7 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
   private val discInfo = DiscInfoCache(app)
   private val hddRoot = HddStore(app).root
   private var scanJob: Job? = null
+  private var featureJob: Job? = null
 
   private val _state = MutableStateFlow(LibraryState())
   val state: StateFlow<LibraryState> = _state.asStateFlow()
@@ -137,6 +141,19 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
       refresh()
     }
     _state.update { it.copy(dashboard = Dashboard.installed(hddRoot)) }
+    refreshFeatures()
+  }
+
+  private fun refreshFeatures() {
+    featureJob?.cancel()
+    val snapshot = _state.value
+    if (snapshot.loading) return
+    featureJob = viewModelScope.launch {
+      val features = withContext(Dispatchers.IO) {
+        LibraryFeatureIndex(getApplication()).snapshot(snapshot.games, snapshot.info)
+      }
+      if (!_state.value.loading && _state.value.games === snapshot.games) _state.update { it.copy(features = features) }
+    }
   }
 
   /** The dashboard's files from the zip at uri onto C: (the library's dashboard button, none installed). */
@@ -181,6 +198,7 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
     val folders = prefs.gamesFolders
     scannedFolders = folders
     scanJob?.cancel()
+    featureJob?.cancel()
     scanJob = viewModelScope.launch {
       _state.update {
         it.copy(loading = true, toRead = 0, read = 0, games = emptyList(), info = emptyMap(), icons = emptyMap())
@@ -207,12 +225,14 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
         _state.update { it.copy(read = i + 1) }
       }
       val icons = withContext(Dispatchers.IO) { loadIcons(info) }
+      val features = withContext(Dispatchers.IO) { LibraryFeatureIndex(app).snapshot(games, info) }
       _state.update { s ->
         s.copy(
           loading = false,
           games = sorted(games.map { g -> info[g.uri]?.title?.let { g.copy(title = it) } ?: g }),
           info = info.toMap(),
           icons = icons,
+          features = features,
         )
       }
     }
