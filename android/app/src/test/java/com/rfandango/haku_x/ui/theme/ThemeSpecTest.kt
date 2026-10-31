@@ -9,8 +9,22 @@ class ThemeSpecTest {
     try { ThemeSpec.parse(text); fail("Invalid theme accepted") } catch (_: IllegalArgumentException) {} catch (_: org.json.JSONException) {}
   }
   @Test fun builtInsRoundTripAndStayReadable() {
-    assertEquals(4, BuiltInThemes.all.size)
+    assertEquals(8, BuiltInThemes.all.size)
+    assertEquals(8, BuiltInThemes.all.map { it.name }.toSet().size)
     BuiltInThemes.all.forEach { t -> assertEquals(t, ThemeSpec.parse(t.json())) }
+  }
+  @Test fun builtInChoiceDoesNotAddDuplicate() {
+    BuiltInThemes.all.forEach { t -> assertEquals(BuiltInThemes.all, BuiltInThemes.choices(t)) }
+  }
+  @Test fun customChoiceIsIncludedOnce() {
+    val custom = BuiltInThemes.xbox.copy(name = "My palette")
+    val choices = BuiltInThemes.choices(custom)
+    assertEquals(9, choices.size); assertEquals(custom, choices.last()); assertEquals(1, choices.count { it == custom })
+  }
+  @Test fun importedNameCannotHideBuiltIn() {
+    val custom = BuiltInThemes.xbox.copy(dark = BuiltInThemes.halo.dark)
+    val choices = BuiltInThemes.choices(custom)
+    assertEquals(9, choices.size); assertTrue(BuiltInThemes.xbox in choices); assertEquals(custom, choices.last())
   }
   @Test fun buttonForegroundIsReadable() {
     BuiltInThemes.all.forEach { t -> listOf(t.light,t.dark).forEach { p ->

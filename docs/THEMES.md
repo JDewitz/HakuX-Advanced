@@ -1,3 +1,5 @@
+> Current update: see [Advanced5.2](THEMES5.2.md) for the drop-down selector, expanded palette set and update-compatible test APK.
+
 # Advanced5.1 — shared UI themes
 
 Based on Advanced5 / official 1.3.0, commit 9e89648. UI changes only. Native

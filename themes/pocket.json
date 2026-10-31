@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "name": "Pocket LCD",
+  "light": {
+    "background": "#E6EDC5",
+    "surface": "#F3F6DE",
+    "raised": "#D1DCAC",
+    "text": "#24361C",
+    "muted": "#4E623E",
+    "accent": "#41662B",
+    "secondary": "#3D6551",
+    "outline": "#7C925D"
+  },
+  "dark": {
+    "background": "#121B10",
+    "surface": "#1E2C18",
+    "raised": "#2D3E23",
+    "text": "#E0ECC2",
+    "muted": "#B4C993",
+    "accent": "#B7D773",
+    "secondary": "#8EC7A0",
+    "outline": "#7F9C5C"
+  }
+}

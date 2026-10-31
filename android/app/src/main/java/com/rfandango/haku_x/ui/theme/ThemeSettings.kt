@@ -5,7 +5,11 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.selected
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
@@ -19,6 +23,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 /** Embedded in Display settings. Selecting a preset applies it immediately everywhere. */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ThemeSettings() {
   val context = LocalContext.current
@@ -26,6 +31,7 @@ fun ThemeSettings() {
   val dark = appInDarkTheme()
   var message by remember { mutableStateOf<String?>(null) }
   var busy by remember { mutableStateOf(false) }
+  var expanded by remember { mutableStateOf(false) }
   var exporting by rememberSaveable { mutableStateOf<String?>(null) }
   val scope = rememberCoroutineScope()
   val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
@@ -53,16 +59,46 @@ fun ThemeSettings() {
       busy = false
     }
   }
-  Hint("Palette: ${selected.name}. Applies to the library, settings, shader browser and pause menus. Light/dark mode is selected separately below.")
-  for (theme in BuiltInThemes.all) {
-    val p = theme.palette(dark)
-    ActionItem((if (selected == theme) "✓ " else "") + theme.name, null, null, !busy) {
-      runCatching { AppTheme.select(context, theme) }.onSuccess { message = null }.onFailure { message = it.message }
-    }
-    Row(Modifier.padding(horizontal=24.dp).padding(bottom=8.dp), horizontalArrangement=Arrangement.spacedBy(4.dp)) {
-      for (key in listOf("background", "surface", "text", "accent", "secondary")) {
-        Box(Modifier.size(28.dp).background(Color(p.color(key))).border(1.dp, MaterialTheme.colorScheme.outline))
+  Hint("One palette for the app and pause menus. Light/dark mode is selected separately below.")
+  ExposedDropdownMenuBox(
+    expanded = expanded,
+    onExpandedChange = { if (!busy) expanded = it },
+    modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
+  ) {
+    OutlinedTextField(
+      value = selected.name,
+      onValueChange = {},
+      readOnly = true,
+      enabled = !busy,
+      singleLine = true,
+      label = { Text("Color theme") },
+      trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+      modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable, enabled = !busy).fillMaxWidth(),
+    )
+    ExposedDropdownMenu(
+      expanded = expanded,
+      onDismissRequest = { expanded = false },
+      modifier = Modifier.heightIn(max = 320.dp),
+    ) {
+      for (theme in BuiltInThemes.choices(selected)) {
+        val isSelected = theme == selected
+        DropdownMenuItem(
+          text = { Text(theme.name + if (theme !in BuiltInThemes.all) " (imported)" else "") },
+          modifier = Modifier.semantics { this.selected = isSelected },
+          trailingIcon = { if (isSelected) Icon(Icons.Filled.Check, contentDescription = null) },
+          enabled = !busy,
+          onClick = {
+            expanded = false
+            runCatching { AppTheme.select(context, theme) }.onSuccess { message = null }.onFailure { message = it.message }
+          },
+        )
       }
+    }
+  }
+  val p = selected.palette(dark)
+  Row(Modifier.padding(horizontal = 24.dp, vertical = 12.dp), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+    for (key in listOf("background", "surface", "text", "accent", "secondary")) {
+      Box(Modifier.size(28.dp).background(Color(p.color(key))).border(1.dp, MaterialTheme.colorScheme.outline))
     }
   }
   ActionItem(if (busy) "Working…" else "Import theme JSON", "Choose a .json file. Invalid or unreadable palettes leave the current theme unchanged.", null, !busy) {

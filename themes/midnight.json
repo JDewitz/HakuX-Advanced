@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "name": "Midnight",
+  "light": {
+    "background": "#EFF1FA",
+    "surface": "#FBFBFF",
+    "raised": "#DFE4F3",
+    "text": "#20253D",
+    "muted": "#535D7A",
+    "accent": "#4D54A7",
+    "secondary": "#4C6291",
+    "outline": "#7B84A0"
+  },
+  "dark": {
+    "background": "#101323",
+    "surface": "#191D33",
+    "raised": "#272C48",
+    "text": "#ECEEFF",
+    "muted": "#B7BEDD",
+    "accent": "#B3AEFF",
+    "secondary": "#88C6E8",
+    "outline": "#7883AF"
+  }
+}

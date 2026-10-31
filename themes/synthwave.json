@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "name": "Synthwave",
+  "light": {
+    "background": "#FFF0FC",
+    "surface": "#FFFAFF",
+    "raised": "#EADAF2",
+    "text": "#391D4D",
+    "muted": "#6C4D7D",
+    "accent": "#9C246F",
+    "secondary": "#315B9E",
+    "outline": "#A47BAF"
+  },
+  "dark": {
+    "background": "#1B102A",
+    "surface": "#281A3D",
+    "raised": "#3B2650",
+    "text": "#FBEAFF",
+    "muted": "#D7B8E8",
+    "accent": "#FF8BCB",
+    "secondary": "#72D7EE",
+    "outline": "#AA7BBE"
+  }
+}

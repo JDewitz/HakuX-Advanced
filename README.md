@@ -104,3 +104,5 @@ Experimental trainer branch: see [Advanced4.3 trainer notes](docs/ADVANCED4.3.md
 Advanced5 integrates official v1.3.0 while retaining the shader, fast-forward, save browser and experimental ETM work. See [integration notes](docs/ADVANCED5.md).
 
 Advanced5.1 adds shared Xbox, Satisfactory, Halo-inspired and Frutiger Aero palettes with JSON import/export. See [theme notes](docs/THEMES.md).
+
+Advanced5.2 replaces theme rows with a drop-down and expands the presets to eight. See [theme update notes](docs/THEMES5.2.md).

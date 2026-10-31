@@ -65,5 +65,16 @@ object BuiltInThemes {
     p("101B20","19282D","26373B","E5F5EA","A9C4BD","ADC776","75CFE7","6A8B80"))
   val aero = ThemeSpec("Frutiger Aero", p("E9F7FF","F7FDFF","D3EDF3","143A4A","365B6B","006B96","33731A","5D8999"),
     p("0D2435","14394B","1D4B5E","EFFBFF","BCDCE8","6EDCF5","B3E975","669EAD"))
-  val all = listOf(xbox, satisfactory, halo, aero)
+  val midnight = ThemeSpec("Midnight", p("EFF1FA","FBFBFF","DFE4F3","20253D","535D7A","4D54A7","4C6291","7B84A0"),
+    p("101323","191D33","272C48","ECEEFF","B7BEDD","B3AEFF","88C6E8","7883AF"))
+  val amber = ThemeSpec("Amber Terminal", p("FFF6DF","FFFCF3","EBDDB8","392700","6B5524","855000","6B5B30","9C8659"),
+    p("17130B","241E10","352C18","FFE8B0","D0B878","FFBC52","DCCC7A","A38C56"))
+  val pocket = ThemeSpec("Pocket LCD", p("E6EDC5","F3F6DE","D1DCAC","24361C","4E623E","41662B","3D6551","7C925D"),
+    p("121B10","1E2C18","2D3E23","E0ECC2","B4C993","B7D773","8EC7A0","7F9C5C"))
+  val synthwave = ThemeSpec("Synthwave", p("FFF0FC","FFFAFF","EADAF2","391D4D","6C4D7D","9C246F","315B9E","A47BAF"),
+    p("1B102A","281A3D","3B2650","FBEAFF","D7B8E8","FF8BCB","72D7EE","AA7BBE"))
+  val all = listOf(xbox, satisfactory, halo, aero, midnight, amber, pocket, synthwave)
+
+  /** Keep a custom active palette visible without confusing it with a built-in of the same name. */
+  fun choices(selected: ThemeSpec): List<ThemeSpec> = if (selected in all) all else all + selected
 }

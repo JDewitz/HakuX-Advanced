@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "name": "Amber Terminal",
+  "light": {
+    "background": "#FFF6DF",
+    "surface": "#FFFCF3",
+    "raised": "#EBDDB8",
+    "text": "#392700",
+    "muted": "#6B5524",
+    "accent": "#855000",
+    "secondary": "#6B5B30",
+    "outline": "#9C8659"
+  },
+  "dark": {
+    "background": "#17130B",
+    "surface": "#241E10",
+    "raised": "#352C18",
+    "text": "#FFE8B0",
+    "muted": "#D0B878",
+    "accent": "#FFBC52",
+    "secondary": "#DCCC7A",
+    "outline": "#A38C56"
+  }
+}
