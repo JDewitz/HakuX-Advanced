@@ -50,3 +50,10 @@ profile-out-*/
 
 # Shared build/device lock between sessions (not versioned)
 /.device.lock
+
+# Fork-local generated files and tool outputs
+/android/.kotlin/
+/android/app/src/main/jniLibs/
+*.bundle
+*.jks
+*.keystore
