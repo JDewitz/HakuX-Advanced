@@ -38,6 +38,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 private object Routes {
+  const val ADVANCED = "advanced?key={key}"
+  fun advanced(key: String = "") = "advanced?key=${Uri.encode(key)}"
   const val MIGRATE = "migrate"
   /** The migration again, from the settings: back there when done. */
   const val MIGRATE_AGAIN = "migrate_again"
@@ -152,12 +154,16 @@ fun HakuXApp(
     composable(Routes.SETTINGS) {
       SettingsScreen(
         onBack = { nav.popBackStack() },
+        onAdvanced = { nav.navigate(Routes.advanced()) },
         onEditControls = { nav.navigate(Routes.CONTROLS) },
         onControllers = { nav.navigate(Routes.CONTROLLERS) },
         onHardDisk = { nav.navigate(Routes.HDD) },
         onGpuDriver = { nav.navigate(Routes.GPU_DRIVER) },
         onMigrate = { nav.navigate(Routes.MIGRATE_AGAIN) },
       )
+    }
+    composable(Routes.ADVANCED, arguments = listOf(navArgument("key") { type = NavType.StringType; defaultValue = "" })) { entry ->
+      com.rfandango.haku_x.advanced.AdvancedScreen(entry.arguments?.getString("key")?.takeIf { it.isNotEmpty() }) { nav.popBackStack() }
     }
     composable(Routes.GPU_DRIVER) {
       GpuDriverScreen(onBack = { nav.popBackStack() })
@@ -186,6 +192,7 @@ fun HakuXApp(
     ) { entry ->
       GameSettingsScreen(
         gameKey = entry.arguments?.getString("key").orEmpty(),
+        onAdvanced = { nav.navigate(Routes.advanced(entry.arguments?.getString("key").orEmpty())) },
         title = entry.arguments?.getString("title").orEmpty(),
         onBack = { nav.popBackStack() },
       )

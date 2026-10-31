@@ -20,6 +20,7 @@
  */
 #include "native/app/app.h"
 #include "native/core/cheats.h"
+#include "native/core/advanced.h"
 #include "native/core/core.h"
 #include "native/core/mods.h"
 #include "native/core/options.h"
@@ -164,6 +165,26 @@ EXPORT JNIEXPORT void JNICALL Java_com_rfandango_haku_1x_NativeCoreActivity_nati
     JNIEnv *env, jclass cls, jboolean enabled)
 {
     nc_dev_nv2a_set_fast_forward(enabled != JNI_FALSE);
+}
+
+EXPORT JNIEXPORT jboolean JNICALL Java_com_rfandango_haku_1x_NativeCoreActivity_nativeSetAdvanced(
+    JNIEnv *env, jclass cls, jstring jname, jstring jvalue)
+{
+    if (!jname || !jvalue) return JNI_FALSE;
+    const char *name = (*env)->GetStringUTFChars(env, jname, NULL);
+    const char *value = (*env)->GetStringUTFChars(env, jvalue, NULL);
+    const bool ok = name && value && nc_advanced_set(name, value);
+    if (name) (*env)->ReleaseStringUTFChars(env, jname, name);
+    if (value) (*env)->ReleaseStringUTFChars(env, jvalue, value);
+    return ok ? JNI_TRUE : JNI_FALSE;
+}
+
+EXPORT JNIEXPORT jstring JNICALL Java_com_rfandango_haku_1x_NativeCoreActivity_nativeAdvancedReport(
+    JNIEnv *env, jclass cls)
+{
+    char text[32768];
+    nc_advanced_report(text, sizeof(text));
+    return (*env)->NewStringUTF(env, text);
 }
 
 /* Savestates (native/state): the running game saved to path, on the
@@ -559,6 +580,25 @@ EXPORT int SDL_main(int argc, char *argv[])
     NcOptions opt;
     nc_options_init(&opt);
     for (int i = 3; i < argc; i++) {
+        if (!strncmp(argv[i], "advanced=", 9)) {
+            const char *v = argv[i] + 9;
+            if (!strcmp(v, "ram:128") || !strcmp(v, "ram:64")) setenv("NC_RAM_MB", v + 4, 1);
+            else if (!strcmp(v, "x87:64") || !strcmp(v, "x87:80")) {
+                setenv("NC_FEX_X87", v + 4, 1);
+                nc_advanced_set("debug.hakux.fex_x87", v + 4);
+            } else if (!strcmp(v, "pc:0") || !strcmp(v, "pc:1")) {
+                setenv("NC_FEX_PC", v + 3, 1);
+                nc_advanced_set("debug.hakux.fex_pc", v + 3);
+            } else if (!strcmp(v, "afp:0") || !strcmp(v, "afp:1")) {
+                setenv("NC_FEX_AFP", v + 4, 1);
+                nc_advanced_set("debug.hakux.fex_afp", v + 4);
+            } else if (!strncmp(v, "quirks:", 7)) {
+                /* Workarounds used during device creation must be in place now. */
+                setenv("HAKUX_HLE_QUIRKS", v + 7, 1);
+                nc_advanced_set("debug.hakux.quirks", "");
+            }
+            continue;
+        }
         if (nc_option(&opt, argv[i])) {
             continue;                           /* the core's (native/core/options.h) */
         }

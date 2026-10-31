@@ -31,6 +31,7 @@ import android.widget.TextView
 import android.widget.Toast
 import android.window.OnBackInvokedDispatcher
 import androidx.documentfile.provider.DocumentFile
+import com.rfandango.haku_x.advanced.*
 import com.rfandango.haku_x.data.AppPrefs
 import com.rfandango.haku_x.data.CheatInfo
 import com.rfandango.haku_x.data.Controllers
@@ -218,8 +219,10 @@ class NativeCoreActivity : SDLActivity(), InputManager.InputDeviceListener {
 
   override fun getLibraries(): Array<String> = arrayOf("SDL3", "hakuxcore")
 
+  @Volatile private var launchArguments = emptyList<String>()
   override fun getArguments(): Array<String> {
     val args = mutableListOf(discArg, hddDir().absolutePath)
+    args += AdvancedStore(this).profile(gameKey()).arguments()
     val state = intent.getStringExtra(EXTRA_LOADSTATE)
     if (state != null) {
       args += "loadstate=$state"
@@ -285,6 +288,7 @@ class NativeCoreActivity : SDLActivity(), InputManager.InputDeviceListener {
     if (!driverLib.isNullOrEmpty() && GpuDriverHelper.supportsCustomDriverLoading()) {
       args += "vkdriver=${GpuDriverHelper.driverInstallDir}|$driverLib|${GpuDriverHelper.hookLibDir}"
     }
+    launchArguments = args.toList()
     return args.toTypedArray()
   }
 
@@ -325,12 +329,13 @@ class NativeCoreActivity : SDLActivity(), InputManager.InputDeviceListener {
    * another app in front) or the menu is open, and goes on where it stopped
    * when neither is (nativeSetPaused).
    */
+  private var manualPaused = false
   private var activityPaused = false
   private var menuDialogs = 0
   private var nativePaused: Boolean? = null
 
   private fun syncPause() {
-    val want = activityPaused || menuDialogs > 0
+    val want = activityPaused || manualPaused || menuDialogs > 0
     if (nativePaused != want) {
       nativePaused = want
       nativeSetPaused(want)
@@ -343,6 +348,7 @@ class NativeCoreActivity : SDLActivity(), InputManager.InputDeviceListener {
    * chosen from closes, so the game stays stopped from one to the next.
    */
   private fun showMenuDialog(b: AlertDialog.Builder): AlertDialog {
+    advancedMenu?.onMenuOpened()
     menuDialogs++
     syncPause()
     b.setOnDismissListener {
@@ -418,7 +424,14 @@ class NativeCoreActivity : SDLActivity(), InputManager.InputDeviceListener {
 
   override fun onResume() {
     super.onResume()
-    fastForwardHotkey.keyCode = Controllers.load(this).fastForwardKey
+    emulatorHotkeys.reset()
+    val advanced = AdvancedStore(this)
+    val ffKey = Controllers.load(this).fastForwardKey
+    emulatorHotkeys.bindings = buildMap {
+      ffKey?.let { put(EmulatorAction.FAST_FORWARD, it) }
+      for ((action, code) in advanced.keys()) if (code != ffKey) put(action, code)
+    }
+    emulatorHotkeys.holdFastForward = advanced.holdFastForward
     activityPaused = false
     syncPause() /* where it stopped (onPause), unless the menu is open */
     hideSystemBars()
@@ -454,7 +467,7 @@ class NativeCoreActivity : SDLActivity(), InputManager.InputDeviceListener {
    */
   override fun onWindowFocusChanged(hasFocus: Boolean) {
     super.onWindowFocusChanged(hasFocus)
-    if (hasFocus) hideSystemBars() else fastForwardHotkey.resetPressed()
+    if (hasFocus) hideSystemBars() else emulatorHotkeys.reset()
   }
 
   /** SDL's window style stays full screen: its windowed start showed the status bar for a moment. */
@@ -470,7 +483,8 @@ class NativeCoreActivity : SDLActivity(), InputManager.InputDeviceListener {
   }
 
   override fun onPause() {
-    fastForwardHotkey.resetPressed()
+    advancedMenu?.onPause()
+    emulatorHotkeys.reset()
     fpsHandler.removeCallbacks(fpsRunnable)
     fpsHandler.removeCallbacks(fatalRunnable)
     fpsHandler.removeCallbacks(rumbleRunnable)
@@ -711,14 +725,47 @@ class NativeCoreActivity : SDLActivity(), InputManager.InputDeviceListener {
   private var controlsShown: Boolean? = null
   private var editorBar: View? = null
   private var fastForward = false
-  private val fastForwardHotkey = com.rfandango.haku_x.input.FastForwardHotkey()
-
-  private fun toggleFastForward() {
-    fastForward = !fastForward
-    nativeSetFastForward(fastForward)
-    Toast.makeText(this,
-      getString(if (fastForward) R.string.fast_forward_on else R.string.fast_forward_off),
-      Toast.LENGTH_SHORT).show()
+  private var holdBaseline = false
+  private var advancedMenu: AdvancedMenu? = null
+  private fun tools(): AdvancedMenu = advancedMenu ?: AdvancedMenu(this, ::showMenuDialog, ::captureFrame, ::gameKey,
+    { activityPaused || manualPaused || menuDialogs > 0 },
+    { launchArguments.drop(2).filter { arg -> listOf("advanced=", "scale=", "aspect=", "fxaa=", "upscale=", "uncap", "asyncpipe=", "prebuild=", "video=", "avpack=").any { arg.startsWith(it) } }.joinToString(" ") },
+    { fastForward }).also { advancedMenu = it }
+  private val emulatorHotkeys = EmulatorHotkeys(::activateAction) { held ->
+    if (held) { holdBaseline = fastForward; setFastForward(true) } else setFastForward(holdBaseline)
+  }
+  private fun setFastForward(on: Boolean) {
+    if (fastForward == on) return
+    fastForward = on
+    nativeSetFastForward(on)
+    Toast.makeText(this, getString(if (on) R.string.fast_forward_on else R.string.fast_forward_off), Toast.LENGTH_SHORT).show()
+  }
+  private fun toggleFastForward() = setFastForward(!fastForward)
+  private fun activateAction(action: EmulatorAction) {
+    when (action) {
+      EmulatorAction.FAST_FORWARD -> toggleFastForward()
+      EmulatorAction.PAUSE -> {
+        manualPaused = !manualPaused
+        if (manualPaused) advancedMenu?.stopBenchmark("manually paused")
+        syncPause()
+        Toast.makeText(this, if (manualPaused) "Paused" else "Resumed", Toast.LENGTH_SHORT).show()
+      }
+      EmulatorAction.SCREENSHOT -> tools().screenshot()
+      EmulatorAction.BENCHMARK -> tools().recordBenchmark()
+      EmulatorAction.QUICK_SAVE, EmulatorAction.QUICK_LOAD -> {
+        val slot = AdvancedStore(this).quickSlot
+        when {
+          !nativeStatesAvailable() -> Toast.makeText(this, "Savestates are not available for this renderer", Toast.LENGTH_LONG).show()
+          action == EmulatorAction.QUICK_SAVE -> saveStates.save(slot)
+          saveStates.state(slot).exists() -> saveStates.load(slot)
+          else -> Toast.makeText(this, "Quick slot $slot is empty", Toast.LENGTH_SHORT).show()
+        }
+      }
+    }
+  }
+  override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+    if (advancedMenu?.activityResult(requestCode, resultCode, data) == true) return
+    super.onActivityResult(requestCode, resultCode, data)
   }
 
   /**
@@ -733,6 +780,8 @@ class NativeCoreActivity : SDLActivity(), InputManager.InputDeviceListener {
     val states = nativeStatesAvailable()
     val items = mutableListOf<Pair<String, () -> Unit>>(
       getString(if (fastForward) R.string.fast_forward_disable else R.string.fast_forward_enable) to ::toggleFastForward,
+      "Advanced & experimental" to { tools().show() },
+      (if (manualPaused) "Resume manually paused game" else "Pause game") to { activateAction(EmulatorAction.PAUSE) },
       getString(R.string.overlay_menu_edit) to ::editControls,
       getString(if (shown) R.string.overlay_menu_hide else R.string.overlay_menu_show) to {
         controlsShown = !shown
@@ -1002,8 +1051,8 @@ class NativeCoreActivity : SDLActivity(), InputManager.InputDeviceListener {
    * it: Controllers.defaults).
    */
   override fun dispatchKeyEvent(event: KeyEvent): Boolean {
-    if (fastForwardHotkey.handle(event.keyCode, event.deviceId, event.action,
-        event.repeatCount, event.isCanceled, editorBar == null, ::toggleFastForward)) return true
+    if (emulatorHotkeys.handle(event.keyCode, event.deviceId, event.action,
+        event.repeatCount, event.isCanceled, editorBar == null)) return true
     if (event.keyCode == KeyEvent.KEYCODE_BACK && router?.bindsKey(event) != true) {
       if (event.action == KeyEvent.ACTION_UP && !event.isCanceled) {
         onBack()
@@ -1218,6 +1267,10 @@ class NativeCoreActivity : SDLActivity(), InputManager.InputDeviceListener {
     external fun nativeSetPaused(paused: Boolean)
     @JvmStatic
     external fun nativeSetFastForward(enabled: Boolean)
+    @JvmStatic
+    external fun nativeSetAdvanced(name: String, value: String): Boolean
+    @JvmStatic
+    external fun nativeAdvancedReport(): String
 
     /** Saves the running game to path (not on the UI thread): null, or why it couldn't. */
     @JvmStatic

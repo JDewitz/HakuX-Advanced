@@ -29,6 +29,7 @@ include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/hle.cmake")
 
 add_library(hakux_native STATIC
   core/log.c
+  core/advanced.c
   core/jmp.c
   core/vm.c
   core/xdvdfs.c

@@ -70,7 +70,7 @@ private val SECTIONS: List<Pair<Int, List<Overridable>>> = listOf(
 
 /** One game's settings: each follows the app's until the game overrides it. */
 @Composable
-fun GameSettingsScreen(gameKey: String, title: String, onBack: () -> Unit) {
+fun GameSettingsScreen(gameKey: String, title: String, onBack: () -> Unit, onAdvanced: () -> Unit) {
   val context = LocalContext.current
   val prefs = remember { AppPrefs(context) }
   val overrides = remember(gameKey) { GameOverrides(context, gameKey) }
@@ -94,6 +94,7 @@ fun GameSettingsScreen(gameKey: String, title: String, onBack: () -> Unit) {
     },
   ) { padding ->
     Column(Modifier.padding(padding).fillMaxSize().verticalScroll(rememberScrollState())) {
+      com.rfandango.haku_x.ui.common.ActionItem(title = "Advanced profile for this game", summary = "CPU, RAM and GPU workarounds", icon = null, onClick = onAdvanced)
       Hint(stringResource(R.string.game_settings_desc))
       for ((section, items) in SECTIONS) {
         Section(stringResource(section))

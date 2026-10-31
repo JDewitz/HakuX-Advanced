@@ -13,6 +13,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/system_properties.h>
+#ifdef HAKUX_NATIVE_CORE
+#include "native/core/advanced.h"
+#endif
 
 /* A debug property's value in v (empty when unset) and its length. With
  * HAKUX_NO_PROPS=1 none is read, each as if unset: a run that mustn't depend
@@ -25,6 +28,10 @@ static inline int hle_prop_get(const char *name, char v[PROP_VALUE_MAX])
         off = e && e[0] == '1';
     }
     v[0] = 0;
+#ifdef HAKUX_NATIVE_CORE
+    int local = nc_advanced_get(name, v);
+    if (local >= 0) return local;
+#endif
     return off ? 0 : __system_property_get(name, v);
 }
 
@@ -43,6 +50,10 @@ static inline bool hle_prop_new(HleProp *p, const char *name, char v[PROP_VALUE_
         return false;
     }
     strcpy(p->last, v);
+#ifdef HAKUX_NATIVE_CORE
+    char local[PROP_VALUE_MAX];
+    first = first && nc_advanced_get(name, local) < 0;
+#endif
     return !first && v[0];
 }
 #endif

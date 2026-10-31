@@ -2,6 +2,7 @@
  * hakuX native core — logging to stderr and the Android log.
  */
 #include "native/core/nc.h"
+#include "native/core/advanced.h"
 
 #include <stdio.h>
 #include <unistd.h>
@@ -17,6 +18,7 @@ void nc_log(const char *tag, const char *fmt, ...)
     va_start(ap, fmt);
     vsnprintf(buf, sizeof(buf), fmt, ap);
     va_end(ap);
+    nc_advanced_log(tag, buf);
     fprintf(stderr, "%s: %s\n", tag, buf);
 #ifdef __ANDROID__
     __android_log_write(ANDROID_LOG_INFO, tag, buf);

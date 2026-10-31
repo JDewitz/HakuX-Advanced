@@ -31,8 +31,8 @@ android {
     minSdk = 28
     targetSdk = 36
 
-    versionCode = 8
-    versionName = "1.2.0-fastforward1"
+    versionCode = 9
+    versionName = "1.2.0-advanced1"
 
     ndk {
       abiFilters += listOf("arm64-v8a")
@@ -57,7 +57,7 @@ android {
   buildTypes {
     debug {
       applicationIdSuffix = ".fastforward"
-      resValue("string", "app_name", "hakuX Fast Forward")
+      resValue("string", "app_name", "hakuX Advanced")
       ndk {
         debugSymbolLevel = "NONE"
       }

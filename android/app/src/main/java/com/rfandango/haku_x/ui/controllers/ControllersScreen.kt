@@ -76,6 +76,11 @@ fun ControllersScreen(onBack: () -> Unit, onMap: (deviceId: Int) -> Unit) {
   var captureKey by remember { mutableStateOf<Pair<Int, Int>?>(null) }
 
   fun update(c: Controllers.Config) {
+    if (c.fastForwardKey != null && c.fastForwardKey != config.fastForwardKey &&
+        c.fastForwardKey in com.rfandango.haku_x.advanced.AdvancedStore(context).keys().values) {
+      android.widget.Toast.makeText(context, "This key belongs to another emulator action. Clear it in Advanced settings first.", android.widget.Toast.LENGTH_LONG).show()
+      return
+    }
     Controllers.save(context, c)
     config = c
   }

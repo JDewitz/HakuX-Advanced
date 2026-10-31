@@ -61,6 +61,7 @@ import java.util.GregorianCalendar
 /** What the core reads at game start, plus the games folders the library scans. */
 @Composable
 fun SettingsScreen(
+  onAdvanced: () -> Unit,
   onBack: () -> Unit,
   onEditControls: () -> Unit,
   onControllers: () -> Unit,
@@ -163,6 +164,7 @@ fun SettingsScreen(
         pickFolder.launch(folders.lastOrNull())
       }
 
+      ActionItem(title = "Advanced & experimental", summary = "Startup profiles, GPU workarounds and emulator hotkeys", icon = null, onClick = onAdvanced)
       Section(stringResource(R.string.settings_section_controls))
       ListItem(
         headlineContent = { Text(stringResource(R.string.settings_overlay)) },

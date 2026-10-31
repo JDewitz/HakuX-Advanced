@@ -328,6 +328,13 @@ static void prof_poll(void)
     }
     char v[PROP_VALUE_MAX];
     if (hle_prop_new(&prop, "debug.hakux.perf", v)) {
+        if (!strcmp(v, "stop")) {
+            if (armed) smp_stop();
+            armed = false;
+            g_hle_prof_on = env_on != 0;
+            hle_log("hakuX-hle-prof", "perf capture cancelled");
+            return;
+        }
         char s[PROP_VALUE_MAX] = "";
         hle_prop_get("debug.hakux.perfsec", s);
         int sec = atoi(s) > 0 ? atoi(s) : 10;

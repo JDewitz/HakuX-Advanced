@@ -21,6 +21,7 @@
  * A trailing ",<salt>" makes a repeat a new value.
  */
 #include "native/core/memscan.h"
+#include "native/core/advanced.h"
 
 #include "native/dev/dev.h"
 #include "hw/xbox/hle/host.h"
@@ -256,6 +257,15 @@ static void poke(const NcVm *vm, const char *what)
     if (n != 1 && n != 2 && n != 4) {
         return;
     }
+    /* Validate every byte before writing: unmapped boundary = no partial write. */
+    if (va > UINT32_MAX - (n - 1)) return;
+    for (unsigned i = 0; i < n; i++) {
+        const uint32_t pa = nc_vm_phys(vm, va + i);
+        if (pa == UINT32_MAX || pa >= vm->ram_size) {
+            nc_log("hakuX-native-scan", "poke %08x: not mapped; no bytes written", va + i);
+            return;
+        }
+    }
     for (unsigned i = 0; i < n; i++) {
         const uint32_t pa = nc_vm_phys(vm, va + i);
         if (pa == UINT32_MAX || pa >= vm->ram_size) {
@@ -307,6 +317,7 @@ void nc_memscan_poll(const NcVm *vm)
 {
     static unsigned polls;
     static char last[PROP_VALUE_MAX];
+    static bool external_polled;
     static bool mats_next;
     static uint32_t mats_word;          /* "mats1:<va>": that guest word at both ends */
     if (mats_next) {
@@ -319,13 +330,14 @@ void nc_memscan_poll(const NcVm *vm)
         return;
     }
     char v[PROP_VALUE_MAX] = "";
-    if (hle_prop_get("debug.hakux.memscan", v) <= 0 || !strcmp(v, last)) {
-        return;
-    }
-    const bool first = !last[0] && polls == 1;
-    snprintf(last, sizeof(last), "%s", v);
-    if (first) {
-        return;                         /* the value at start */
+    const bool from_ui = nc_advanced_take_memory(v);
+    if (!from_ui) {
+        hle_prop_get("debug.hakux.memscan", v);
+        const bool first = !external_polled;
+        external_polled = true;
+        if (!strcmp(v, last)) return;
+        snprintf(last, sizeof(last), "%s", v);
+        if (first || !v[0]) return; /* adb's initial value stays a baseline */
     }
     char *salt = strchr(v, ',');
     if (salt) {
