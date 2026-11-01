@@ -65,6 +65,9 @@ class AdvancedStore internal constructor(private val dir: File) {
       }
     }
   }
+  var onlinePlay: Boolean
+    get() = OnlinePlayPolicy.fromJson(read()).onlinePlay
+    set(value) = change { it.put("onlinePlay", value) }
   fun hasProfile(game: String) = read().optJSONObject("games")?.has(game) == true
   fun profile(game: String? = null): AdvancedProfile {
     val o = read()

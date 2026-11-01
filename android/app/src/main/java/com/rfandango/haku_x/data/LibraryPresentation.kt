@@ -16,6 +16,7 @@ enum class LibraryViewMode(val label: String) {
 data class GameFeatures(
   val trainerEnabled: Boolean = false,
   val trainerImported: Boolean = false,
+  val trainerBlocked: Boolean = false,
   val trainerOptions: Int = 0,
   val trainerError: Boolean = false,
   val customSetup: Boolean = false,
@@ -39,6 +40,7 @@ object LibraryMarkers {
 class LibraryFeatureIndex(private val context: Context) {
   private fun json(name: String) = runCatching { JSONObject(File(context.filesDir, name).readText()) }.getOrElse { JSONObject() }
   fun snapshot(games: List<Game>, info: Map<Uri, DiscInfo>): Map<Uri, GameFeatures> {
+    val online = com.rfandango.haku_x.advanced.AdvancedStore(context).onlinePlay
     val settings = context.getSharedPreferences(GameOverrides.NAME, Context.MODE_PRIVATE).all
     val advanced = json("advanced.json")
     val modsFile = File(context.filesDir, "mod_choices.json")
@@ -51,7 +53,8 @@ class LibraryFeatureIndex(private val context: Context) {
       val trainer = runCatching { TrainerStore(context, key).load() }
       val t = trainer.getOrNull()
       game.uri to GameFeatures(
-        trainerEnabled = t?.enabled == true,
+        trainerEnabled = t?.enabled == true && !online,
+        trainerBlocked = t?.enabled == true && online,
         trainerImported = t != null,
         trainerOptions = t?.options?.count { it == '1' } ?: 0,
         trainerError = trainer.isFailure,

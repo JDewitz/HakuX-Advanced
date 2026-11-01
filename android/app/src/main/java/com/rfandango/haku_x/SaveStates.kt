@@ -119,6 +119,7 @@ class SaveStates(
   }
 
   fun load(slot: Int) {
+    if (!activity.allowStateLoad()) return
     val file = store.state(slot)
     val progress = showDialog(AlertDialog.Builder(activity)
       .setView(BusyView(activity, activity.getString(R.string.state_loading, slot)).view).setCancelable(false))

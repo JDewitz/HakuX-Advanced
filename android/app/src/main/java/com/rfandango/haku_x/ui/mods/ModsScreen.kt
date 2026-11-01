@@ -28,6 +28,7 @@ import com.rfandango.haku_x.ui.common.SwitchItem
 @Composable
 fun ModsScreen(gameKey: String, title: String, onBack: () -> Unit, onTrainers: () -> Unit) {
   val context = LocalContext.current
+  val online = com.rfandango.haku_x.advanced.AdvancedStore(context).onlinePlay
   val game = remember(gameKey) { ModCatalog.load(context, gameKey) }
   val choices = remember(gameKey) { ModChoices(context, gameKey) }
   val mods = remember(gameKey) { mutableStateMapOf<String, Boolean>().apply { game.mods.forEach { put(it.id, choices.mod(it.id)) } } }
@@ -41,7 +42,8 @@ fun ModsScreen(gameKey: String, title: String, onBack: () -> Unit, onTrainers: (
       if (game.isEmpty) {
         EmptyText(stringResource(R.string.mods_none))
       }
-      if (game.mods.isNotEmpty()) {
+      if (online) Hint("Online play protection blocks all guest mods, cheats and trainers. Use Advanced to choose an offline trainer session; networking will be forced off.")
+      if (game.mods.isNotEmpty() && !online) {
         Section(stringResource(R.string.mods_section_mods))
         Hint(stringResource(R.string.mods_mods_desc))
         for (mod in game.mods) {
@@ -57,7 +59,7 @@ fun ModsScreen(gameKey: String, title: String, onBack: () -> Unit, onTrainers: (
           )
         }
       }
-      if (game.cheats.isNotEmpty()) {
+      if (game.cheats.isNotEmpty() && !online) {
         Section(stringResource(R.string.mods_section_cheats))
         Hint(stringResource(R.string.mods_cheats_desc))
         for (cheat in game.cheats) {

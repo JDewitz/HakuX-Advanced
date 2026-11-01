@@ -67,6 +67,7 @@ class RelaunchActivity : Activity() {
 
   private fun startCore() {
     val core = Intent(this, NativeCoreActivity::class.java)
+      .apply { if (intent.hasExtra(NativeCoreActivity.EXTRA_ONLINE_PLAY)) putExtra(NativeCoreActivity.EXTRA_ONLINE_PLAY, intent.getBooleanExtra(NativeCoreActivity.EXTRA_ONLINE_PLAY, true)) }
       .putExtra(NativeCoreActivity.EXTRA_DVD_URI, intent.getStringExtra(NativeCoreActivity.EXTRA_DVD_URI))
       .apply {
         /* a savestate's load, the title's own reboot, or the game from its start */

@@ -44,6 +44,7 @@ class AdvancedMenu(
   private var exporting = false
   private fun toast(text: String) = Toast.makeText(activity, text, Toast.LENGTH_LONG).show()
   private fun property(name: String, value: String): Boolean {
+    if (name == "memscan" && !activity.onlinePolicy.allowMemoryTools) { toast("Memory tools blocked by online play protection"); return false }
     val ok = NativeCoreActivity.nativeSetAdvanced("debug.hakux.$name", value)
     if (!ok) toast("Command rejected: value too long or memory queue is full")
     return ok
@@ -54,17 +55,26 @@ class AdvancedMenu(
       .setNegativeButton("Back", null))
   }
   fun show() = choice("Advanced & experimental", listOf(
+    "Online play protection · current session: ${if (activity.onlinePolicy.onlinePlay) "ON" else "OFFLINE"}" to ::sessionMode,
     "Startup profile for this game · restart required" to ::startup,
     "GPU driver workaround overrides · restart required" to ::quirks,
     "RetroArch Slang shaders" to { shaders.show() },
     "Live presentation filters" to ::presentation,
     "Record 10-second benchmark" to ::recordBenchmark,
     "Save screenshot" to ::screenshot,
-    "Memory search & cheat tools" to ::memoryMenu,
+    "Memory search & cheat tools" to { if (activity.onlinePolicy.allowMemoryTools) memoryMenu() else toast("Memory tools blocked by online play protection") },
     "Dump next frame's render targets" to { command("rtdump"); toast("Queued; resume the game, then export Advanced files") },
     "Dump a texture by ID" to ::texture,
     "Export Advanced files as ZIP" to ::export,
   ))
+  private fun sessionMode() {
+    show(AlertDialog.Builder(activity).setTitle("Online play protection · next cold start")
+      .setSingleChoiceItems(arrayOf("ON — networking allowed, trainers/mods/state loads blocked", "OFFLINE — trainers allowed, all Xbox networking off"), if (store.onlinePlay) 0 else 1) { dialog, index ->
+        runCatching { store.onlinePlay = index == 0 }.onSuccess {
+          dialog.dismiss(); toast("Saved. Fully exit to the library and start the game again. The running session cannot change modes.")
+        }.onFailure { toast(it.message ?: "Could not save protection mode") }
+      }.setNegativeButton("Back",null))
+  }
   private fun startup() {
     val p = store.profile(game())
     val labels = arrayOf("128 MB Xbox RAM", "Full 80-bit x87", "Honor reduced-x87 precision control", "Arm alternate floating-point optimization")
@@ -167,6 +177,7 @@ class AdvancedMenu(
     }
   }
   private fun queueMemory(text: String) {
+    if (!activity.onlinePolicy.allowMemoryTools) { toast("Memory tools blocked by online play protection"); return }
     if (!property("memscan", "$text,${SystemClock.elapsedRealtimeNanos()}")) return
     toast("Queued. It runs after you resume; reopen Memory results afterward.")
   }
@@ -182,6 +193,7 @@ class AdvancedMenu(
     "View memory results" to ::results,
   ))
   private fun poke() {
+    if (!activity.onlinePolicy.allowMemoryTools) { toast("Memory writes blocked by online play protection"); return }
     val layout = LinearLayout(activity).apply { orientation = LinearLayout.VERTICAL; setPadding(24, 0, 24, 0) }
     val addr = EditText(activity).apply { hint = "Hex address"; setSingleLine() }
     val value = EditText(activity).apply { hint = "Hex value"; setSingleLine() }

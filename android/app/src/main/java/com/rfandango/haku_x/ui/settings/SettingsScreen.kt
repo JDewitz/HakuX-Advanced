@@ -255,6 +255,7 @@ fun SettingsScreen(
         )
       }
 
+      if (!com.rfandango.haku_x.advanced.AdvancedStore(context).onlinePlay) Hint("Offline trainer mode: Xbox networking is forced off regardless of the network choice below. Enable Online play protection in Advanced and launch fresh to use Insignia, LAN or Kai.")
       NetworkSettings(prefs, onInsignia)
 
       Section(stringResource(R.string.settings_section_console_video))

@@ -132,10 +132,11 @@ fun TrainerBrowser(gameKey: String? = null, title: String = "", onBack: () -> Un
     }
   }.distinctBy { it.first }.sortedBy { it.second.lowercase(Locale.ROOT) }
   val matches = gameChoices.filter { selected?.trainer?.matches(it.first)==true }
-  val ready = !writing && !scanning && target!=null && loadedKey==target
+  val online = com.rfandango.haku_x.advanced.AdvancedStore(context).onlinePlay
+  val ready = !online && !writing && !scanning && target!=null && loadedKey==target
   val activeHere = active?.file?.name?.removeSuffix(".etm")==selected?.id
   fun change(block: (TrainerStore) -> TrainerStore.Selection?) {
-    if(writing||scanning||loadedKey!=target) return
+    if(online||writing||scanning||loadedKey!=target) return
     val key=target ?: return
     writing=true
     scope.launch {
@@ -156,6 +157,7 @@ fun TrainerBrowser(gameKey: String? = null, title: String = "", onBack: () -> Un
         }
         Text(folder?.let { runCatching { Storage.folderPlace(context,it) }.getOrDefault(it.toString()) } ?: "No trainer folder selected",
           Modifier.padding(horizontal=16.dp),style=MaterialTheme.typography.bodySmall,maxLines=2,overflow=TextOverflow.Ellipsis)
+        if(online) Text("Online play protection is ON. Trainer activation is blocked. Choose offline trainer mode in Advanced to use trainers; Xbox networking will be forced off.",Modifier.padding(12.dp),style=MaterialTheme.typography.bodySmall)
         if(scanning||writing) LinearProgressIndicator(Modifier.fillMaxWidth())
         if(message.isNotBlank()) Text(message,Modifier.padding(horizontal=16.dp,vertical=4.dp),style=MaterialTheme.typography.bodySmall,maxLines=4,overflow=TextOverflow.Ellipsis)
         if(!wide) TextButton(onClick={ listOnly=!listOnly }) { Text(if(listOnly) "Show trainer options" else "Show trainer list") }
@@ -167,7 +169,7 @@ fun TrainerBrowser(gameKey: String? = null, title: String = "", onBack: () -> Un
               items(visible,key={it.id}) { e ->
                 ListItem(headlineContent={ Text(e.trainer.name.ifBlank { e.sources.firstOrNull() ?: e.id.take(8) }) },
                   supportingContent={Text(e.sources.joinToString("\n"),maxLines=2,overflow=TextOverflow.Ellipsis)},
-                  trailingContent={if(active?.file?.name=="${e.id}.etm") Text(if(active?.enabled==true) "ON" else "OFF")},
+                  trailingContent={if(active?.file?.name=="${e.id}.etm") Text(if(active?.enabled==true) { if(online) "BLOCKED" else "ON" } else "OFF")},
                   colors=ListItemDefaults.colors(containerColor=if(selected?.id==e.id) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface),
                   modifier=Modifier.clickable(enabled=!writing) {picked=e.id;if(!wide)listOnly=false})
               }

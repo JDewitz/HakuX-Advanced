@@ -34,6 +34,7 @@ fun AdvancedScreen(game: String?, onBack: () -> Unit) {
   var own by remember { mutableStateOf(game != null && store.hasProfile(game)) }
   var keys by remember { mutableStateOf(store.keys()) }
   var ff by remember { mutableStateOf(Controllers.load(context).fastForwardKey) }
+  var onlinePlay by remember { mutableStateOf(store.onlinePlay) }
   var hold by remember { mutableStateOf(store.holdFastForward) }
   var slot by remember { mutableStateOf(store.quickSlot) }
   var quirk by remember { mutableStateOf<String?>(null) }
@@ -90,6 +91,12 @@ fun AdvancedScreen(game: String?, onBack: () -> Unit) {
         ActionItem(title = if (game == null) "Reset startup profile" else "Use global startup profile", summary = "Hotkeys are kept.", icon = null) {
           runCatching { store.resetProfile(game); profile = store.profile(game); own = false }.onFailure { message(it.message ?: "Could not reset") }
         }
+        Section("Online play · global session policy")
+        SwitchItem("Online play protection", "Default on: trainers, cheats, guest mods, memory tools and save-state loading are blocked. Off: offline trainer sessions only; all Xbox networking is forced off. Fully exit and start the game again after changing this setting.", onlinePlay) { value ->
+          runCatching { store.onlinePlay = value }.onSuccess { onlinePlay = value }
+            .onFailure { message(it.message ?: "Could not save online protection") }
+        }
+        Hint("This global policy cannot be overridden by a game profile. Saved trainer options are retained; this setting controls whether they can run. NAT/Insignia, LAN and Kai are all unavailable in offline trainer mode.")
         Section("CPU & memory · restart required")
         SwitchItem("128 MB Xbox RAM", "Off: retail 64 MB. On: development-kit memory size.", profile.ram128) { save(profile.copy(ram128 = it)) }
         SwitchItem("Full 80-bit x87", "Off: existing reduced-precision implementation. Compare per title.", profile.fullX87) { save(profile.copy(fullX87 = it)) }

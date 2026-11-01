@@ -208,6 +208,7 @@ class NativeCoreActivity : SDLActivity(), InputManager.InputDeviceListener {
     RelaunchActivity.heldFrame(this).delete()
     startActivity(
       Intent(this, RelaunchActivity::class.java)
+        .putExtra(EXTRA_ONLINE_PLAY, onlinePolicy.onlinePlay)
         .putExtra(EXTRA_DVD_URI, discUri?.toString() ?: intent.getStringExtra(EXTRA_DVD_URI))
         .putExtra(EXTRA_RESTART, true)
         .putExtra(
@@ -224,13 +225,24 @@ class NativeCoreActivity : SDLActivity(), InputManager.InputDeviceListener {
 
   override fun getLibraries(): Array<String> = arrayOf("SDL3", "hakuxcore")
 
+  /** Pinned through XBE/state relaunches; changing preferences cannot network-enable injected RAM. */
+  val onlinePolicy: com.rfandango.haku_x.advanced.OnlinePlayPolicy by lazy {
+    val configured = com.rfandango.haku_x.advanced.OnlinePlayPolicy(AdvancedStore(this).onlinePlay)
+    com.rfandango.haku_x.advanced.OnlineLaunchGuard.resolve(configured.propagateFrom(
+      if (intent.hasExtra(EXTRA_ONLINE_PLAY)) intent.getBooleanExtra(EXTRA_ONLINE_PLAY, true) else null))
+  }
+  fun allowStateLoad(): Boolean {
+    if (onlinePolicy.allowStateLoad) return true
+    Toast.makeText(this, com.rfandango.haku_x.advanced.OnlinePlayPolicy.BLOCK_MESSAGE, Toast.LENGTH_LONG).show()
+    return false
+  }
   @Volatile private var launchArguments = emptyList<String>()
   override fun getArguments(): Array<String> {
     val args = mutableListOf(discArg, hddDir().absolutePath)
     args += AdvancedStore(this).profile(gameKey()).arguments()
     /* the dashboard: C:\xboxdash.xbe with no disc (discArg "none") */
     if (dashboard) args += "dash"
-    val state = intent.getStringExtra(EXTRA_LOADSTATE)
+    val state = intent.getStringExtra(EXTRA_LOADSTATE)?.takeIf { onlinePolicy.allowStateLoad }
     if (state != null) {
       args += "loadstate=$state"
     } else if (intent.getBooleanExtra(EXTRA_RELAUNCH, false)) {
@@ -274,7 +286,7 @@ class NativeCoreActivity : SDLActivity(), InputManager.InputDeviceListener {
      * through an XLink Kai engine; the Internet through NAT, Insignia's DNS
      * server given by DHCP (Xbox Live); off, no cable. */
     val prefs = AppPrefs(this)
-    when (prefs.networkMode) {
+    when (onlinePolicy.networkMode(prefs.networkMode)) {
       AppPrefs.NET_LAN -> {
         args += "net=lan"
         Network.broadcastAddress(this)?.let { args += "lanbcast=$it" }
@@ -288,7 +300,9 @@ class NativeCoreActivity : SDLActivity(), InputManager.InputDeviceListener {
         args += "net=nat"
         args += "dns=${prefs.insigniaDns.trim().ifEmpty { AppPrefs.INSIGNIA_DNS }}"
       }
+      else -> args += "net=off"
     }
+    Log.i(TAG, "session: online protection=${onlinePolicy.onlinePlay}; guest networking=${onlinePolicy.networkMode(prefs.networkMode)}; trainer/mod injection=${onlinePolicy.allowGuestMods}")
     /* The game's mods (their files and XBE patches) and cheats (mods/):
      * the manifest the core reads as the disc opens. */
     modsArg()?.let { args += it }
@@ -308,10 +322,29 @@ class NativeCoreActivity : SDLActivity(), InputManager.InputDeviceListener {
   }
 
   override fun onCreate(savedInstanceState: Bundle?) {
+    // The native trainer/cheat engine has process-global state. Never reuse a core
+    // process for another Activity session, even after Android destroyed its UI.
+    if (coreSessionEntered) {
+      val next = Intent(this, RelaunchActivity::class.java)
+        .putExtra(EXTRA_DVD_URI, intent.getStringExtra(EXTRA_DVD_URI))
+        .putExtra(EXTRA_RESTART, true)
+        .putExtra(EXTRA_ONLINE_PLAY, onlinePolicy.onlinePlay)
+        .putExtra(LauncherActivity.EXTRA_LAUNCHED_EXTERNALLY, intent.getBooleanExtra(LauncherActivity.EXTRA_LAUNCHED_EXTERNALLY, false))
+        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NO_ANIMATION)
+      if (onlinePolicy.allowStateLoad) intent.getStringExtra(EXTRA_LOADSTATE)?.let { next.putExtra(EXTRA_LOADSTATE,it) }
+      startActivity(next)
+      finish()
+      android.os.Process.killProcess(android.os.Process.myPid())
+      return
+    }
+    coreSessionEntered = true
     /* the in-game menus (framework dialogs) light or dark, as the app's theme is */
     if (AppTheme.isDark(this)) {
       setTheme(R.style.Theme_HakuX_Game_Dark)
     }
+    intent.putExtra(EXTRA_ONLINE_PLAY, onlinePolicy.onlinePlay)
+    val blockedState = !onlinePolicy.allowStateLoad && intent.hasExtra(EXTRA_LOADSTATE)
+    if (blockedState) intent.removeExtra(EXTRA_LOADSTATE)
     discArg = openDisc()
     Logs.startGame(this, gameName(), when {
       intent.getBooleanExtra(EXTRA_RELAUNCH, false) -> "relaunched into another XBE"
@@ -319,7 +352,9 @@ class NativeCoreActivity : SDLActivity(), InputManager.InputDeviceListener {
       else -> "started"
     })
     super.onCreate(savedInstanceState)
-    if (AppPrefs(this).networkMode == AppPrefs.NET_LAN) {
+    if (blockedState) Toast.makeText(this, "State load blocked; starting a clean online-protected session.", Toast.LENGTH_LONG).show()
+    if (onlinePolicy.onlinePlay && !AdvancedStore(this).onlinePlay) Toast.makeText(this, "This session remains online-protected due to its pinned mode or native network overrides. Exit to the library before starting an offline trainer session.", Toast.LENGTH_LONG).show()
+    if (onlinePolicy.networkMode(AppPrefs(this).networkMode) == AppPrefs.NET_LAN) {
       multicastLock = Network.multicastLock(this)
     }
     setupOnScreenController()
@@ -417,12 +452,14 @@ class NativeCoreActivity : SDLActivity(), InputManager.InputDeviceListener {
 
   /** Starts the core again into the savestate at path (SaveStates' Load state). */
   fun restartInto(path: String) {
+    if (!allowStateLoad()) return
     if (relaunchStarted) return
     relaunchStarted = true
     Log.i(TAG, "savestate: starting the core again into $path")
     val uri = discUri?.toString() ?: intent.getStringExtra(EXTRA_DVD_URI)
     startActivity(
       Intent(this, RelaunchActivity::class.java)
+        .putExtra(EXTRA_ONLINE_PLAY, onlinePolicy.onlinePlay)
         .putExtra(EXTRA_DVD_URI, uri)
         .putExtra(EXTRA_LOADSTATE, path)
         .putExtra(
@@ -653,9 +690,10 @@ class NativeCoreActivity : SDLActivity(), InputManager.InputDeviceListener {
 
   /** "mods=<manifest>" when the disc's title has mods or cheats (SDL's thread: may extract a mod's files). */
   private fun modsArg(): String? {
-    if (discUri == null) return null
+    runCheats = emptyList()
+    if (!onlinePolicy.allowGuestMods || discUri == null) return null
     val key = gameKey()
-    return runCatching { ModRun.write(this, key) }
+    return runCatching { ModRun.write(this, key, onlinePolicy) }
       .onFailure { Log.e(TAG, "mods: ${it.message}") }
       .getOrNull()
       ?.let { (file, cheats) ->
@@ -667,6 +705,7 @@ class NativeCoreActivity : SDLActivity(), InputManager.InputDeviceListener {
 
   /** The menu's Cheats: each on or off at once (from the next vblank), and so kept for the game. */
   private fun showCheats() {
+    if (!onlinePolicy.allowGuestMods) { Toast.makeText(this, "Cheats blocked by online play protection", Toast.LENGTH_LONG).show(); return }
     val cheats = runCheats
     val choices = ModChoices(this, runKey)
     val checked = BooleanArray(cheats.size) { choices.cheat(cheats[it].name) }
@@ -1033,6 +1072,7 @@ class NativeCoreActivity : SDLActivity(), InputManager.InputDeviceListener {
     val uri = discUri?.toString() ?: intent.getStringExtra(EXTRA_DVD_URI)
     startActivity(
       Intent(this, RelaunchActivity::class.java)
+        .putExtra(EXTRA_ONLINE_PLAY, onlinePolicy.onlinePlay)
         .putExtra(EXTRA_DVD_URI, uri)
         .putExtra(
           LauncherActivity.EXTRA_LAUNCHED_EXTERNALLY,
@@ -1226,11 +1266,13 @@ class NativeCoreActivity : SDLActivity(), InputManager.InputDeviceListener {
   }
 
   companion object {
+    private var coreSessionEntered = false
     private const val TAG = "hakuX-native"
     const val EXTRA_DVD_URI = "dvdUri"
     /** Boot the XBE of the saved launch data page (a title's XLaunchNewImage). */
     const val EXTRA_RELAUNCH = "relaunch"
     /** Boot into the savestate at this path (SaveStates' Load state). */
+    const val EXTRA_ONLINE_PLAY = "online_play_session"
     const val EXTRA_LOADSTATE = "loadstate"
     /** RelaunchActivity: the game started again from the start (no launch data, no savestate). */
     const val EXTRA_RESTART = "restart"

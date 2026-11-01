@@ -96,6 +96,7 @@ fun LibraryGameContent(
         Text(game.relativePath, Modifier.padding(top = 6.dp), maxLines = 2, overflow = TextOverflow.Ellipsis,
           style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant)
         Text(when {
+          features.trainerBlocked -> "Trainer blocked · online play protection"
           features.trainerError -> "Trainer unavailable · import it again"
           features.trainerEnabled -> "Trainer enabled · ${features.trainerOptions} options selected"
           features.trainerImported -> "Trainer imported · disabled"

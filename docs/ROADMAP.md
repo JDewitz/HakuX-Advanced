@@ -61,6 +61,20 @@ Built and unit-tested: scrolling/focusing previews theme colors in memory.
 Tap commits; Back/dismiss/leaving settings restores the saved selection.
 Imported themes remain available. Android gesture/focus testing is pending.
 
+## Advanced5.7: online play protection
+
+Global Advanced toggle, default ON. Protected sessions block all trainer,
+cheat and guest-mod injection, save-state loading and memory tools before any
+online connection. Turning it off selects an offline trainer session with all
+Xbox networking forced off. The immutable mode is pinned across XBE/state
+relaunches; changing the next-session preference cannot network-enable a running
+trainer session. Full cold exit/launch is required to switch. Saved trainer
+choices remain intact but show as blocked online. Native NC_NET debug overrides
+or failure to check them force a protected fallback. Reusing an old native
+process is redirected through a clean process restart. This is implemented in
+the app launch/injection/load boundaries; real-device Insignia and lifecycle
+validation is required before relying on it. See ONLINE5.7.md for the full matrix.
+
 ## Next priorities
 
 | Order | Work | Acceptance target |

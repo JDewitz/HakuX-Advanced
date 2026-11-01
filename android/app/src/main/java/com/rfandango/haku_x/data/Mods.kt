@@ -225,7 +225,9 @@ object ModRun {
   private const val TAG = "hakuX-mods"
 
   /** The manifest written (null: the game has none), and the run's cheats. */
-  fun write(context: Context, gameKey: String): Pair<File, List<CheatInfo>>? {
+  fun write(context: Context, gameKey: String, policy: com.rfandango.haku_x.advanced.OnlinePlayPolicy): Pair<File, List<CheatInfo>>? {
+    // Before any trainer/mod parsing or extraction; no manifest enters an online session.
+    if (!policy.allowGuestMods) return null
     val game = ModCatalog.load(context, gameKey)
     val trainer = TrainerStore(context, gameKey).load()?.takeIf { it.enabled }
     if (game.isEmpty && trainer == null) return null
