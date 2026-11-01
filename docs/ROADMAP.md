@@ -66,15 +66,15 @@ Imported themes remain available. Android gesture/focus testing is pending.
 | Order | Work | Acceptance target |
 | --- | --- | --- |
 | 1 | Pluggable compatibility/mod packs | User-selected patch folder; game/revision matching, validation, toggles, conflict reporting, reversible launch-time application |
-| 2 | Halo regression investigation | Reproduce reported 1.2.0 → 1.3.0 regression on the same disc/update/device/settings; isolate cause, then deliver a verified workaround pack or core fix |
-| 3 | Project Snowblind graphics investigation | Capture reproducible rendering issues; test existing quirks first, add a narrow renderer fix if required; publish a pack only after validation |
+| 2 | EvoX-style trainer browser | Selected trainer folder, automatic catalog refresh, matching trainers, remembered per-trainer options and next-launch enable switches |
+| 3 | Halo regression investigation | Reproduce reported 1.2.0 → 1.3.0 regression on the same disc/update/device/settings; isolate cause, then deliver a verified workaround pack or core fix |
+| 4 | Project Snowblind graphics investigation | Capture reproducible rendering issues; test existing quirks first, add a narrow renderer fix if required; publish a pack only after validation |
 | Alongside | Device/controller QA | Themes/live preview, library modes, save browser, shaders and ETM; touch/D-pad, portrait/landscape, large libraries |
-| 4 | Real play statistics | Persist per-game session count, last played and playtime; define pause/background/crash behavior first |
-| 5 | Library polish | Sorting/filtering by trainer/custom setup, favorites, optional user-selected cover art and richer info |
-| 6 | Per-game input profiles | Named profiles; Bluetooth/USB keyboard buttons and gamepad axes; deadzones, invert, conflicts, import/export |
-| 7 | Steel Battalion accessory prototype | Native guest device emulation, then host mappings and optional touch panel; separate experimental milestone |
+| 5 | Real play statistics | Persist per-game session count, last played and playtime; define pause/background/crash behavior first |
+| 6 | Library polish | Sorting/filtering by trainer/custom setup, favorites, optional user-selected cover art and richer info |
+| 7 | Per-game input profiles | Named profiles; Bluetooth/USB keyboard buttons and gamepad axes; deadzones, invert, conflicts, import/export |
+| 8 | Steel Battalion accessory prototype | Native guest device emulation, then host mappings and optional touch panel; separate experimental milestone |
 | Research | RetroAchievements | Coordinate Xbox support and maintenance with RA/upstream before promising online achievements |
-| Separate core research | External BIOS boot | Determine required low-level firmware execution support; a folder alone does not add it |
 
 Continue compatibility, shader and ETM testing alongside these priorities.
 This is a proposed fork roadmap, not a dated commitment or upstream agreement.
@@ -91,14 +91,11 @@ Proposed logical folder layout (Android folder selection via the system picker):
     patches/<TITLEID>.<VERSION>/<patch-id>/manifest.json
     patches/<TITLEID>.<VERSION>/<patch-id>/files/...
     profiles/<profile-id>.json
-    bios/<user-supplied firmware files>  # reserved for a future supported boot path
+    trainers/<user-organized folders>/*.etm
 
-BIOS binaries do not inherently identify a game. A matching game's manifest
-can reference a named compatibility/boot profile; that profile selects firmware
-only if a future core supports it. Current hakuX uses a reimplemented/HLE kernel
-and has no general external BIOS selector/boot path. Do not imply that placing
-a .bin in bios/ will fix a game. Compatibility profiles for current CPU/GPU
-settings are useful independently of firmware support.
+The earlier BIOS-folder suggestion is superseded by a trainer folder/browser.
+Compatibility profiles configure current CPU/GPU settings; no external BIOS
+boot feature is planned in this feature set.
 
 Matching and lifecycle:
 - Match disc/XBE title ID and certificate version; refine by region, executable
@@ -141,6 +138,46 @@ Acceptance for the loader: matched/wrong revisions, title updates, conflicting
 packs, changed folder contents, invalid manifests, toggle-off rollback, original
 image integrity and state fingerprint handling. Fix-specific validation must
 show the affected scenes improving without regressing normal gameplay.
+
+## EvoX-style trainer browser — proposed
+
+Replace repeated one-file imports with a user-selected trainer folder. Scan
+subfolders on selection, app resume, explicit Refresh and before a fresh launch;
+subscribe to change notifications where the Android document provider supports
+them. Do not promise continuous background watching on all storage providers.
+
+Provide a dedicated two-pane Trainers window: searchable game/trainer list on
+the left; trainer name, notes, source filename, compatibility details, enable
+switch and individual option toggles on the right. Open it globally or from a
+game's context menu with that game's matches prefiltered. Long lists use a
+browser, not an unbounded drop-down. A small selector inside the details panel
+can choose between multiple trainers for the same game.
+
+Display the ETM's internal trainer name and labels when available, retaining the
+filename as secondary information. Read embedded title IDs for matching; do not
+activate a trainer solely because its filename resembles a game. ETM metadata
+does not reliably establish exact region/revision compatibility: surface this
+as unverified unless a separate manifest supplies a tested match.
+
+Remember option/enabled choices by game revision and trainer content hash so
+switching trainers retains each one's choices. Start with one active ETM per
+game; list alternatives without stacking their executable patches. Preserve the
+currently imported trainer during migration. Multiple-trainer execution is not
+assumed compatible. Index new/changed files by content, avoid duplicate entries,
+report invalid/missing files and retain user choices for temporarily offline
+storage. Snapshot/copy the chosen binary for launch so a folder edit cannot
+change a running session's trainer.
+
+Use the existing ETM runtime. Switches configure the next fresh launch. Arbitrary
+EvoX injected code cannot be assumed reversible at runtime: turning an option
+off or loading a prior state does not guarantee earlier injected patches are
+removed. The UI should label configured, matched and applied states distinctly.
+Library wrench badges link to these details. Add trainer identity/options to
+state compatibility fingerprints alongside patch profiles.
+
+Current implementation remains one imported ETM per game with next-launch
+option switches; folder discovery, persistent alternatives and the new browser
+are roadmap items, not part of Advanced5.5.
 
 ## Input profiles and Steel Battalion
 
