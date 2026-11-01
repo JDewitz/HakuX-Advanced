@@ -1,6 +1,6 @@
 # hakuX Advanced roadmap
 
-Updated 2026-10-31. Working fork based on official hakuX 1.3.0.
+Updated 2026-11-01. Working fork based on official hakuX 1.3.0.
 This is a proposed development order, not a dated release commitment or a claim
 that rfandango has adopted these changes upstream.
 
@@ -14,7 +14,7 @@ that rfandango has adopted these changes upstream.
 | Save state browser | Implemented with dated slots/screenshots; cross-build compatibility is not promised |
 | RetroArch shader browser/download | Implemented experimental compatible shader subset; arbitrary desktop shaders are not guaranteed |
 | evoX ETM trainers | Implemented experimental importer/runtime; game revision and option compatibility must be checked |
-| Shared themes | Implemented across app/pause screens; JSON import/export; eight palettes in a drop-down |
+| Shared themes | Implemented across app/pause screens; eight built-ins plus persistent imported themes; multi-select JSON import in Advanced5.4 |
 | Theme signing backup and handoff | Existing private backup is separate from public source packages |
 
 ## This update: Advanced5.3 library
@@ -45,6 +45,15 @@ an explicit Off override), or enabled built-in mods/cheats. Global defaults
 alone do not mark every game. Both badges can appear together.
 Badges refresh on return to the library and on rescan. Invalid trainer imports
 are reported in detailed views and do not appear as enabled trainers.
+
+## Advanced5.4: persistent theme library
+
+Multi-select JSON import stores each valid custom palette in the app. Imported
+themes stay in the drop-down across preset changes and restarts. The previous
+active custom selection is migrated. Exact duplicates are skipped; different
+same-name palettes remain separate with numbered imported labels. A bad file
+does not block the rest. Single import selects the theme; batch import preserves
+the current selection. ZIPs must be extracted before selecting JSON files.
 
 ## Next priorities
 

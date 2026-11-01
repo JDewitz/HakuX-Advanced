@@ -28,24 +28,47 @@ import kotlinx.coroutines.withContext
 fun ThemeSettings() {
   val context = LocalContext.current
   val selected by AppTheme.spec.collectAsState()
+  val imported by AppTheme.imported.collectAsState()
+  val choices = ThemeCatalog.choices(selected, imported)
   val dark = appInDarkTheme()
   var message by remember { mutableStateOf<String?>(null) }
   var busy by remember { mutableStateOf(false) }
   var expanded by remember { mutableStateOf(false) }
   var exporting by rememberSaveable { mutableStateOf<String?>(null) }
   val scope = rememberCoroutineScope()
-  val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
-    if (uri != null) scope.launch {
+  val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
+    if (uris.isNotEmpty()) scope.launch {
       busy = true; message = null
-      runCatching {
-        val theme = withContext(Dispatchers.IO) {
-          context.contentResolver.openInputStream(uri)?.use { ThemeSpec.parse(it.readBytesLimited().toString(Charsets.UTF_8)) }
-            ?: error("Cannot open theme file")
+      try {
+        message = withContext(Dispatchers.IO) {
+          var added = 0; var duplicates = 0
+          val errors = mutableListOf<String>()
+          var single: ThemeSpec? = null
+          for ((index, uri) in uris.distinct().withIndex()) {
+            try {
+              val theme = context.contentResolver.openInputStream(uri)?.use {
+                ThemeSpec.parse(it.readBytesLimited().toString(Charsets.UTF_8))
+              } ?: error("Cannot open file")
+              if (AppTheme.importTheme(context, theme)) added++ else duplicates++
+              single = theme
+            } catch (e: Exception) {
+              errors += "File ${index + 1}: ${e.message ?: "Cannot import theme"}"
+            }
+          }
+          // A batch fills the menu without changing the user's current selection.
+          if (uris.distinct().size == 1 && single != null) {
+            try { AppTheme.select(context, single) }
+            catch (e: Exception) { errors += "Saved, but could not select: ${e.message}" }
+          }
+          AppTheme.refreshImported(context)
+          buildString {
+            append("$added added, $duplicates already available, ${errors.size} failed.")
+            if (uris.distinct().size > 1) append(" Choose a theme from the menu.")
+            if (errors.isNotEmpty()) append("\n").append(errors.take(5).joinToString("\n"))
+            if (errors.size > 5) append("\n…and ${errors.size - 5} more.")
+          }
         }
-        AppTheme.select(context, theme)
-        "Imported ${theme.name}"
-      }.onSuccess { message = it }.onFailure { message = "Theme not changed: ${it.message}" }
-      busy = false
+      } finally { busy = false }
     }
   }
   val exporter = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
@@ -66,7 +89,7 @@ fun ThemeSettings() {
     modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
   ) {
     OutlinedTextField(
-      value = selected.name,
+      value = ThemeCatalog.label(selected, choices),
       onValueChange = {},
       readOnly = true,
       enabled = !busy,
@@ -80,16 +103,22 @@ fun ThemeSettings() {
       onDismissRequest = { expanded = false },
       modifier = Modifier.heightIn(max = 320.dp),
     ) {
-      for (theme in BuiltInThemes.choices(selected)) {
+      for (theme in choices) {
         val isSelected = theme == selected
         DropdownMenuItem(
-          text = { Text(theme.name + if (theme !in BuiltInThemes.all) " (imported)" else "") },
+          text = { Text(ThemeCatalog.label(theme, choices)) },
           modifier = Modifier.semantics { this.selected = isSelected },
           trailingIcon = { if (isSelected) Icon(Icons.Filled.Check, contentDescription = null) },
           enabled = !busy,
           onClick = {
             expanded = false
-            runCatching { AppTheme.select(context, theme) }.onSuccess { message = null }.onFailure { message = it.message }
+            scope.launch {
+              busy = true
+              try {
+                runCatching { withContext(Dispatchers.IO) { AppTheme.select(context, theme) } }
+                  .onSuccess { message = null }.onFailure { message = it.message }
+              } finally { busy = false }
+            }
           },
         )
       }
@@ -101,7 +130,7 @@ fun ThemeSettings() {
       Box(Modifier.size(28.dp).background(Color(p.color(key))).border(1.dp, MaterialTheme.colorScheme.outline))
     }
   }
-  ActionItem(if (busy) "Working…" else "Import theme JSON", "Choose a .json file. Invalid or unreadable palettes leave the current theme unchanged.", null, !busy) {
+  ActionItem(if (busy) "Working…" else "Import themes JSON", "Select one or several .json files. Imported themes stay in the menu. Extract ZIP packs first.", null, !busy) {
     picker.launch(arrayOf("application/json", "text/plain", "application/octet-stream"))
   }
   ActionItem("Export current theme", "Save a template to edit or share. Colors only; no images or extra files.", null, !busy && exporting == null) {

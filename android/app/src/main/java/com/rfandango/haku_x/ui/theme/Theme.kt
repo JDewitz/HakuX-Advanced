@@ -46,7 +46,19 @@ object AppTheme {
   private val _spec = MutableStateFlow(BuiltInThemes.xbox)
   val spec: StateFlow<ThemeSpec> = _spec
 
+  private val _imported = MutableStateFlow<List<ThemeSpec>>(emptyList())
+  val imported: StateFlow<List<ThemeSpec>> = _imported
+  private fun catalog(context: Context) = ThemeCatalog(java.io.File(context.filesDir, "ui-themes"))
+
+  fun refreshImported(context: Context) { _imported.value = catalog(context).read() }
+
+  fun importTheme(context: Context, value: ThemeSpec): Boolean = catalog(context).add(value)
+
   fun select(context: Context, value: ThemeSpec) {
+    // Preserve a legacy selection before the user switches away from it.
+    catalog(context).add(_spec.value)
+    catalog(context).add(value)
+    refreshImported(context)
     ThemeStore.save(context, value)
     _spec.value = value
   }
@@ -57,6 +69,9 @@ object AppTheme {
   fun load(context: Context) {
     _mode.value = AppPrefs(context).theme
     _spec.value = ThemeStore.read(context)
+    // Migration is best-effort: a storage error must not replace the active palette.
+    runCatching { catalog(context).add(_spec.value) }
+    refreshImported(context)
   }
 
   fun set(context: Context, value: String) {

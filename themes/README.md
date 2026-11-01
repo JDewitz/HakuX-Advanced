@@ -7,15 +7,22 @@ framework dialogs. The game picture and user-configured touch controls are
 not recolored. Android file pickers and OS-owned widgets retain system styling.
 
 Choose **Export current theme** to save a template, or edit one of these eight
-JSON files. Import a single JSON with **Import theme JSON**; importing also
-selects it immediately. One custom selection is retained. Keep your JSON file
-to reimport it after selecting another preset.
+JSON files. In Advanced5.4+, **Import themes JSON** lets you select one or
+several files in the Android picker. Extract theme ZIPs first. A single import
+also selects the theme; a batch leaves your current selection active.
+Imported themes are copied into the app and remain in the drop-down after
+switching presets or restarting. The original JSONs are no longer needed for
+selection, but keeping them is useful as a backup. Clearing app data or
+uninstalling removes the saved catalog.
 
 The drop-down shows Xbox, Satisfactory, Halo inspired, Frutiger Aero, Midnight,
 Amber Terminal, Pocket LCD and Synthwave. Only the active palette's preview
 strip is shown below it. The menu scrolls on smaller screens. A selected
-imported theme appears as an additional entry marked “imported”, including
-when its name matches a built-in. It is not a persistent library of imports.
+imported theme remains as an additional entry marked “imported”, including
+when its name matches a built-in. Same-name variants receive numbered imported
+labels; exact duplicates are skipped. Built-ins are never overwritten. Invalid
+files are reported individually and do not block other selected files.
+The previously active custom theme is migrated automatically on upgrade.
 
 A file has exactly `version` (number 1), `name` (1–64 printable characters),
 `light` and `dark`. Each palette has exactly these opaque #RRGGBB colors:
