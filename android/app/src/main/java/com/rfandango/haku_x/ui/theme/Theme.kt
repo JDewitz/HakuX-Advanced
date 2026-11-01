@@ -45,6 +45,10 @@ private fun ThemePalette.scheme(dark: Boolean): androidx.compose.material3.Color
 object AppTheme {
   private val _spec = MutableStateFlow(BuiltInThemes.xbox)
   val spec: StateFlow<ThemeSpec> = _spec
+  private val _preview = MutableStateFlow<ThemeSpec?>(null)
+  val preview: StateFlow<ThemeSpec?> = _preview
+  /** Transient settings preview; never writes the active theme or catalog. */
+  fun preview(value: ThemeSpec?) { _preview.value = value }
 
   private val _imported = MutableStateFlow<List<ThemeSpec>>(emptyList())
   val imported: StateFlow<List<ThemeSpec>> = _imported
@@ -61,6 +65,7 @@ object AppTheme {
     refreshImported(context)
     ThemeStore.save(context, value)
     _spec.value = value
+    _preview.value = null
   }
 
   private val _mode = MutableStateFlow(AppPrefs.THEME_SYSTEM)
@@ -119,7 +124,8 @@ fun HakuXTheme(dark: Boolean = appInDarkTheme(), content: @Composable () -> Unit
   val context = androidx.compose.ui.platform.LocalContext.current
   androidx.compose.runtime.LaunchedEffect(context) { AppTheme.load(context) }
   val spec by AppTheme.spec.collectAsState()
-  MaterialTheme(colorScheme = spec.palette(dark).scheme(dark)) {
+  val preview by AppTheme.preview.collectAsState()
+  MaterialTheme(colorScheme = (preview ?: spec).palette(dark).scheme(dark)) {
     CompositionLocalProvider(LocalRippleConfiguration provides FocusRipple, content = content)
   }
 }

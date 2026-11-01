@@ -2,6 +2,7 @@ package com.rfandango.haku_x.ui.theme
 
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -12,12 +13,17 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.selected
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.rfandango.haku_x.ui.common.ActionItem
 import com.rfandango.haku_x.ui.common.Hint
+import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -28,6 +34,8 @@ import kotlinx.coroutines.withContext
 fun ThemeSettings() {
   val context = LocalContext.current
   val selected by AppTheme.spec.collectAsState()
+  val preview by AppTheme.preview.collectAsState()
+  val displayed = preview ?: selected
   val imported by AppTheme.imported.collectAsState()
   val choices = ThemeCatalog.choices(selected, imported)
   val dark = appInDarkTheme()
@@ -36,6 +44,19 @@ fun ThemeSettings() {
   var expanded by remember { mutableStateOf(false) }
   var exporting by rememberSaveable { mutableStateOf<String?>(null) }
   val scope = rememberCoroutineScope()
+  val menuScroll = rememberScrollState()
+  var focusedTheme by remember { mutableStateOf<ThemeSpec?>(null) }
+  fun closeMenu() { expanded = false; focusedTheme = null; AppTheme.preview(null) }
+  DisposableEffect(Unit) { onDispose { AppTheme.preview(null) } }
+  LaunchedEffect(expanded, choices) {
+    if (!expanded) { AppTheme.preview(null); return@LaunchedEffect }
+    // Position near the saved selection after popup measurement; opening alone does not preview.
+    snapshotFlow { menuScroll.maxValue }.first { it != Int.MAX_VALUE }
+    menuScroll.scrollTo(ThemePreviewScroll.offset(choices.indexOf(selected), choices.size, menuScroll.maxValue))
+    snapshotFlow { menuScroll.value }.drop(1).collect { offset ->
+      ThemePreviewScroll.index(offset, menuScroll.maxValue, choices.size)?.let { AppTheme.preview(focusedTheme ?: choices[it]) }
+    }
+  }
   val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
     if (uris.isNotEmpty()) scope.launch {
       busy = true; message = null
@@ -85,11 +106,11 @@ fun ThemeSettings() {
   Hint("One palette for the app and pause menus. Light/dark mode is selected separately below.")
   ExposedDropdownMenuBox(
     expanded = expanded,
-    onExpandedChange = { if (!busy) expanded = it },
+    onExpandedChange = { if (!busy) { if (it) expanded = true else closeMenu() } },
     modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
   ) {
     OutlinedTextField(
-      value = ThemeCatalog.label(selected, choices),
+      value = ThemeCatalog.label(displayed, choices),
       onValueChange = {},
       readOnly = true,
       enabled = !busy,
@@ -100,18 +121,32 @@ fun ThemeSettings() {
     )
     ExposedDropdownMenu(
       expanded = expanded,
-      onDismissRequest = { expanded = false },
-      modifier = Modifier.heightIn(max = 320.dp),
+      onDismissRequest = { closeMenu() },
+      modifier = Modifier.heightIn(max = 320.dp).pointerInput(Unit) {
+        awaitPointerEventScope {
+          while (true) {
+            val event = awaitPointerEvent()
+            if (event.type == PointerEventType.Press || event.type == PointerEventType.Scroll) focusedTheme = null
+          }
+        }
+      },
+      scrollState = menuScroll,
     ) {
       for (theme in choices) {
         val isSelected = theme == selected
         DropdownMenuItem(
           text = { Text(ThemeCatalog.label(theme, choices)) },
-          modifier = Modifier.semantics { this.selected = isSelected },
+          modifier = Modifier
+            .background(if (theme == preview) MaterialTheme.colorScheme.primaryContainer else Color.Transparent)
+            .onFocusChanged {
+              if (it.isFocused && expanded) { focusedTheme = theme; AppTheme.preview(theme) }
+              else if (focusedTheme == theme) focusedTheme = null
+            }
+            .semantics { this.selected = isSelected },
           trailingIcon = { if (isSelected) Icon(Icons.Filled.Check, contentDescription = null) },
           enabled = !busy,
           onClick = {
-            expanded = false
+            closeMenu()
             scope.launch {
               busy = true
               try {
@@ -124,7 +159,8 @@ fun ThemeSettings() {
       }
     }
   }
-  val p = selected.palette(dark)
+  Hint("Scroll or focus a theme to preview it live. Tap to keep it; close the menu to cancel.")
+  val p = displayed.palette(dark)
   Row(Modifier.padding(horizontal = 24.dp, vertical = 12.dp), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
     for (key in listOf("background", "surface", "text", "accent", "secondary")) {
       Box(Modifier.size(28.dp).background(Color(p.color(key))).border(1.dp, MaterialTheme.colorScheme.outline))
