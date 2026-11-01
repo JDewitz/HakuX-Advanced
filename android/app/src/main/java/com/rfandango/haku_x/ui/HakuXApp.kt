@@ -47,6 +47,8 @@ private object Routes {
   const val SETUP = "setup"
   const val LIBRARY = "library"
   const val SETTINGS = "settings"
+  const val TRAINERS = "trainers?key={key}&title={title}"
+  fun trainers(key: String = "", title: String = "") = "trainers?key=${Uri.encode(key)}&title=${Uri.encode(title)}"
   const val CONTROLS = "controls"
   const val CONTROLLERS = "controllers"
   const val HDD = "hdd"
@@ -145,6 +147,10 @@ fun HakuXApp(
           val key = GameOverrides.gameKey(disc?.titleId ?: 0L, disc?.version ?: 0L, game.relativePath)
           nav.navigate(Routes.game(key, game.title))
         },
+        onTrainers = { game, disc ->
+          val key = GameOverrides.gameKey(disc.titleId, disc.version, game.relativePath)
+          nav.navigate(Routes.trainers(key, game.title))
+        },
         onMods = { game, disc ->
           val key = GameOverrides.gameKey(disc.titleId, disc.version, game.relativePath)
           nav.navigate(Routes.mods(key, game.title))
@@ -162,10 +168,20 @@ fun HakuXApp(
         gameKey = entry.arguments?.getString("key").orEmpty(),
         title = entry.arguments?.getString("title").orEmpty(),
         onBack = { nav.popBackStack() },
+        onTrainers = { nav.navigate(Routes.trainers(entry.arguments?.getString("key").orEmpty(),entry.arguments?.getString("title").orEmpty())) },
       )
+    }
+    composable(Routes.TRAINERS, arguments = listOf(
+      navArgument("key") { type = NavType.StringType; defaultValue = "" },
+      navArgument("title") { type = NavType.StringType; defaultValue = "" },
+    )) { entry ->
+      com.rfandango.haku_x.ui.mods.TrainerBrowser(
+        gameKey = entry.arguments?.getString("key")?.takeIf { it.isNotEmpty() },
+        title = entry.arguments?.getString("title").orEmpty(), onBack = { nav.popBackStack() })
     }
     composable(Routes.SETTINGS) {
       SettingsScreen(
+        onTrainers = { nav.navigate(Routes.trainers()) },
         onBack = { nav.popBackStack() },
         onAdvanced = { nav.navigate(Routes.advanced()) },
         onEditControls = { nav.navigate(Routes.CONTROLS) },

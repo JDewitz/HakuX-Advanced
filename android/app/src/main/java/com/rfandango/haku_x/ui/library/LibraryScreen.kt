@@ -132,6 +132,7 @@ fun LibraryScreen(
   onLoadState: (Game, SaveStateStore, Int) -> Unit,
   /** The game's mods and cheats (a disc whose title has some, mods/). */
   onMods: (Game, DiscInfo) -> Unit,
+  onTrainers: (Game, DiscInfo) -> Unit,
   /** The dashboard started (installed on C:, Dashboard). */
   onDashboard: () -> Unit,
   vm: LibraryViewModel = viewModel(),
@@ -208,7 +209,7 @@ fun LibraryScreen(
             TextButton(onClick = onOpenSettings) { Text(stringResource(R.string.settings_games_folder_title)) }
           }
           games.isEmpty() -> Message(stringResource(R.string.library_empty_games))
-          else -> GameList(games, state.info, state.icons, state.features, viewMode, onLaunch, onGameSettings, onLoadState, onMods, vm::askConvert)
+          else -> GameList(games, state.info, state.icons, state.features, viewMode, onLaunch, onGameSettings, onLoadState, onMods, onTrainers, vm::askConvert)
         }
       }
     }
@@ -299,6 +300,7 @@ private fun GameList(
   onGameSettings: (Game, DiscInfo?) -> Unit,
   onLoadState: (Game, SaveStateStore, Int) -> Unit,
   onMods: (Game, DiscInfo) -> Unit,
+  onTrainers: (Game, DiscInfo) -> Unit,
   onConvert: (Game) -> Unit,
 ) {
   // The game whose long-press menu is open.
@@ -376,6 +378,8 @@ private fun GameList(
               )
             }
             if (disc != null) {
+              DropdownMenuItem(text = { Text("Trainers") }, leadingIcon = { Icon(Icons.Filled.Build, null) },
+                onClick = { menuFor = null; onTrainers(game, disc) })
               DropdownMenuItem(
                 text = { Text(stringResource(R.string.library_menu_mods)) },
                 leadingIcon = { Icon(Icons.Filled.Star, contentDescription = null) },

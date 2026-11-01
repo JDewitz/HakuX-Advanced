@@ -61,6 +61,7 @@ import java.util.GregorianCalendar
 /** What the core reads at game start, plus the games folders the library scans. */
 @Composable
 fun SettingsScreen(
+  onTrainers: () -> Unit,
   onAdvanced: () -> Unit,
   onBack: () -> Unit,
   onEditControls: () -> Unit,
@@ -167,6 +168,7 @@ fun SettingsScreen(
         pickFolder.launch(folders.lastOrNull())
       }
 
+      ActionItem(title = "Trainers", summary = "Folder browser, game matching and EvoX trainer options", icon = null, onClick = onTrainers)
       ActionItem(title = "Advanced & experimental", summary = "Startup profiles, GPU workarounds and emulator hotkeys", icon = null, onClick = onAdvanced)
       Section(stringResource(R.string.settings_section_controls))
       ListItem(

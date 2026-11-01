@@ -65,8 +65,8 @@ Imported themes remain available. Android gesture/focus testing is pending.
 
 | Order | Work | Acceptance target |
 | --- | --- | --- |
-| 1 | Pluggable compatibility/mod packs | User-selected patch folder; game/revision matching, validation, toggles, conflict reporting, reversible launch-time application |
-| 2 | EvoX-style trainer browser | Selected trainer folder, automatic catalog refresh, matching trainers, remembered per-trainer options and next-launch enable switches |
+| 1 | Trainer browser — Advanced5.6 device testing | Folder scan, searchable two-pane UI, embedded-ID filtering, remembered trainer alternatives and next-launch options |
+| 2 | Pluggable compatibility/mod packs | User-selected patch folder; game/revision matching, validation, toggles, conflict reporting, reversible launch-time application |
 | 3 | Halo regression investigation | Reproduce reported 1.2.0 → 1.3.0 regression on the same disc/update/device/settings; isolate cause, then deliver a verified workaround pack or core fix |
 | 4 | Project Snowblind graphics investigation | Capture reproducible rendering issues; test existing quirks first, add a narrow renderer fix if required; publish a pack only after validation |
 | Alongside | Device/controller QA | Themes/live preview, library modes, save browser, shaders and ETM; touch/D-pad, portrait/landscape, large libraries |
@@ -139,12 +139,12 @@ packs, changed folder contents, invalid manifests, toggle-off rollback, original
 image integrity and state fingerprint handling. Fix-specific validation must
 show the affected scenes improving without regressing normal gameplay.
 
-## EvoX-style trainer browser — proposed
+## EvoX-style trainer browser — Advanced5.6 test build
 
-Replace repeated one-file imports with a user-selected trainer folder. Scan
-subfolders on selection, app resume, explicit Refresh and before a fresh launch;
-subscribe to change notifications where the Android document provider supports
-them. Do not promise continuous background watching on all storage providers.
+Implemented for testing: a user-selected trainer folder, recursive scanning on
+browser resume/Refresh, and debounced provider notifications where supported.
+Multiple individual file imports are also supported. Continuous background
+monitoring and a full pre-launch rescan remain follow-ups.
 
 Provide a dedicated two-pane Trainers window: searchable game/trainer list on
 the left; trainer name, notes, source filename, compatibility details, enable
@@ -172,12 +172,15 @@ Use the existing ETM runtime. Switches configure the next fresh launch. Arbitrar
 EvoX injected code cannot be assumed reversible at runtime: turning an option
 off or loading a prior state does not guarantee earlier injected patches are
 removed. The UI should label configured, matched and applied states distinctly.
-Library wrench badges link to these details. Add trainer identity/options to
+The library wrench indicates configured next-launch state; the game context
+menu opens the browser. A direct clickable badge is a follow-up. Add trainer identity/options to
 state compatibility fingerprints alongside patch profiles.
 
-Current implementation remains one imported ETM per game with next-launch
-option switches; folder discovery, persistent alternatives and the new browser
-are roadmap items, not part of Advanced5.5.
+Advanced5.6 supplies this browser, folder catalog and remembered alternatives;
+selected binaries remain compatible with the existing ETM runtime. The currently
+imported ETM remains visible for its game. Device UI and actual trainer effects
+need testing. Save-state pack/trainer fingerprints are a later follow-up.
+See TRAINERS5.6.md for entry points, behavior and test instructions.
 
 ## Input profiles and Steel Battalion
 
