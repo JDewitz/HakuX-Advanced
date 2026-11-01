@@ -14,7 +14,7 @@ that rfandango has adopted these changes upstream.
 | Save state browser | Implemented with dated slots/screenshots; cross-build compatibility is not promised |
 | RetroArch shader browser/download | Implemented experimental compatible shader subset; arbitrary desktop shaders are not guaranteed |
 | evoX ETM trainers | Implemented experimental importer/runtime; game revision and option compatibility must be checked |
-| Shared themes | Implemented across app/pause screens; eight built-ins plus persistent imported themes; multi-select JSON import in Advanced5.4 |
+| Shared themes | Implemented across app/pause screens; eight built-ins plus persistent imported themes; multi-select import in Advanced5.4 and live scroll/focus preview in Advanced5.5 |
 | Theme signing backup and handoff | Existing private backup is separate from public source packages |
 
 ## This update: Advanced5.3 library
@@ -55,19 +55,92 @@ same-name palettes remain separate with numbered imported labels. A bad file
 does not block the rest. Single import selects the theme; batch import preserves
 the current selection. ZIPs must be extracted before selecting JSON files.
 
+## Advanced5.5: live theme preview
+
+Built and unit-tested: scrolling/focusing previews theme colors in memory.
+Tap commits; Back/dismiss/leaving settings restores the saved selection.
+Imported themes remain available. Android gesture/focus testing is pending.
+
 ## Next priorities
 
 | Order | Work | Acceptance target |
 | --- | --- | --- |
-| 1 | Device/controller QA of library modes and themes | Touch, D-pad, portrait/landscape, long names, empty/large libraries; no unintended launch from Options |
-| 2 | Real play statistics | Persist per-game session count, last played and playtime; define pause/background/crash behavior first |
-| 3 | Library polish | Sorting/filtering by trainer/custom setup, favorites, optional user-selected cover art and richer info |
-| 4 | Per-game input profiles | Named profiles; Bluetooth/USB keyboard buttons and gamepad axes; deadzones, invert, clear conflicts, import/export |
-| 5 | Steel Battalion accessory prototype | Native guest device emulation, then host mappings and an optional touch panel; separate experimental milestone |
+| 1 | Pluggable compatibility/mod packs | User-selected patch folder; game/revision matching, validation, toggles, conflict reporting, reversible launch-time application |
+| 2 | Halo regression investigation | Reproduce reported 1.2.0 → 1.3.0 regression on the same disc/update/device/settings; isolate cause, then deliver a verified workaround pack or core fix |
+| 3 | Project Snowblind graphics investigation | Capture reproducible rendering issues; test existing quirks first, add a narrow renderer fix if required; publish a pack only after validation |
+| Alongside | Device/controller QA | Themes/live preview, library modes, save browser, shaders and ETM; touch/D-pad, portrait/landscape, large libraries |
+| 4 | Real play statistics | Persist per-game session count, last played and playtime; define pause/background/crash behavior first |
+| 5 | Library polish | Sorting/filtering by trainer/custom setup, favorites, optional user-selected cover art and richer info |
+| 6 | Per-game input profiles | Named profiles; Bluetooth/USB keyboard buttons and gamepad axes; deadzones, invert, conflicts, import/export |
+| 7 | Steel Battalion accessory prototype | Native guest device emulation, then host mappings and optional touch panel; separate experimental milestone |
 | Research | RetroAchievements | Coordinate Xbox support and maintenance with RA/upstream before promising online achievements |
+| Separate core research | External BIOS boot | Determine required low-level firmware execution support; a folder alone does not add it |
 
 Continue compatibility, shader and ETM testing alongside these priorities.
-Keep each native experiment separate from frontend-only changes for diagnosis.
+This is a proposed fork roadmap, not a dated commitment or upstream agreement.
+
+## Pluggable game patches and compatibility profiles — proposed
+
+Goal: install/share game fixes and mods without rebuilding the APK or editing
+original game images. Extend the existing mods pipeline instead of introducing
+a second unrelated XBE/file-overlay engine. Today mods/ is packaged as assets;
+external discovery and the manifest/profile manager are not implemented.
+
+Proposed logical folder layout (Android folder selection via the system picker):
+
+    patches/<TITLEID>.<VERSION>/<patch-id>/manifest.json
+    patches/<TITLEID>.<VERSION>/<patch-id>/files/...
+    profiles/<profile-id>.json
+    bios/<user-supplied firmware files>  # reserved for a future supported boot path
+
+BIOS binaries do not inherently identify a game. A matching game's manifest
+can reference a named compatibility/boot profile; that profile selects firmware
+only if a future core supports it. Current hakuX uses a reimplemented/HLE kernel
+and has no general external BIOS selector/boot path. Do not imply that placing
+a .bin in bios/ will fix a game. Compatibility profiles for current CPU/GPU
+settings are useful independently of firmware support.
+
+Matching and lifecycle:
+- Match disc/XBE title ID and certificate version; refine by region, executable
+  hash and installed title-update hash/version when a pack depends on them.
+  A title ID or filename alone is insufficient for revision-specific writes.
+- Manifest records pack ID/version, author, purpose, tested emulator versions,
+  game identities, optional GPU/driver scope, dependencies and conflicts.
+- Refresh the folder catalog on app resume, explicit Refresh and before launch;
+  use change notifications where the Android document provider supports them.
+  Freeze the resolved pack list for each running session; changes take the next
+  fresh launch. This does not promise background monitoring for every provider.
+- Show matched, enabled, applied, skipped and incompatible states separately.
+  Add a library badge/details list and a launch log of effective packs/profiles.
+
+First supported payloads should be constrained data: existing per-game settings
+and exposed renderer quirks, expected-byte-checked XBE changes, and file
+replacements/overlays. Keep compatibility fixes, optional mods and trainers
+separate in the UI. Reuse existing title-update patch support. No arbitrary
+native plugins or downloaded executable code are required for this first stage.
+
+Validate expected bytes/hashes before applying. Report overlapping writes,
+file replacements and contradictory profile settings; do not silently inherit
+the bundled mods' current later-folder-wins behavior for compatibility packs.
+Keep original images unchanged; toggling a pack off reverses its effect on the
+next launch. Save states should record the active pack/profile fingerprint and
+warn or refuse when a load is incompatible. Diagnostic exports should include
+pack versions/hashes, effective settings and emulator/device information.
+
+Halo and Snowblind are initial investigation targets, not generated fixes.
+The Halo regression is user-reported and has not been reproduced here. Start
+with an official 1.2.0/1.3.0 comparison using the same disc/update and settings,
+then bisect relevant changes. For Snowblind, obtain a reproducible scene and
+renderer capture/logs, then test depth/shader/state quirks against evidence.
+A data pack can activate an existing workaround or patch guest code; it cannot
+replace missing/broken native renderer or kernel behavior on its own. If a new
+core hook is needed, ship that fix first and let the manifest target supporting
+versions. Prefer a general core correction when the defect affects many games.
+
+Acceptance for the loader: matched/wrong revisions, title updates, conflicting
+packs, changed folder contents, invalid manifests, toggle-off rollback, original
+image integrity and state fingerprint handling. Fix-specific validation must
+show the affected scenes improving without regressing normal gameplay.
 
 ## Input profiles and Steel Battalion
 
