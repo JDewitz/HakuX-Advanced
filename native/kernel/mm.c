@@ -536,6 +536,7 @@ static void log_phys_map(NcKernel *k)
 static uint32_t contig_alloc(NcKernel *k, uint32_t size, uint32_t lo, uint32_t hi, uint32_t align,
                              uint32_t protect, uint32_t ra)
 {
+    const uint32_t requested = size;
     size = nc_align_up(size ? size : 1, NC_PAGE);
     /* The top of RAM, virtual pages moved out of the way (vm.c), then the
      * window needing the fewest moves; neither when there are fewer free
@@ -570,6 +571,11 @@ static uint32_t contig_alloc(NcKernel *k, uint32_t size, uint32_t lo, uint32_t h
             nc_vm_free_runs(k->vm, runs, sizeof(runs));
             nc_log("hakuX-native", "mm: contiguous allocation of %u KiB failed (#%u; free %u KiB:%s)", size >> 10, n,
                    nc_vm_free_bytes(k->vm) >> 10, runs);
+            nc_log("hakuX-native", "mm: request bytes=%u rounded=%u lo=%08x hi_exclusive=%08x "
+                   "align=%08x protect=%08x caller=%08x blocks=%u/%u reason=%s",
+                   requested, size, lo, hi ? hi : k->vm->ram_size, align, protect, ra,
+                   g_ncontig, MAX_CONTIG, g_ncontig == MAX_CONTIG ? "tracking-full" :
+                   nc_vm_free_bytes(k->vm) < size ? "free-pages" : "no-usable-window");
             log_splitters(k);
             log_phys_map(k);
             log_holders(k, "contiguous allocation failed");
