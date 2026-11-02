@@ -11,8 +11,10 @@ one successful user report. Native/Android builds and automated checks passed;
 RH repeatability testing and post-fix logs are pending. The standalone native
 patch series and report are ready for upstream review; nothing has been sent.
 
-The project is now named HakuX-Advanced. Private GitHub publication is the
-current repository-setup task; external creation/push requires account access.
+The project is now named HakuX-Advanced. Private GitHub sync is complete at
+https://github.com/JDewitz/HakuX-Advanced, with `main` as the default branch,
+upstream/fork ancestry and 17 Advanced tags preserved, and host checks passing
+for the prepared source head. See GITHUB.md for the sync record.
 
 ## Next: game compatibility profiles
 

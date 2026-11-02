@@ -1,8 +1,8 @@
 # Private GitHub setup — HakuX-Advanced
 
-Create a private **standalone repository**, named exactly `HakuX-Advanced`,
-under the authenticated owner's personal account unless an organization is
-explicitly selected. GitHub public forks cannot independently become private:
+The private standalone repository is
+https://github.com/JDewitz/HakuX-Advanced, owned by `JDewitz`.
+Private visibility and default branch `main` were verified on 2026-11-02. GitHub public forks cannot independently become private:
 https://docs.github.com/en/pull-requests/reference/forks#visibility-of-forks
 Keeping a standalone private copy preserves Git ancestry, authors and licensing.
 
@@ -52,6 +52,9 @@ repository push. This downloads public upstream history and needs network access
 The intro disclosure is intentionally reproduced exactly as requested:
 `AI Use Discolosure: AI was used heavily in this project.`
 
-Repository creation/push is pending until the actual remote URL, private flag
-and main commit are verified. Do not substitute installation of an integration
-for confirmation that a repository has been created.
+Sync completed on 2026-11-02. The prepared source head
+`7cf98cbfe42fa5ee3a9942299d51c19e66344af9` and all 17 `advanced-*` tags
+were transferred with the full upstream/fork ancestry preserved. Host checks
+passed for that head in Actions run 41420948980. Temporary transfer branches
+were removed. The tested Advanced5.8 APK and private signing key were not
+uploaded to Git. Subsequent documentation commits record this verification.

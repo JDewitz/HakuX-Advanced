@@ -26,8 +26,14 @@ post-instrumentation capture.
 
 Prepared: native-only upstream patch/report package, RH pack containing the
 exact APK and source, instructions, checksums and results template. No upstream
-message or PR has been posted. No GitHub repository creation or push should be
-reported until the remote operation and private visibility are verified.
+message or PR has been posted.
+
+GitHub sync completed on 2026-11-02:
+https://github.com/JDewitz/HakuX-Advanced. Private visibility and default branch
+`main` were verified. The prepared source head `7cf98cb`, full upstream/fork
+ancestry and all 17 Advanced tags are present. Host checks passed for that head
+(Actions run 41420948980). Temporary transfer branches were removed. No new APK
+was built by this sync; signing material remains outside Git.
 
 The earlier dashboard/kernel experiment is excluded. Automatic per-game
 compatibility rules, general patch packs, Steel Battalion device emulation and
