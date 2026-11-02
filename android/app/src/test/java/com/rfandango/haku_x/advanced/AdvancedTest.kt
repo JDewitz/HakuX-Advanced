@@ -9,7 +9,7 @@ class AdvancedTest {
   @Test fun startupDefaultsAndProfileRoundTrip() {
     val base = AdvancedProfile.fromJson(JSONObject())
     assertEquals(AdvancedProfile(), base)
-    assertEquals(listOf("advanced=ram:64", "advanced=x87:64", "advanced=pc:1", "advanced=afp:1", "advanced=quirks:"), base.arguments())
+    assertEquals(listOf("advanced=ram:64", "advanced=x87:64", "advanced=pc:1", "advanced=afp:1", "advanced=quirks:", "pool=default"), base.arguments())
     val custom = AdvancedProfile(true, true, false, false, mapOf("lrz_clear" to -1, "z_eq_w" to 1))
     assertEquals(custom, AdvancedProfile.fromJson(JSONObject(custom.toJson().toString())))
     assertEquals("-lrz_clear,+z_eq_w", custom.quirkSpec())
@@ -18,6 +18,25 @@ class AdvancedTest {
     assertEquals(all, AdvancedProfile.fromJson(all.toJson()))
     val invalid = JSONObject().put("quirks", JSONObject().put("lrz_clear", 42).put("invented", 1))
     assertTrue(AdvancedProfile.fromJson(invalid).quirks.isEmpty())
+  }
+  @Test fun poolPlacementSurvivesProfilesAndUsesExplicitLaunchArguments() {
+    val old = AdvancedProfile.fromJson(JSONObject().put("ram128", true))
+    assertFalse(old.poolHigh)
+    assertTrue(old.ram128)
+    assertTrue(old.arguments().contains("pool=default"))
+    val high = old.copy(poolHigh = true)
+    assertEquals(high, AdvancedProfile.fromJson(high.toJson()))
+    assertTrue(high.arguments().contains("pool=high"))
+    assertFalse(high.arguments().contains("pool=default"))
+    val dir = kotlin.io.path.createTempDirectory("pool-profile").toFile()
+    try {
+      val store = AdvancedStore(dir)
+      store.saveProfile("halo", high)
+      assertTrue(AdvancedStore(dir).profile("halo").poolHigh)
+      assertFalse(AdvancedStore(dir).profile("other").poolHigh)
+      store.resetProfile("halo")
+      assertFalse(store.profile("halo").poolHigh)
+    } finally { dir.deleteRecursively() }
   }
   @Test fun memoryInputIsCanonicalAndRangeChecked() {
     assertEquals("u32=8", MemoryCommand.search("u32", "0008"))

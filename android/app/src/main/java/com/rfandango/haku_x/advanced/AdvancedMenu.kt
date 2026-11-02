@@ -77,12 +77,12 @@ class AdvancedMenu(
   }
   private fun startup() {
     val p = store.profile(game())
-    val labels = arrayOf("128 MB Xbox RAM", "Full 80-bit x87", "Honor reduced-x87 precision control", "Arm alternate floating-point optimization")
-    val values = booleanArrayOf(p.ram128, p.fullX87, p.precisionControl, p.armAfp)
+    val labels = arrayOf("128 MB Xbox RAM", "Full 80-bit x87", "Honor reduced-x87 precision control", "Arm alternate floating-point optimization", "High kernel pool placement · experimental")
+    val values = booleanArrayOf(p.ram128, p.fullX87, p.precisionControl, p.armAfp, p.poolHigh)
     show(AlertDialog.Builder(activity).setTitle("This game · changes require restart")
       .setMultiChoiceItems(labels, values) { _, index, checked -> values[index] = checked }
       .setPositiveButton("Save for this game") { _, _ ->
-        runCatching { store.saveProfile(game(), p.copy(ram128 = values[0], fullX87 = values[1], precisionControl = values[2], armAfp = values[3])) }
+        runCatching { store.saveProfile(game(), p.copy(ram128 = values[0], fullX87 = values[1], precisionControl = values[2], armAfp = values[3], poolHigh = values[4])) }
           .onSuccess { toast("Profile saved. Restart the game to apply it.") }.onFailure { toast(it.message ?: "Save failed") }
       }.setNeutralButton("Use global") { _, _ ->
         runCatching { store.resetProfile(game()) }.onSuccess { toast("Global profile will apply at the next start") }.onFailure { toast("Reset failed") }

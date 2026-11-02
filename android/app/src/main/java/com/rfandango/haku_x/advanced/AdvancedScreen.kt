@@ -99,6 +99,7 @@ fun AdvancedScreen(game: String?, onBack: () -> Unit) {
         Hint("This global policy cannot be overridden by a game profile. Saved trainer options are retained; this setting controls whether they can run. NAT/Insignia, LAN and Kai are all unavailable in offline trainer mode.")
         Section("CPU & memory · restart required")
         SwitchItem("128 MB Xbox RAM", "Off: retail 64 MB. On: development-kit memory size.", profile.ram128) { save(profile.copy(ram128 = it)) }
+        SwitchItem("High kernel pool placement", "Experimental Halo crash investigation. Off keeps the normal layout. Fully exit and restart the game; do not load a save state.", profile.poolHigh) { save(profile.copy(poolHigh = it)) }
         SwitchItem("Full 80-bit x87", "Off: existing reduced-precision implementation. Compare per title.", profile.fullX87) { save(profile.copy(fullX87 = it)) }
         SwitchItem("Honor x87 precision control", "Default on. Applies to reduced x87; full 80-bit mode supersedes it.", profile.precisionControl) { save(profile.copy(precisionControl = it)) }
         SwitchItem("Arm alternate floating-point optimization", "Default on. Supported CPU features are still detected by FEX.", profile.armAfp) { save(profile.copy(armAfp = it)) }

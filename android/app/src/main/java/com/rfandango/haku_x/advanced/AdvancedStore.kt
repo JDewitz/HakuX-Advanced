@@ -12,16 +12,17 @@ data class AdvancedProfile(
   val precisionControl: Boolean = true,
   val armAfp: Boolean = true,
   val quirks: Map<String, Int> = emptyMap(),
+  val poolHigh: Boolean = false,
 ) {
   fun quirkSpec() = QUIRKS.mapNotNull { (key, _) -> quirks[key]?.takeIf { it != 0 }?.let {
     (if (it > 0) "+" else "-") + key
   } }.joinToString(",")
   fun arguments() = listOf("advanced=ram:${if (ram128) 128 else 64}",
     "advanced=x87:${if (fullX87) 80 else 64}", "advanced=pc:${if (precisionControl) 1 else 0}",
-    "advanced=afp:${if (armAfp) 1 else 0}", "advanced=quirks:${quirkSpec()}")
+    "advanced=afp:${if (armAfp) 1 else 0}", "advanced=quirks:${quirkSpec()}", "pool=${if (poolHigh) "high" else "default"}")
   fun toJson() = JSONObject().put("ram128", ram128).put("fullX87", fullX87)
     .put("precisionControl", precisionControl).put("armAfp", armAfp)
-    .put("quirks", JSONObject(quirks))
+    .put("quirks", JSONObject(quirks)).put("poolHigh", poolHigh)
   companion object {
     val QUIRKS = linkedMapOf(
       "vi_after_pipeline" to "Repeat vertex input after pipeline changes",
@@ -40,7 +41,7 @@ data class AdvancedProfile(
     fun fromJson(o: JSONObject) = AdvancedProfile(o.optBoolean("ram128", false),
       o.optBoolean("fullX87", false), o.optBoolean("precisionControl", true), o.optBoolean("armAfp", true),
       QUIRKS.keys.mapNotNull { key -> o.optJSONObject("quirks")?.optInt(key)?.takeIf { it == -1 || it == 1 }
-        ?.let { key to it } }.toMap())
+        ?.let { key to it } }.toMap(), o.optBoolean("poolHigh", false))
   }
 }
 
