@@ -488,13 +488,16 @@ bool nc_kernel_init(NcKernel *k, NcVm *vm)
      * state, where its boot made it, so that the objects made at boot are
      * where the state's are. */
     const uint32_t pool_lo = g_pool_at ? g_pool_at : POOL_BASE;
-    uint32_t pool_pa = nc_vm_alloc_phys_ex(vm, POOL_SIZE, pool_lo, pool_lo + POOL_SIZE, NC_PAGE, false);
-    if (pool_pa == UINT32_MAX) {
-        pool_pa = nc_vm_alloc_phys_ex(vm, POOL_SIZE, 0, vm->ram_size - NC_TOP_RESERVE, NC_PAGE, true);
-    }
+    /* NC_POOL_HIGH=1: experimental cold-boot A/B for low-RAM conflicts.
+     * A savestate always retains its recorded placement. */
+    const char *pool_high = getenv("NC_POOL_HIGH");
+    const bool high = !g_pool_at && pool_high && !strcmp(pool_high, "1");
+    const uint32_t pool_pa = nc_pool_boot_alloc(vm, POOL_SIZE, pool_lo, high);
     if (pool_pa == UINT32_MAX) {
         return false;
     }
+    nc_log("hakuX-native", "pool: boot pa=%08x size=%u mode=%s", pool_pa, POOL_SIZE,
+           g_pool_at ? "savestate" : high ? "high-experimental" : "default");
     nc_pool_init(k, NC_CONTIG_WINDOW + pool_pa, POOL_SIZE);
 
     static const char *const type_names[NC_OB_TYPES] = {

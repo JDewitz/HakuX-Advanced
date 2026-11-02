@@ -298,6 +298,8 @@ const NcKExport *nc_kernel_export(unsigned ordinal);
 
 /* Installs the implementation of the function export called name. */
 void nc_kernel_impl(NcKernel *k, const char *name, NcKFn fn);
+/* Initial pool: requested low range (then high fallback), or high directly. */
+uint32_t nc_pool_boot_alloc(NcVm *vm, uint32_t size, uint32_t lo, bool high);
 void nc_pool_init(NcKernel *k, uint32_t va, uint32_t len);
 uint32_t nc_pool_alloc(NcKernel *k, uint32_t size);
 void nc_pool_free(NcKernel *k, uint32_t va, uint32_t size);

@@ -11,6 +11,7 @@
  *   scale=N          the render scale
  *   asyncpipe=0|1    asynchronous shader compilation (on when absent)
  *   prebuild=0|1     the cached shaders built before the game (on)
+ *   pool=default|high  experimental initial kernel pool placement (cold boot)
  *   pads=MASK        the players with a controller plugged in (hex, bit n
  *                    player n + 1; default player 1)
  *   video=FLAGS      the console's video settings (XC_VIDEO_FLAGS, hex)

@@ -11,6 +11,21 @@
 #define POOL_ALIGN 16u
 #define POOL_CHUNK 0x10000u
 
+/* Boot placement only: a high pool tests low-RAM allocation conflicts without
+ * changing its size or the policy for subsequent chunks. Saved-state placement
+ * is selected by the caller and must take precedence over this experiment. */
+uint32_t nc_pool_boot_alloc(NcVm *vm, uint32_t size, uint32_t lo, bool high)
+{
+    uint32_t pa = UINT32_MAX;
+    if (!high) {
+        pa = nc_vm_alloc_phys_ex(vm, size, lo, lo + size, NC_PAGE, false);
+    }
+    if (pa == UINT32_MAX) {
+        pa = nc_vm_alloc_phys_ex(vm, size, 0, vm->ram_size - NC_TOP_RESERVE, NC_PAGE, true);
+    }
+    return pa;
+}
+
 void nc_pool_init(NcKernel *k, uint32_t va, uint32_t len)
 {
     k->pool_va = va;
