@@ -37,6 +37,7 @@ fun AdvancedScreen(game: String?, onBack: () -> Unit) {
   var onlinePlay by remember { mutableStateOf(store.onlinePlay) }
   var hold by remember { mutableStateOf(store.holdFastForward) }
   var slot by remember { mutableStateOf(store.quickSlot) }
+  var poolPicker by remember { mutableStateOf(false) }
   var quirk by remember { mutableStateOf<String?>(null) }
   var slotPicker by remember { mutableStateOf(false) }
   var capture by remember { mutableStateOf<EmulatorAction?>(null) }
@@ -99,7 +100,12 @@ fun AdvancedScreen(game: String?, onBack: () -> Unit) {
         Hint("This global policy cannot be overridden by a game profile. Saved trainer options are retained; this setting controls whether they can run. NAT/Insignia, LAN and Kai are all unavailable in offline trainer mode.")
         Section("CPU & memory · restart required")
         SwitchItem("128 MB Xbox RAM", "Off: retail 64 MB. On: development-kit memory size.", profile.ram128) { save(profile.copy(ram128 = it)) }
-        SwitchItem("High kernel pool placement", "Experimental Halo crash investigation. Off keeps the normal layout. Fully exit and restart the game; do not load a save state.", profile.poolHigh) { save(profile.copy(poolHigh = it)) }
+        Section("Game compatibility · restart required")
+        ListItem(headlineContent = { Text("High kernel pool placement · ${profile.poolMode.label}") }, supportingContent = {
+          Text(profile.poolDecision(game, com.rfandango.haku_x.BuildConfig.VERSION_NAME).summary)
+        }, modifier = Modifier.clickable { poolPicker = true })
+        Hint("Halo CE is the first catalog entry. Auto remains off until a tested revision rule is approved. On forces the layout for this startup profile. Fully exit and start fresh; save states retain their recorded pool layout. This layout change is allowed with online protection.")
+        Section("CPU precision · restart required")
         SwitchItem("Full 80-bit x87", "Off: existing reduced-precision implementation. Compare per title.", profile.fullX87) { save(profile.copy(fullX87 = it)) }
         SwitchItem("Honor x87 precision control", "Default on. Applies to reduced x87; full 80-bit mode supersedes it.", profile.precisionControl) { save(profile.copy(precisionControl = it)) }
         SwitchItem("Arm alternate floating-point optimization", "Default on. Supported CPU features are still detected by FEX.", profile.armAfp) { save(profile.copy(armAfp = it)) }
@@ -145,6 +151,8 @@ fun AdvancedScreen(game: String?, onBack: () -> Unit) {
       }
     }
   }
+  if (poolPicker) ChoiceDialog(title = "High kernel pool placement · next start", options = CompatibilityMode.entries.map { it to it.label },
+    current = profile.poolMode, onPick = { mode -> save(profile.copy(poolMode = mode)); poolPicker = false }, onDismiss = { poolPicker = false })
   quirk?.let { name ->
     ChoiceDialog(title = AdvancedProfile.QUIRKS.getValue(name), options = listOf(0 to "Auto", 1 to "Force on", -1 to "Force off"),
       current = profile.quirks[name] ?: 0, onPick = { value ->

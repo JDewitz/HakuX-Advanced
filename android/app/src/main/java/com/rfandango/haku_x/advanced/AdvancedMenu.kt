@@ -57,6 +57,7 @@ class AdvancedMenu(
   fun show() = choice("Advanced & experimental", listOf(
     "Online play protection · current session: ${if (activity.onlinePolicy.onlinePlay) "ON" else "OFFLINE"}" to ::sessionMode,
     "Startup profile for this game · restart required" to ::startup,
+    "Game compatibility · high kernel pool placement" to ::compatibility,
     "GPU driver workaround overrides · restart required" to ::quirks,
     "RetroArch Slang shaders" to { shaders.show() },
     "Live presentation filters" to ::presentation,
@@ -77,16 +78,30 @@ class AdvancedMenu(
   }
   private fun startup() {
     val p = store.profile(game())
-    val labels = arrayOf("128 MB Xbox RAM", "Full 80-bit x87", "Honor reduced-x87 precision control", "Arm alternate floating-point optimization", "High kernel pool placement · experimental")
-    val values = booleanArrayOf(p.ram128, p.fullX87, p.precisionControl, p.armAfp, p.poolHigh)
+    val labels = arrayOf("128 MB Xbox RAM", "Full 80-bit x87", "Honor reduced-x87 precision control", "Arm alternate floating-point optimization")
+    val values = booleanArrayOf(p.ram128, p.fullX87, p.precisionControl, p.armAfp)
     show(AlertDialog.Builder(activity).setTitle("This game · changes require restart")
       .setMultiChoiceItems(labels, values) { _, index, checked -> values[index] = checked }
       .setPositiveButton("Save for this game") { _, _ ->
-        runCatching { store.saveProfile(game(), p.copy(ram128 = values[0], fullX87 = values[1], precisionControl = values[2], armAfp = values[3], poolHigh = values[4])) }
+        runCatching { store.saveProfile(game(), p.copy(ram128 = values[0], fullX87 = values[1], precisionControl = values[2], armAfp = values[3])) }
           .onSuccess { toast("Profile saved. Restart the game to apply it.") }.onFailure { toast(it.message ?: "Save failed") }
       }.setNeutralButton("Use global") { _, _ ->
         runCatching { store.resetProfile(game()) }.onSuccess { toast("Global profile will apply at the next start") }.onFailure { toast("Reset failed") }
       }.setNegativeButton("Cancel", null))
+  }
+  private fun compatibility() {
+    val p = store.profile(game())
+    val next = p.poolDecision(game(), BuildConfig.VERSION_NAME)
+    show(AlertDialog.Builder(activity).setTitle("High kernel pool placement · next start")
+      .setMessage("Session startup request: ${activity.compatibilitySummary}\n\nNext start: ${next.summary}\n\nAuto has no approved Halo revision yet. On forces the workaround; Off disables it. Fully exit and cold start. Save-state layout takes precedence. Online protection remains enforced.")
+      .setPositiveButton("Choose Auto / On / Off") { _, _ ->
+        show(AlertDialog.Builder(activity).setTitle("Next cold start · ${p.poolMode.label}")
+          .setSingleChoiceItems(CompatibilityMode.entries.map { it.label }.toTypedArray(), p.poolMode.ordinal) { dialog, index ->
+            runCatching { store.saveProfile(game(), p.copy(poolMode = CompatibilityMode.entries[index])) }
+              .onSuccess { dialog.dismiss(); toast("Saved for next cold start. The current session is unchanged.") }
+              .onFailure { toast(it.message ?: "Save failed") }
+          }.setNegativeButton("Back", null))
+      }.setNegativeButton("Back", null))
   }
   private fun quirks() = choice("Driver overrides · next start", AdvancedProfile.QUIRKS.map { (name, label) ->
     val state = when (store.profile(game()).quirks[name]) { 1 -> "On"; -1 -> "Off"; else -> "Auto" }

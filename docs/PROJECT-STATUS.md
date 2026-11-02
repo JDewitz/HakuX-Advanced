@@ -1,6 +1,12 @@
-# HakuX-Advanced project status — 2026-11-02
+# HakuX-Advanced project status — 2026-11-03
 
-Latest tested runtime commit: 9bc08fd (Advanced5.8).
+Current source update: Advanced5.9, `1.3.0-advanced5.9-compat`, versionCode 25.
+Adds Auto / On / Off pool-layout compatibility controls, legacy migration,
+identity/revision/build matching, effective-setting reasons and launch logging.
+The Halo automatic rule remains disabled. Native libraries are reused unchanged
+from the tested 5.8 APK. See COMPATIBILITY5.9.md for behavior and validation.
+
+Latest device-tested runtime commit: 9bc08fd (Advanced5.8).
 Tag: advanced-1.3.0-5.8-halo. APK versionCode 24.
 Android package: com.rfandango.haku_x.themes.
 Signing certificate SHA-256:
@@ -35,6 +41,5 @@ ancestry and all 17 Advanced tags are present. Host checks passed for that head
 (Actions run 41420948980). Temporary transfer branches were removed. No new APK
 was built by this sync; signing material remains outside Git.
 
-The earlier dashboard/kernel experiment is excluded. Automatic per-game
-compatibility rules, general patch packs, Steel Battalion device emulation and
-RetroAchievements are planned, not implemented. See ROADMAP.md.
+The earlier dashboard/kernel experiment is excluded. Automatic activation of a Halo rule remains pending validation. General patch
+packs, Steel Battalion device emulation and RetroAchievements remain planned. See ROADMAP.md.

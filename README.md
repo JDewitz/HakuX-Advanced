@@ -7,7 +7,7 @@ HakuX-Advanced is an unofficial experimental fork of
 for arm64 Android. The original authors and dependency contributors retain
 all attribution and licenses. This project is not an official hakuX release.
 
-The current runtime is **1.3.0-advanced5.8-halo** (versionCode **24**), built on
+The current source is **1.3.0-advanced5.9-compat** (versionCode **25**), built on
 **official hakuX 1.3.0**. It retains the fork's history from the original 1.2.0
 base and the subsequent 1.3.0 integration. The default development branch is
 `main`; `upstream` tracks rfandango/hakuX. The repository starts private.
@@ -24,8 +24,10 @@ base and the subsequent 1.3.0 integration. The default development branch is
 - Online protection: mutually exclusive protected online and offline trainer sessions.
 - Optional high initial kernel pool placement for the Halo CE 1.3.0 crash.
 
-Fast-forward frame skipping was removed. Auto/On/Off compatibility profiles and
-identity-based automatic game rules are planned; they are not implemented yet.
+Fast-forward frame skipping was removed. Auto/On/Off compatibility profiles now
+control the pool-layout experiment, with an effective-setting reason and launch
+logging. Halo's automatic rule remains disabled pending verified revision tests.
+General patch packs are still planned.
 
 ## Latest validation
 
@@ -36,13 +38,15 @@ checks. The Halo workaround has an initial successful user report; repeatable
 cold boots, successful-run logs and broader device/game testing remain pending.
 This is not a full-campaign or general compatibility certification.
 
-For Halo, enable **High kernel pool placement** in the per-game Advanced
+For Halo, choose **On** for **High kernel pool placement** in the per-game Advanced
 settings, retain retail **64 MiB**, fully exit and launch fresh. Compare OFF/ON;
-do not use an emulator save state for that comparison. The toggle defaults OFF.
+do not use an emulator save state for that comparison. New profiles default to
+Auto (currently resolves Off); existing explicit choices are preserved.
 Recorded state placement takes precedence when a state is loaded.
 
 ## Documentation
 
+- [Compatibility profiles and Halo controls](docs/COMPATIBILITY5.9.md)
 - [Current project status and release record](docs/PROJECT-STATUS.md)
 - [Roadmap](docs/ROADMAP.md)
 - [Halo test instructions and implementation](docs/HALO5.8.md)

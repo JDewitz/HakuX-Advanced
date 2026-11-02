@@ -12,17 +12,19 @@ data class AdvancedProfile(
   val precisionControl: Boolean = true,
   val armAfp: Boolean = true,
   val quirks: Map<String, Int> = emptyMap(),
-  val poolHigh: Boolean = false,
+  val poolMode: CompatibilityMode = CompatibilityMode.AUTO,
 ) {
   fun quirkSpec() = QUIRKS.mapNotNull { (key, _) -> quirks[key]?.takeIf { it != 0 }?.let {
     (if (it > 0) "+" else "-") + key
   } }.joinToString(",")
-  fun arguments() = listOf("advanced=ram:${if (ram128) 128 else 64}",
+  val poolHigh: Boolean get() = poolMode == CompatibilityMode.ON
+  fun poolDecision(game: String?, emulatorVersion: String) = CompatibilityProfiles.resolvePool(poolMode, game, emulatorVersion)
+  fun arguments(game: String? = null, emulatorVersion: String = "") = listOf("advanced=ram:${if (ram128) 128 else 64}",
     "advanced=x87:${if (fullX87) 80 else 64}", "advanced=pc:${if (precisionControl) 1 else 0}",
-    "advanced=afp:${if (armAfp) 1 else 0}", "advanced=quirks:${quirkSpec()}", "pool=${if (poolHigh) "high" else "default"}")
+    "advanced=afp:${if (armAfp) 1 else 0}", "advanced=quirks:${quirkSpec()}", poolDecision(game, emulatorVersion).argument)
   fun toJson() = JSONObject().put("ram128", ram128).put("fullX87", fullX87)
     .put("precisionControl", precisionControl).put("armAfp", armAfp)
-    .put("quirks", JSONObject(quirks)).put("poolHigh", poolHigh)
+    .put("quirks", JSONObject(quirks)).put("poolMode", poolMode.name)
   companion object {
     val QUIRKS = linkedMapOf(
       "vi_after_pipeline" to "Repeat vertex input after pipeline changes",
@@ -41,7 +43,11 @@ data class AdvancedProfile(
     fun fromJson(o: JSONObject) = AdvancedProfile(o.optBoolean("ram128", false),
       o.optBoolean("fullX87", false), o.optBoolean("precisionControl", true), o.optBoolean("armAfp", true),
       QUIRKS.keys.mapNotNull { key -> o.optJSONObject("quirks")?.optInt(key)?.takeIf { it == -1 || it == 1 }
-        ?.let { key to it } }.toMap(), o.optBoolean("poolHigh", false))
+        ?.let { key to it } }.toMap(), when {
+        o.has("poolMode") -> CompatibilityMode.entries.firstOrNull { it.name == o.opt("poolMode") } ?: CompatibilityMode.OFF
+        o.has("poolHigh") -> if (o.opt("poolHigh") == true) CompatibilityMode.ON else CompatibilityMode.OFF
+        else -> CompatibilityMode.AUTO
+      })
   }
 }
 

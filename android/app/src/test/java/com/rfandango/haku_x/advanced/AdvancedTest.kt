@@ -24,7 +24,7 @@ class AdvancedTest {
     assertFalse(old.poolHigh)
     assertTrue(old.ram128)
     assertTrue(old.arguments().contains("pool=default"))
-    val high = old.copy(poolHigh = true)
+    val high = old.copy(poolMode = CompatibilityMode.ON)
     assertEquals(high, AdvancedProfile.fromJson(high.toJson()))
     assertTrue(high.arguments().contains("pool=high"))
     assertFalse(high.arguments().contains("pool=default"))

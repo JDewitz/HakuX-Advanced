@@ -1,6 +1,6 @@
 # HakuX-Advanced roadmap
 
-Updated 2026-11-02. Working fork based on official hakuX 1.3.0.
+Updated 2026-11-03. Working fork based on official hakuX 1.3.0.
 This is a proposed development order, not a dated release commitment or a claim
 that rfandango has adopted these changes upstream.
 
@@ -16,10 +16,17 @@ https://github.com/JDewitz/HakuX-Advanced, with `main` as the default branch,
 upstream/fork ancestry and 17 Advanced tags preserved, and host checks passing
 for the prepared source head. See GITHUB.md for the sync record.
 
-## Next: game compatibility profiles
+## Current implementation: Advanced5.9 compatibility profiles
 
-Implement per-workaround Auto / On / Off settings with user overrides taking
-precedence. Match XBE title ID plus verified revision/hash constraints; never
+The pool-layout experiment now has Auto / On / Off controls, legacy Boolean
+migration, effective-setting reasons, launch logging and a bundled Halo catalog
+entry. Automatic activation is disabled pending verified revisions and repeat
+cold-boot results. The native fix is unchanged. See COMPATIBILITY5.9.md.
+
+## Next: expand and validate compatibility profiles
+
+Extend the initial pool-layout framework to additional independently validated
+workarounds, with per-workaround Auto / On / Off and explicit user overrides. Match XBE title ID plus verified revision/hash constraints; never
 filename substrings. Record provenance, reason, evidence, emulator version,
 restart requirement and online-play policy. Expose the effective choice in
 settings and logs. Keep the current Halo rule opt-in until RH checks support

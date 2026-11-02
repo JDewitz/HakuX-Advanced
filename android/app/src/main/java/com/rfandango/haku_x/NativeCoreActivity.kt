@@ -237,9 +237,15 @@ class NativeCoreActivity : SDLActivity(), InputManager.InputDeviceListener {
     return false
   }
   @Volatile private var launchArguments = emptyList<String>()
+  @Volatile var compatibilitySummary: String = "Not started"
+    private set
   override fun getArguments(): Array<String> {
     val args = mutableListOf(discArg, hddDir().absolutePath)
-    args += AdvancedStore(this).profile(gameKey()).arguments()
+    val startup = AdvancedStore(this).profile(gameKey())
+    val compatibility = startup.poolDecision(gameKey(), BuildConfig.VERSION_NAME)
+    compatibilitySummary = compatibility.summary
+    Log.i(TAG, "compatibility: high-kernel-pool; game=${gameKey()}; build=${BuildConfig.VERSION_NAME}; rule=${compatibility.ruleId ?: "none"}; ${compatibility.summary}")
+    args += startup.arguments(gameKey(), BuildConfig.VERSION_NAME)
     /* the dashboard: C:\xboxdash.xbe with no disc (discArg "none") */
     if (dashboard) args += "dash"
     val state = intent.getStringExtra(EXTRA_LOADSTATE)?.takeIf { onlinePolicy.allowStateLoad }
@@ -817,7 +823,7 @@ class NativeCoreActivity : SDLActivity(), InputManager.InputDeviceListener {
   private var advancedMenu: AdvancedMenu? = null
   private fun tools(): AdvancedMenu = advancedMenu ?: AdvancedMenu(this, ::showMenuDialog, ::captureFrame, ::gameKey,
     { activityPaused || manualPaused || menuDialogs > 0 },
-    { launchArguments.drop(2).filter { arg -> listOf("advanced=", "scale=", "aspect=", "fxaa=", "upscale=", "uncap", "asyncpipe=", "prebuild=", "video=", "avpack=").any { arg.startsWith(it) } }.joinToString(" ") },
+    { launchArguments.drop(2).filter { arg -> listOf("advanced=", "pool=", "scale=", "aspect=", "fxaa=", "upscale=", "uncap", "asyncpipe=", "prebuild=", "video=", "avpack=").any { arg.startsWith(it) } }.joinToString(" ") },
     { fastForward }).also { advancedMenu = it }
   private val emulatorHotkeys = EmulatorHotkeys(::activateAction) { held ->
     if (held) { holdBaseline = fastForward; setFastForward(true) } else setFastForward(holdBaseline)
