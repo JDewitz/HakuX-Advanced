@@ -4,7 +4,7 @@ Updated 2026-11-03. Working fork based on official hakuX 1.3.0.
 This is a proposed development order, not a dated release commitment or a claim
 that rfandango has adopted these changes upstream.
 
-## Current milestone: Advanced5.8
+## Device-tested baseline: Advanced5.8
 
 The opt-in Halo high initial kernel pool placement workaround is built and has
 one successful user report. Native/Android builds and automated checks passed;

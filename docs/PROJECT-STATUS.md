@@ -12,10 +12,18 @@ Android package: com.rfandango.haku_x.themes.
 Signing certificate SHA-256:
 1037f9d3ba4617d3e75b3ce8cd02cd3968f58aefa025017523e843e78d277a81.
 
-The latest distributed APK predates the repository branding/docs update. It is
-not rebuilt or renamed internally by changing this repository. Preserve its
-exact bytes for reproducing the initial user test. New APKs need a higher
-versionCode before distribution and the same private signing key for updates.
+The Advanced5.8 APK remains the reference for the initial successful device
+test. Advanced5.9 uses the HakuX-Advanced display name, the same update package
+and signing certificate, and the higher versionCode 25. Preserve the exact 5.8
+APK for reproducing the earlier result.
+
+Advanced5.9 validation: Android compilation; 99 JVM tests passed, zero failures,
+one optional shader-archive skip; native pool/Advanced/fast-forward checks passed.
+GitHub CI run 41491779396 passed Android and native jobs for source `9fdfc6c`.
+The Android Gradle configuration now uses JAVA_HOME rather than a fixed host
+path. APK assembly and signature/package verification passed. All 11 native libraries
+match the 5.8 APK byte-for-byte. Device UI navigation, real-settings upgrade and
+repeat Halo tests remain pending. The APK checksum is in COMPATIBILITY5.9.md.
 
 Build validation: native arm64 and Android builds pass; JVM 92 passed, one
 optional external shader-archive test skipped. Native pool/Advanced and trainer

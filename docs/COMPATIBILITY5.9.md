@@ -84,3 +84,19 @@ override priority; legacy migration; persistence; and global/game inheritance.
 The native pool-placement and Advanced/fast-forward host checks remain required.
 Android device UI navigation, upgrades with real user settings and repeat Halo
 OFF/ON cold boots still require tester validation.
+
+Android compilation and JVM tests passed for source `9fdfc6c`: 99 passed,
+zero failures, one optional shader-archive skip. Native pool/Advanced/fast-forward
+checks passed locally and on GitHub. Actions run 41491779396 passed both jobs.
+CI now compiles Android UI and runs JVM tests on future pushes without signing
+secrets. No upstream message or PR has been sent as part of this update.
+
+APK packaging and signature verification passed. All 11 packaged native libraries
+are byte-for-byte identical to Advanced5.8. Package/version and the existing
+signing certificate were checked on the final APK, not only in build settings.
+
+Artifact: `HakuX-Advanced-1.3.0-5.9-compat-arm64.apk`
+
+SHA-256: `1789fabefa54414b619f1b646ad0d03c044eff22070a8e827e3ffcf0ce972645`
+
+Signing certificate SHA-256: `1037f9d3ba4617d3e75b3ce8cd02cd3968f58aefa025017523e843e78d277a81`

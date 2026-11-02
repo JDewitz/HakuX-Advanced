@@ -31,12 +31,13 @@ General patch packs are still planned.
 
 ## Latest validation
 
-Advanced5.8 passed its native arm64 Android build and Android APK build.
-The JVM suite had **92 passes, zero failures and one optional shader-archive
-skip**, plus native allocation/Advanced checks and trainer parser/x86-wrapper
-checks. The Halo workaround has an initial successful user report; repeatable
-cold boots, successful-run logs and broader device/game testing remain pending.
-This is not a full-campaign or general compatibility certification.
+Advanced5.9 passed Android compilation and its JVM suite: **99 passed, zero
+failures and one optional shader-archive skip**. Native pool/Advanced/fast-forward
+checks also passed, as did the Android/native GitHub CI jobs. This update reuses
+the native libraries from the tested Advanced5.8 APK; it does not rebuild the
+native core. The Halo workaround still has an initial successful 5.8 user report;
+5.9 device UI/upgrade tests, repeatable cold boots and broader compatibility
+checks remain pending.
 
 For Halo, choose **On** for **High kernel pool placement** in the per-game Advanced
 settings, retain retail **64 MiB**, fully exit and launch fresh. Compare OFF/ON;
