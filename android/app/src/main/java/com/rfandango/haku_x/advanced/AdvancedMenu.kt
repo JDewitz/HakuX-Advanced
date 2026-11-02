@@ -93,7 +93,7 @@ class AdvancedMenu(
     val p = store.profile(game())
     val next = p.poolDecision(game(), BuildConfig.VERSION_NAME)
     show(AlertDialog.Builder(activity).setTitle("High kernel pool placement · next start")
-      .setMessage("Session startup request: ${activity.compatibilitySummary}\n\nNext start: ${next.summary}\n\nAuto has no approved Halo revision yet. On forces the workaround; Off disables it. Fully exit and cold start. Save-state layout takes precedence. Online protection remains enforced.")
+      .setMessage("Session startup request: ${activity.compatibilitySummary}\n\nNext start: ${next.summary}\n\nAuto enables Halo CE revision 8 (4D530004.8) on the 1.3.0 core; other revisions stay off. On forces the workaround; Off disables it. Fully exit and cold start. Save-state layout takes precedence. Online protection remains enforced.")
       .setPositiveButton("Choose Auto / On / Off") { _, _ ->
         show(AlertDialog.Builder(activity).setTitle("Next cold start · ${p.poolMode.label}")
           .setSingleChoiceItems(CompatibilityMode.entries.map { it.label }.toTypedArray(), p.poolMode.ordinal) { dialog, index ->

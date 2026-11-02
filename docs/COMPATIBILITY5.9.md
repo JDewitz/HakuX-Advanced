@@ -1,5 +1,8 @@
 # Advanced5.9 — game compatibility profiles
 
+Historical 5.9 behavior below. Advanced5.9.1 enables Auto for Halo revision 8;
+see [HALO5.9.1.md](HALO5.9.1.md) for the current rule and evidence.
+
 Version: `1.3.0-advanced5.9-compat`, versionCode 25.
 Update package: `com.rfandango.haku_x.themes`. Use the existing signing key.
 

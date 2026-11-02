@@ -104,7 +104,7 @@ fun AdvancedScreen(game: String?, onBack: () -> Unit) {
         ListItem(headlineContent = { Text("High kernel pool placement · ${profile.poolMode.label}") }, supportingContent = {
           Text(profile.poolDecision(game, com.rfandango.haku_x.BuildConfig.VERSION_NAME).summary)
         }, modifier = Modifier.clickable { poolPicker = true })
-        Hint("Halo CE is the first catalog entry. Auto remains off until a tested revision rule is approved. On forces the layout for this startup profile. Fully exit and start fresh; save states retain their recorded pool layout. This layout change is allowed with online protection.")
+        Hint("Auto enables this workaround for Halo CE revision 8 (4D530004.8) on the 1.3.0 core. Other revisions stay off. On forces the layout for this startup profile. Fully exit and start fresh; save states retain their recorded pool layout. This layout change is allowed with online protection.")
         Section("CPU precision · restart required")
         SwitchItem("Full 80-bit x87", "Off: existing reduced-precision implementation. Compare per title.", profile.fullX87) { save(profile.copy(fullX87 = it)) }
         SwitchItem("Honor x87 precision control", "Default on. Applies to reduced x87; full 80-bit mode supersedes it.", profile.precisionControl) { save(profile.copy(precisionControl = it)) }

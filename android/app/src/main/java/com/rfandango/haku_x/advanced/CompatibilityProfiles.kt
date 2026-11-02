@@ -43,9 +43,9 @@ data class CompatibilityDecision(val enabled: Boolean, val mode: CompatibilityMo
 object CompatibilityProfiles {
   val haloPool = CompatibilityRule(
     id = "halo-ce-high-pool-v1", titleId = 0x4D530004L,
-    revisions = emptySet(), emulatorBase = "1.3.0", automatic = false,
+    revisions = setOf(8L), emulatorBase = "1.3.0", automatic = true,
     reason = "High initial kernel pool placement for Halo CE's new-game bay crash",
-    evidence = "docs/HALO5.8-USER-VALIDATION.md: one successful user report; exact revision and repeat cold-boot logs pending",
+    evidence = "docs/HALO5.9.1.md: user reports successful workaround and 5.9 operation; certificate title ID/revision supplied as 4D530004.8; independent logs/repeat tests pending",
   )
   val rules: List<CompatibilityRule> = listOf(haloPool)
 

@@ -7,7 +7,7 @@ HakuX-Advanced is an unofficial experimental fork of
 for arm64 Android. The original authors and dependency contributors retain
 all attribution and licenses. This project is not an official hakuX release.
 
-The current source is **1.3.0-advanced5.9-compat** (versionCode **25**), built on
+The current source is **1.3.0-advanced5.9.1-halo8** (versionCode **26**), built on
 **official hakuX 1.3.0**. It retains the fork's history from the original 1.2.0
 base and the subsequent 1.3.0 integration. The default development branch is
 `main`; `upstream` tracks rfandango/hakuX. The repository starts private.
@@ -26,27 +26,30 @@ base and the subsequent 1.3.0 integration. The default development branch is
 
 Fast-forward frame skipping was removed. Auto/On/Off compatibility profiles now
 control the pool-layout experiment, with an effective-setting reason and launch
-logging. Halo's automatic rule remains disabled pending verified revision tests.
+logging. Auto enables the Halo pool workaround for the user-reported revision
+`4D530004.8` on the 1.3.0 core; other revisions remain off.
 General patch packs are still planned.
 
 ## Latest validation
 
-Advanced5.9 passed Android compilation and its JVM suite: **99 passed, zero
+Advanced5.9.1 passed Android compilation and its JVM suite: **99 passed, zero
 failures and one optional shader-archive skip**. Native pool/Advanced/fast-forward
-checks also passed, as did the Android/native GitHub CI jobs. This update reuses
+checks and Android/native GitHub CI passed for the unchanged 5.9 baseline. This update reuses
 the native libraries from the tested Advanced5.8 APK; it does not rebuild the
 native core. The Halo workaround still has an initial successful 5.8 user report;
-5.9 device UI/upgrade tests, repeatable cold boots and broader compatibility
-checks remain pending.
+the user also reports that 5.9 runs well and looks correct. Testing the 5.9.1
+Auto rule, repeatable cold boots and broader compatibility checks remain pending.
 
 For Halo, choose **On** for **High kernel pool placement** in the per-game Advanced
 settings, retain retail **64 MiB**, fully exit and launch fresh. Compare OFF/ON;
 do not use an emulator save state for that comparison. New profiles default to
-Auto (currently resolves Off); existing explicit choices are preserved.
+Auto (On for Halo revision 8 on the 1.3.0 core; otherwise Off); existing explicit
+choices are preserved.
 Recorded state placement takes precedence when a state is loaded.
 
 ## Documentation
 
+- [Halo revision 8 Auto update](docs/HALO5.9.1.md)
 - [Compatibility profiles and Halo controls](docs/COMPATIBILITY5.9.md)
 - [Current project status and release record](docs/PROJECT-STATUS.md)
 - [Roadmap](docs/ROADMAP.md)

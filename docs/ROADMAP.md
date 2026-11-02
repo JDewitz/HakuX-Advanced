@@ -20,8 +20,9 @@ for the prepared source head. See GITHUB.md for the sync record.
 
 The pool-layout experiment now has Auto / On / Off controls, legacy Boolean
 migration, effective-setting reasons, launch logging and a bundled Halo catalog
-entry. Automatic activation is disabled pending verified revisions and repeat
-cold-boot results. The native fix is unchanged. See COMPATIBILITY5.9.md.
+entry. Advanced5.9.1 enables Auto only for user-reported Halo revision 8 on
+the 1.3.0 core. Other revisions remain off. Independent logs and repeat cold
+boots remain follow-ups. The native fix is unchanged. See HALO5.9.1.md.
 
 ## Next: expand and validate compatibility profiles
 
@@ -29,8 +30,7 @@ Extend the initial pool-layout framework to additional independently validated
 workarounds, with per-workaround Auto / On / Off and explicit user overrides. Match XBE title ID plus verified revision/hash constraints; never
 filename substrings. Record provenance, reason, evidence, emulator version,
 restart requirement and online-play policy. Expose the effective choice in
-settings and logs. Keep the current Halo rule opt-in until RH checks support
-an automatic rule. These profiles are separate from ETM trainers and cannot
+settings and logs. Expand automatic rules only when revision-specific test evidence supports them. These profiles are separate from ETM trainers and cannot
 bypass online protection. Additional pluggable game patches follow this work.
 Steel Battalion input/controller work and RetroAchievements remain later items.
 

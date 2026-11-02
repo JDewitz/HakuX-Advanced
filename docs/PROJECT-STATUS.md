@@ -1,9 +1,14 @@
 # HakuX-Advanced project status — 2026-11-03
 
-Current source update: Advanced5.9, `1.3.0-advanced5.9-compat`, versionCode 25.
+Current update: Advanced5.9.1, `1.3.0-advanced5.9.1-halo8`, versionCode 26.
+Auto enables the Halo pool workaround for user-reported title/revision
+`4D530004.8` on emulator base 1.3.0. Explicit On/Off choices remain unchanged.
+Other revisions are not enabled. See HALO5.9.1.md for evidence and use notes.
+
+Previous update: Advanced5.9, `1.3.0-advanced5.9-compat`, versionCode 25.
 Adds Auto / On / Off pool-layout compatibility controls, legacy migration,
 identity/revision/build matching, effective-setting reasons and launch logging.
-The Halo automatic rule remains disabled. Native libraries are reused unchanged
+In 5.9, the Halo automatic rule was disabled. Native libraries are reused unchanged
 from the tested 5.8 APK. See COMPATIBILITY5.9.md for behavior and validation.
 
 Latest device-tested runtime commit: 9bc08fd (Advanced5.8).
@@ -49,5 +54,6 @@ ancestry and all 17 Advanced tags are present. Host checks passed for that head
 (Actions run 41420948980). Temporary transfer branches were removed. No new APK
 was built by this sync; signing material remains outside Git.
 
-The earlier dashboard/kernel experiment is excluded. Automatic activation of a Halo rule remains pending validation. General patch
+The earlier dashboard/kernel experiment is excluded. The Halo revision 8 Auto rule uses user-reported identity and success evidence;
+independent logs and repeat tests remain pending. General patch
 packs, Steel Battalion device emulation and RetroAchievements remain planned. See ROADMAP.md.

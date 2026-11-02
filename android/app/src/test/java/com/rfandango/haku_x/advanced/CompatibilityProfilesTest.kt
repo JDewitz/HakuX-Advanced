@@ -12,15 +12,20 @@ class CompatibilityProfilesTest {
   private fun resolve(mode: CompatibilityMode, key: String? = halo, version: String = "1.3.0-advanced5.9-compat",
                       rules: List<CompatibilityRule> = listOf(approved)) = CompatibilityProfiles.resolvePool(mode, key, version, rules)
 
-  @Test fun shippedCatalogKeepsHaloOptIn() {
-    assertEquals(1, CompatibilityProfiles.rules.size)
-    assertFalse(CompatibilityProfiles.haloPool.automatic)
-    assertTrue(CompatibilityProfiles.haloPool.revisions.isEmpty())
-    val result = resolve(CompatibilityMode.AUTO, rules = CompatibilityProfiles.rules)
-    assertFalse(result.enabled)
-    assertNull(result.ruleId)
-    assertTrue(result.reason.contains("No approved"))
-    assertEquals("pool=default", result.argument)
+  @Test fun shippedCatalogOnlyEnablesUserReportedHaloRevision8() {
+    assertEquals(setOf(8L), CompatibilityProfiles.haloPool.revisions)
+    assertTrue(CompatibilityProfiles.haloPool.automatic)
+    val result = resolve(CompatibilityMode.AUTO, "4d530004.8", rules = CompatibilityProfiles.rules)
+    assertTrue(result.enabled)
+    assertEquals(CompatibilityProfiles.haloPool.id, result.ruleId)
+    assertEquals("pool=high", result.argument)
+    for (key in listOf(halo, "4D530004.7", "4D530064.8", "path:Halo.iso", null)) {
+      assertFalse(resolve(CompatibilityMode.AUTO, key, rules = CompatibilityProfiles.rules).enabled)
+    }
+    assertFalse(resolve(CompatibilityMode.AUTO, "4D530004.8", "1.2.0", CompatibilityProfiles.rules).enabled)
+    assertFalse(resolve(CompatibilityMode.AUTO, "4D530004.8", "1.3.1", CompatibilityProfiles.rules).enabled)
+    assertFalse(resolve(CompatibilityMode.OFF, "4D530004.8", rules = CompatibilityProfiles.rules).enabled)
+    assertEquals("pool=high", AdvancedProfile().arguments("4D530004.8", "1.3.0-advanced5.9.1-halo8").last())
   }
   @Test fun automaticRulesRequireTitleRevisionAndEmulatorBuild() {
     assertTrue(resolve(CompatibilityMode.AUTO).enabled)
