@@ -57,3 +57,16 @@ profile-out-*/
 *.bundle
 *.jks
 *.keystore
+
+# Local Android/signing configuration and personal runtime data
+/android/local.properties
+/android/key.properties
+.env
+.env.*
+*.p12
+*.pfx
+*.apk
+*.aab
+/hdd/
+/savestates/
+/logs/

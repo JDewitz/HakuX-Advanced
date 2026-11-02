@@ -1,8 +1,29 @@
-# hakuX Advanced roadmap
+# HakuX-Advanced roadmap
 
-Updated 2026-11-01. Working fork based on official hakuX 1.3.0.
+Updated 2026-11-02. Working fork based on official hakuX 1.3.0.
 This is a proposed development order, not a dated release commitment or a claim
 that rfandango has adopted these changes upstream.
+
+## Current milestone: Advanced5.8
+
+The opt-in Halo high initial kernel pool placement workaround is built and has
+one successful user report. Native/Android builds and automated checks passed;
+RH repeatability testing and post-fix logs are pending. The standalone native
+patch series and report are ready for upstream review; nothing has been sent.
+
+The project is now named HakuX-Advanced. Private GitHub publication is the
+current repository-setup task; external creation/push requires account access.
+
+## Next: game compatibility profiles
+
+Implement per-workaround Auto / On / Off settings with user overrides taking
+precedence. Match XBE title ID plus verified revision/hash constraints; never
+filename substrings. Record provenance, reason, evidence, emulator version,
+restart requirement and online-play policy. Expose the effective choice in
+settings and logs. Keep the current Halo rule opt-in until RH checks support
+an automatic rule. These profiles are separate from ETM trainers and cannot
+bypass online protection. Additional pluggable game patches follow this work.
+Steel Battalion input/controller work and RetroAchievements remain later items.
 
 ## Current baseline
 

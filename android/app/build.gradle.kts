@@ -60,8 +60,8 @@ android {
 
   buildTypes {
     debug {
-      applicationIdSuffix = if (providers.gradleProperty("themeTestApp").isPresent) ".themes" else ".shaders"
-      resValue("string", "app_name", if (providers.gradleProperty("themeTestApp").isPresent) "hakuX Themes Test" else "hakuX Shaders Test")
+      applicationIdSuffix = ".themes"
+      resValue("string", "app_name", "HakuX-Advanced")
       ndk {
         debugSymbolLevel = "NONE"
       }
@@ -78,7 +78,7 @@ android {
       )
     }
     release {
-      resValue("string", "app_name", "hakuX")
+      resValue("string", "app_name", "HakuX-Advanced")
       isMinifyEnabled = true
       proguardFiles(
         getDefaultProguardFile("proguard-android-optimize.txt"),

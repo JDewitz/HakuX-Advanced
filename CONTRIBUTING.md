@@ -1,6 +1,6 @@
 # Contributing
 
-Base changes on the `advanced` branch. Keep compatibility experiments optional
+Base changes on the `main` branch. Keep compatibility experiments optional
 and default to existing upstream behavior. Avoid combining unrelated kernel,
 renderer, input and UI changes in one patch.
 

@@ -1,4 +1,4 @@
-# Fork provenance and release notes
+# HakuX-Advanced provenance and release notes
 
 Upstream: https://github.com/rfandango/hakuX
 Base tag: v1.2.0
@@ -32,3 +32,15 @@ merged into this runtime. See ADVANCED4.md.
 Experimental trainer branch `trainer-experimental` adds classic ETM import, per-game options and guest boot execution on top of Advanced4.2. See ADVANCED4.3.md for limitations and validation.
 
 Advanced5 merges official v1.3.0 (a90f01e) into Advanced4.3. Branch: advanced-1.3-integration; details and validation limits: ADVANCED5.md.
+
+## Current project identity (2026-11-02)
+
+Name: HakuX-Advanced. Development branch: main. Current runtime: Advanced5.8
+on official v1.3.0; the original v1.2.0 base above is ancestry, not the current
+runtime baseline. Fork commits and tags retain their original object IDs.
+
+Advanced5.3–5.5 added library views and theme import/preview improvements;
+5.6 added the folder-backed trainer browser; 5.7 added online protection;
+5.8 added Halo allocation diagnostics and opt-in high initial pool placement.
+One user reports the Halo workaround works. Full RH validation is pending.
+See PROJECT-STATUS.md for exact tested runtime identity and validation limits.
