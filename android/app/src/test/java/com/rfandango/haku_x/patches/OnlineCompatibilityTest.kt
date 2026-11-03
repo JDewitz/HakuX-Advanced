@@ -31,7 +31,7 @@ class OnlineCompatibilityTest {
   @Test fun reviewedContentCanUseOnlineCompatibilityWhileTrainersRemainOff() {
     val e = entry();val registry = listOf(approve(e)); val policy = OnlinePlayPolicy(true)
     assertTrue(decision(e, registry).ready)
-    assertFalse(policy.allowGuestMods);assertFalse(policy.allowMemoryTools);assertFalse(policy.allowStateLoad)
+    assertFalse(policy.allowGuestMods);assertFalse(policy.allowMemoryTools);assertTrue(policy.allowStateLoad)
     assertEquals("nat", policy.networkMode("nat"))
     val lines = OnlineCompatibilityManifest.lines(listOf(e), game, emulator, registry)
     assertEquals(listOf("patch\tdefault.xbe\tp-${e.hash.take(32)}\t0x11000: 01 02 -> 03 04"), lines)

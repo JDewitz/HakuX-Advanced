@@ -5,7 +5,8 @@ import org.json.JSONObject
 /** Immutable per-process session contract: injected trainers and networking never coexist. */
 data class OnlinePlayPolicy(val onlinePlay: Boolean = true) {
   val allowGuestMods get() = !onlinePlay
-  val allowStateLoad get() = !onlinePlay
+  // Snapshot loading is independent of trainer/network protection.
+  val allowStateLoad get() = true
   val allowMemoryTools get() = !onlinePlay
   fun networkMode(configured: String): String = if (onlinePlay) configured else "off"
   fun propagateFrom(parent: Boolean?) = OnlinePlayPolicy(parent ?: onlinePlay)

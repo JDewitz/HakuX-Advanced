@@ -1,4 +1,7 @@
 Current online compatibility exception: see [ONLINE5.11.md](ONLINE5.11.md).
+
+Save-state policy update: Advanced5.13 permits loads with online protection On.
+Any blanket online state-load restriction below is historical; see STATES5.13.md.
 Trainers, cheats and gameplay mods remain blocked in protected sessions.
 
 # Advanced5.7 — online play protection

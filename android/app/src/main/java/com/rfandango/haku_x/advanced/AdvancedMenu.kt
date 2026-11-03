@@ -71,7 +71,7 @@ class AdvancedMenu(
   ))
   private fun sessionMode() {
     show(AlertDialog.Builder(activity).setTitle("Online play protection · next cold start")
-      .setSingleChoiceItems(arrayOf("ON — networking allowed; trainers, gameplay mods and state loads blocked", "OFFLINE — trainers allowed, all Xbox networking off"), if (store.onlinePlay) 0 else 1) { dialog, index ->
+      .setSingleChoiceItems(arrayOf("ON — networking and state loads allowed; trainers and gameplay mods blocked", "OFFLINE — trainers allowed, all Xbox networking off"), if (store.onlinePlay) 0 else 1) { dialog, index ->
         runCatching { store.onlinePlay = index == 0 }.onSuccess {
           dialog.dismiss(); toast("Saved. Fully exit to the library and start the game again. The running session cannot change modes.")
         }.onFailure { toast(it.message ?: "Could not save protection mode") }

@@ -119,10 +119,6 @@ class LauncherActivity : ComponentActivity() {
     state: String? = null,
   ) {
     val online = com.rfandango.haku_x.advanced.AdvancedStore(this).onlinePlay
-    if (state != null && online) {
-      android.widget.Toast.makeText(this, "Save-state loading is blocked by online play protection. Start the game fresh, or choose offline trainer mode in Advanced.", android.widget.Toast.LENGTH_LONG).show()
-      return
-    }
     AppPrefs(this).rememberLaunch(uri, relativePath, title)
     startActivity(Intent(this, NativeCoreActivity::class.java).apply {
       putExtra(NativeCoreActivity.EXTRA_ONLINE_PLAY, online)

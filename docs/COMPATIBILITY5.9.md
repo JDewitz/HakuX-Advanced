@@ -1,5 +1,8 @@
 # Advanced5.9 — game compatibility profiles
 
+Save-state policy update: Advanced5.13 permits loads with online protection On.
+Any blanket online state-load restriction below is historical; see STATES5.13.md.
+
 Historical 5.9 behavior below. Advanced5.9.1 enables Auto for Halo revision 8;
 see [HALO5.9.1.md](HALO5.9.1.md) for the current rule and evidence.
 

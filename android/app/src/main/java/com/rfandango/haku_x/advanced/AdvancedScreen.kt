@@ -93,7 +93,7 @@ fun AdvancedScreen(game: String?, onBack: () -> Unit) {
           runCatching { store.resetProfile(game); profile = store.profile(game); own = false }.onFailure { message(it.message ?: "Could not reset") }
         }
         Section("Online play · global session policy")
-        SwitchItem("Online play protection", "Default on: trainers, cheats, gameplay mods, unreviewed imported patches, memory tools and save-state loading are blocked. Reviewed compatibility fixes remain allowed. Off: offline trainer sessions only; all Xbox networking is forced off. Fully exit and start the game again after changing this setting.", onlinePlay) { value ->
+        SwitchItem("Online play protection", "Default on: trainers, cheats, gameplay mods, unreviewed imported patches, memory tools are blocked. Save-state loading and reviewed compatibility fixes remain allowed. Off: offline trainer sessions only; all Xbox networking is forced off. Fully exit and start the game again after changing this setting.", onlinePlay) { value ->
           runCatching { store.onlinePlay = value }.onSuccess { onlinePlay = value }
             .onFailure { message(it.message ?: "Could not save online protection") }
         }

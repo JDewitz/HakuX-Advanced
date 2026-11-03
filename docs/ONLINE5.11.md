@@ -1,5 +1,8 @@
 # Advanced5.11 — compatibility fixes during protected online play
 
+Save-state policy update: Advanced5.13 permits loads with online protection On.
+Any blanket online state-load restriction below is historical; see STATES5.13.md.
+
 Version `1.3.0-advanced5.11-onlinecompat`, versionCode 28. Same update package,
 signing certificate and native libraries as Advanced5.10.
 

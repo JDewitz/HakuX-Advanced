@@ -238,12 +238,7 @@ class NativeCoreActivity : SDLActivity(), InputManager.InputDeviceListener {
     Toast.makeText(this, "Imported patches use cold starts only in this release. Fully exit and disable patches before using save states.", Toast.LENGTH_LONG).show()
     return false
   }
-  fun allowStateLoad(): Boolean {
-    if (!allowImportedPatchStates()) return false
-    if (onlinePolicy.allowStateLoad) return true
-    Toast.makeText(this, com.rfandango.haku_x.advanced.OnlinePlayPolicy.BLOCK_MESSAGE, Toast.LENGTH_LONG).show()
-    return false
-  }
+  fun allowStateLoad(): Boolean = onlinePolicy.allowStateLoad && allowImportedPatchStates()
   @Volatile private var launchArguments = emptyList<String>()
   @Volatile var compatibilitySummary: String = "Not started"
     private set
@@ -256,7 +251,7 @@ class NativeCoreActivity : SDLActivity(), InputManager.InputDeviceListener {
     args += startup.arguments(gameKey(), BuildConfig.VERSION_NAME)
     /* the dashboard: C:\xboxdash.xbe with no disc (discArg "none") */
     if (dashboard) args += "dash"
-    val state = intent.getStringExtra(EXTRA_LOADSTATE)?.takeIf { onlinePolicy.allowStateLoad }
+    val state = intent.getStringExtra(EXTRA_LOADSTATE)
     if (state != null) {
       args += "loadstate=$state"
     } else if (intent.getBooleanExtra(EXTRA_RELAUNCH, false)) {
@@ -345,7 +340,7 @@ class NativeCoreActivity : SDLActivity(), InputManager.InputDeviceListener {
         .putExtra(EXTRA_ONLINE_PLAY, onlinePolicy.onlinePlay)
         .putExtra(LauncherActivity.EXTRA_LAUNCHED_EXTERNALLY, intent.getBooleanExtra(LauncherActivity.EXTRA_LAUNCHED_EXTERNALLY, false))
         .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NO_ANIMATION)
-      if (onlinePolicy.allowStateLoad) intent.getStringExtra(EXTRA_LOADSTATE)?.let { next.putExtra(EXTRA_LOADSTATE,it) }
+      intent.getStringExtra(EXTRA_LOADSTATE)?.let { next.putExtra(EXTRA_LOADSTATE,it) }
       startActivity(next)
       finish()
       android.os.Process.killProcess(android.os.Process.myPid())
@@ -357,8 +352,6 @@ class NativeCoreActivity : SDLActivity(), InputManager.InputDeviceListener {
       setTheme(R.style.Theme_HakuX_Game_Dark)
     }
     intent.putExtra(EXTRA_ONLINE_PLAY, onlinePolicy.onlinePlay)
-    val blockedState = !onlinePolicy.allowStateLoad && intent.hasExtra(EXTRA_LOADSTATE)
-    if (blockedState) intent.removeExtra(EXTRA_LOADSTATE)
     discArg = openDisc()
     Logs.startGame(this, gameName(), when {
       intent.getBooleanExtra(EXTRA_RELAUNCH, false) -> "relaunched into another XBE"
@@ -366,7 +359,6 @@ class NativeCoreActivity : SDLActivity(), InputManager.InputDeviceListener {
       else -> "started"
     })
     super.onCreate(savedInstanceState)
-    if (blockedState) Toast.makeText(this, "State load blocked; starting a clean online-protected session.", Toast.LENGTH_LONG).show()
     if (onlinePolicy.onlinePlay && !AdvancedStore(this).onlinePlay) Toast.makeText(this, "This session remains online-protected due to its pinned mode or native network overrides. Exit to the library before starting an offline trainer session.", Toast.LENGTH_LONG).show()
     if (onlinePolicy.networkMode(AppPrefs(this).networkMode) == AppPrefs.NET_LAN) {
       multicastLock = Network.multicastLock(this)

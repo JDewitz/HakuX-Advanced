@@ -10,9 +10,9 @@ class OnlinePlayPolicyTest {
     for(value in listOf<Any>("false",0,JSONObject.NULL)) assertTrue(OnlinePlayPolicy.fromJson(JSONObject().put("onlinePlay",value)).onlinePlay)
     assertFalse(OnlinePlayPolicy.fromJson(JSONObject().put("onlinePlay",false)).onlinePlay)
   }
-  @Test fun onlineSessionsNeverAllowInjectionStateLoadsOrMemoryTools() {
+  @Test fun onlineSessionsAllowStateLoadsButNeverInjectionOrMemoryTools() {
     val p=OnlinePlayPolicy(true)
-    assertFalse(p.allowGuestMods);assertFalse(p.allowStateLoad);assertFalse(p.allowMemoryTools)
+    assertFalse(p.allowGuestMods);assertTrue(p.allowStateLoad);assertFalse(p.allowMemoryTools)
     for(mode in listOf("off","lan","kai","insignia")) assertEquals(mode,p.networkMode(mode))
   }
   @Test fun trainerSessionsForceAllNetworkingOffIncludingUnknownFutureModes() {

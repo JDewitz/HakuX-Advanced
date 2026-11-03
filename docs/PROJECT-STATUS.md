@@ -1,6 +1,13 @@
 # HakuX-Advanced project status — 2026-11-03
 
-Current update: Advanced5.12, `1.3.0-advanced5.12-shaderdelete`, versionCode 29.
+Current update: Advanced5.13, `1.3.0-advanced5.13-stateload`, versionCode 30.
+Online protection no longer blocks save-state loading from the library, pause
+menu, mapped actions, debug requests or relaunch. Trainer/cheat injection,
+memory tools and imported-patch state compatibility rules are unchanged.
+See STATES5.13.md for scope and validation.
+
+
+Previous update: Advanced5.12, `1.3.0-advanced5.12-shaderdelete`, versionCode 29.
 Shader pack roots have a trash icon and confirmation dialog. Purging removes
 presets, sources and textures, clears affected global/game selections to Off,
 and refreshes the browser. Built-in examples stay removed after deletion.

@@ -7,7 +7,7 @@ HakuX-Advanced is an unofficial experimental fork of
 for arm64 Android. The original authors and dependency contributors retain
 all attribution and licenses. This project is not an official hakuX release.
 
-The current source is **1.3.0-advanced5.12-shaderdelete** (versionCode **29**), built on
+The current source is **1.3.0-advanced5.13-stateload** (versionCode **30**), built on
 **official hakuX 1.3.0**. It retains the fork's history from the original 1.2.0
 base and the subsequent 1.3.0 integration. The default development branch is
 `main`; `upstream` tracks rfandango/hakuX. The repository starts private.
@@ -21,7 +21,7 @@ base and the subsequent 1.3.0 integration. The default development branch is
 - Shared app/pause themes, imported presets, multi-select import and live preview.
 - Cards, list, stats, info/play and icon library layouts, with trainer/config badges.
 - Experimental EvoX ETM trainer import and folder-backed per-game trainer browser.
-- Online protection: trainers/cheats blocked; built-in fixes and release-reviewed compatibility patches remain eligible online.
+- Online protection: save-state loading allowed; trainers/cheats blocked; built-in fixes and release-reviewed compatibility patches remain eligible online.
   The imported-patch approval registry is currently empty.
 - Importable guarded XBE patch packs, folder scanning and persistent per-game toggles.
 - Optional high initial kernel pool placement for the Halo CE 1.3.0 crash.
