@@ -13,6 +13,9 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.Alignment
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -34,13 +37,16 @@ fun ShaderBrowserScreen(game: String?, onBack: () -> Unit, onKeys: () -> Unit, o
   var selected by remember { mutableStateOf(store.selected(game)) }
   var own by remember { mutableStateOf(game != null && store.hasOverride(game)) }
   var presets by remember { mutableStateOf(emptyList<String>()) }
+  var roots by remember { mutableStateOf(emptyList<String>()) }
   var folder by rememberSaveable { mutableStateOf(ShaderCatalog.parent(selected.preset)) }
   var query by rememberSaveable { mutableStateOf("") }
   var loading by remember { mutableStateOf(true) }
   var message by remember { mutableStateOf("") }
   var busy by remember { mutableStateOf(false) }
+  var canCancel by remember { mutableStateOf(true) }
   var progress by remember { mutableStateOf("") }
   var packs by remember { mutableStateOf(false) }
+  var deleting by rememberSaveable { mutableStateOf<String?>(null) }
   val cancel = remember { AtomicBoolean(false) }
   val listState = rememberLazyListState()
   fun friendly(path: String): String {
@@ -53,7 +59,8 @@ fun ShaderBrowserScreen(game: String?, onBack: () -> Unit, onKeys: () -> Unit, o
     }
   }
   suspend fun reload() {
-    presets = withContext(Dispatchers.IO) { store.installBuiltins(); store.presets() }
+    val catalog = withContext(Dispatchers.IO) { store.installBuiltins(); store.presets() to store.packRoots() }
+    presets = catalog.first; roots = catalog.second
     loading = false
   }
   LaunchedEffect(Unit) { runCatching { reload() }.onFailure { loading = false; message = it.message ?: "Could not read shader packs" } }
@@ -93,8 +100,9 @@ fun ShaderBrowserScreen(game: String?, onBack: () -> Unit, onKeys: () -> Unit, o
     }
   }
   DisposableEffect(Unit) { onDispose { cancel.set(true) } }
-  val entries = remember(presets, folder, query) {
-    ShaderCatalog.entries(presets, folder).filter { it.name.contains(query, ignoreCase = true) }
+  val entries = remember(presets, roots, folder, query) {
+    val all = if (folder.isEmpty()) roots.map { ShaderCatalog.Entry(it, it, true) } else ShaderCatalog.entries(presets, folder)
+    all.filter { it.name.contains(query, ignoreCase = true) }
   }
   SubScreen(title = "Shaders", subtitle = if (game == null) "Global graphics" else if (own) "Graphics for this game" else "This game · using global",
     onBack = { if (folder.isNotEmpty()) { folder = ShaderCatalog.up(folder); query = "" } else onBack() },
@@ -104,11 +112,11 @@ fun ShaderBrowserScreen(game: String?, onBack: () -> Unit, onKeys: () -> Unit, o
         style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
       Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp), horizontalArrangement = Arrangement.SpaceBetween) {
         TextButton(onClick = { folder = ShaderCatalog.up(folder); query = "" }, enabled = folder.isNotEmpty()) { Text("Up") }
-        TextButton(onClick = { save(ShaderSelection()) }) { Text("Off") }
-        if (game != null) TextButton(onClick = {
+        TextButton(enabled = !busy, onClick = { save(ShaderSelection()) }) { Text("Off") }
+        if (game != null) TextButton(enabled = !busy, onClick = {
           runCatching { store.reset(game); selected = store.selected(game); own = false; onSelected() }.onFailure { message = "Could not reset preset" }
         }) { Text("Use global") }
-        TextButton(onClick = { packs = true }) { Text("Packs") }
+        TextButton(enabled = !busy, onClick = { packs = true }) { Text("Packs") }
       }
       OutlinedTextField(value = query, onValueChange = { query = it }, label = { Text("Search this folder") }, singleLine = true,
         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp))
@@ -119,7 +127,7 @@ fun ShaderBrowserScreen(game: String?, onBack: () -> Unit, onKeys: () -> Unit, o
         LinearProgressIndicator(Modifier.fillMaxWidth())
         Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
           Text(progress, Modifier.weight(1f), style = MaterialTheme.typography.bodySmall)
-          TextButton(onClick = { cancel.set(true) }) { Text("Cancel") }
+          if (canCancel) TextButton(onClick = { cancel.set(true) }) { Text("Cancel") }
         }
       }
       if (message.isNotEmpty()) Text(message, Modifier.padding(horizontal = 16.dp, vertical = 4.dp), style = MaterialTheme.typography.bodySmall)
@@ -144,14 +152,39 @@ fun ShaderBrowserScreen(game: String?, onBack: () -> Unit, onKeys: () -> Unit, o
                 }
               } else Text(if (entry.path == selected.preset) "✓" else "·")
             },
-            trailingContent = { if (entry.directory) Text("›") },
-            modifier = Modifier.clickable {
+            trailingContent = {
+              if (entry.directory) Row(verticalAlignment = Alignment.CenterVertically) {
+                if (folder.isEmpty()) IconButton(enabled = !busy, onClick = { deleting = entry.path }) {
+                  Icon(Icons.Default.Delete, contentDescription = "Delete ${friendly(entry.path)}", tint = MaterialTheme.colorScheme.error)
+                }
+                Text("›")
+              }
+            },
+            modifier = Modifier.clickable(enabled = !busy) {
               if (entry.directory) { folder = ShaderCatalog.open(presets, entry); query = "" } else save(ShaderSelection(entry.path))
             })
         }
       }
       Text("Keys → Next shader: cycles presets in the selected folder.", Modifier.padding(horizontal = 16.dp, vertical = 6.dp), style = MaterialTheme.typography.bodySmall)
     }
+  }
+  deleting?.let { pack ->
+    AlertDialog(onDismissRequest = { deleting = null }, title = { Text("Delete shader pack?") },
+      text = { Text("Delete ${friendly(pack)} and all its presets, shader sources and textures? Affected global and per-game selections will switch Off. This cannot be undone.") },
+      confirmButton = { TextButton(enabled = !busy, onClick = {
+        deleting = null; busy = true; canCancel = false; progress = "Deleting shader pack…"
+        scope.launch {
+          val result = runCatching { withContext(Dispatchers.IO) { store.deletePack(pack) } }
+          // Refresh even after a partial filesystem failure; settings may already have been cleared.
+          selected = store.selected(game); own = game != null && store.hasOverride(game)
+          folder = ""; query = ""
+          runCatching { reload() }.onFailure { message = it.message ?: "Could not refresh shader packs" }
+          busy = false; canCancel = true
+          result.onSuccess { message = "Shader pack deleted" }
+            .onFailure { message = "Could not fully delete pack: ${it.message}. Affected selections are Off; retry deletion." }
+        }
+      }) { Text("Delete", color = MaterialTheme.colorScheme.error) } },
+      dismissButton = { TextButton(onClick = { deleting = null }) { Text("Cancel") } })
   }
   if (packs) AlertDialog(onDismissRequest = { packs = false }, title = { Text("Shader packs") },
     text = { Text("Download Libretro shaders or use the Android file picker to import a ZIP with its sources, includes and textures.") },

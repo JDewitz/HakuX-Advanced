@@ -103,6 +103,18 @@ class AdvancedStore internal constructor(private val dir: File) {
     }
   }
   fun resetShader(game: String) = change { it.optJSONObject("shaderGames")?.remove(game) }
+  /** Keep affected game overrides explicitly Off rather than inheriting another shader. */
+  fun clearShaderPack(pack: String) = change { o ->
+    val prefix = "$pack/"
+    fun clear(selection: JSONObject?) {
+      if (selection?.optString("preset")?.startsWith(prefix) == true) {
+        selection.put("preset", ""); selection.put("parameters", JSONObject())
+      }
+    }
+    clear(o.optJSONObject("shaderGlobal"))
+    val games = o.optJSONObject("shaderGames")
+    games?.keys()?.asSequence()?.toList()?.forEach { clear(games.optJSONObject(it)) }
+  }
   fun keys(): Map<EmulatorAction, Int> {
     val o = read().optJSONObject("keys") ?: JSONObject()
     return EmulatorAction.entries.filter { it != EmulatorAction.FAST_FORWARD }.mapNotNull {

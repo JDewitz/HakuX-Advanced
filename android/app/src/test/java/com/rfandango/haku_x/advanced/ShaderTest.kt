@@ -59,4 +59,37 @@ class ShaderTest {
     }
   }
 
+  @Test fun purgeRemovesWholePackButPreservesSiblingsAndLinkTargets() = dir { root ->
+    val shaders = java.io.File(root, "shaders").apply { mkdirs() }
+    val pack = java.io.File(shaders, "pack-test").apply { mkdirs() }
+    java.io.File(pack, "sources/pass.slang").apply { parentFile.mkdirs(); writeText("source") }
+    java.io.File(pack, "preset.slangp").writeText("preset")
+    val sibling = java.io.File(shaders, "pack-other/keep.slangp").apply { parentFile.mkdirs(); writeText("keep") }
+    val outside = java.io.File(root, "outside").apply { mkdirs() }
+    val keep = java.io.File(outside, "keep.txt").apply { writeText("keep") }
+    Files.createSymbolicLink(java.io.File(pack, "linked").toPath(), outside.toPath())
+    ShaderPackRemoval.delete(shaders, "pack-test")
+    assertFalse(pack.exists()); assertTrue(sibling.isFile); assertTrue(keep.isFile)
+  }
+  @Test fun purgeRejectsRootTraversalNestedFoldersAndRootSymlinks() = dir { root ->
+    val shaders = java.io.File(root, "shaders").apply { mkdirs() }
+    val outside = java.io.File(root, "outside").apply { mkdirs() }
+    Files.createSymbolicLink(java.io.File(shaders, "pack-link").toPath(), outside.toPath())
+    for (name in listOf("", ".", "..", "../outside", "pack/nested", "pack\\nested", "pack-link"))
+      rejects { ShaderPackRemoval.delete(shaders, name) }
+    assertTrue(outside.isDirectory)
+  }
+  @Test fun purgeClearsEveryAffectedSelectionWithoutChangingOtherPacks() = dir { root ->
+    val store = AdvancedStore(root)
+    store.saveShader(null, ShaderSelection("pack-a/crt/p.slangp", mapOf("Amount" to 1f)))
+    store.saveShader("affected", ShaderSelection("pack-a/x.slangp"))
+    val keep = ShaderSelection("pack-ab/x.slangp", mapOf("Amount" to .5f))
+    store.saveShader("other", keep)
+    store.clearShaderPack("pack-a")
+    assertEquals(ShaderSelection(), store.shader(null))
+    assertEquals(ShaderSelection(), store.shader("affected")); assertTrue(store.hasShader("affected"))
+    assertEquals(ShaderSelection(), store.shader("inherited"))
+    assertEquals(keep, store.shader("other"))
+  }
+
 }

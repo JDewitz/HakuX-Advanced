@@ -1,6 +1,12 @@
 # HakuX-Advanced project status — 2026-11-03
 
-Current update: Advanced5.11, `1.3.0-advanced5.11-onlinecompat`, versionCode 28.
+Current update: Advanced5.12, `1.3.0-advanced5.12-shaderdelete`, versionCode 29.
+Shader pack roots have a trash icon and confirmation dialog. Purging removes
+presets, sources and textures, clears affected global/game selections to Off,
+and refreshes the browser. Built-in examples stay removed after deletion.
+Native libraries and online compatibility policy are unchanged. See SHADERS5.12.md.
+
+Previous update: Advanced5.11, `1.3.0-advanced5.11-onlinecompat`, versionCode 28.
 Protected online sessions now have a separate compatibility-only manifest path
 for exact-content release-reviewed patches. The registry starts empty. Halo
 revision 8’s built-in Auto fix remains eligible online; trainers, cheats and

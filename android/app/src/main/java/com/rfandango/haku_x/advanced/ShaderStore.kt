@@ -7,6 +7,11 @@ import java.io.File
 import java.io.InputStream
 import java.util.UUID
 import java.util.zip.ZipInputStream
+import java.nio.file.Files
+import java.nio.file.SimpleFileVisitor
+import java.nio.file.FileVisitResult
+import java.nio.file.Path
+import java.nio.file.attribute.BasicFileAttributes
 
 data class ShaderSelection(val preset: String = "", val parameters: Map<String, Float> = emptyMap()) {
   fun json() = JSONObject().put("preset", preset).put("parameters", JSONObject(parameters))
@@ -60,11 +65,34 @@ internal object ShaderPack {
     require(root.walkTopDown().any { it.isFile && it.extension.equals("slangp", true) }) { "No .slangp presets found" }
   }
 }
+/** Delete one immediate pack directory. Never follow symbolic links outside the pack. */
+internal object ShaderPackRemoval {
+  fun directory(root: File, name: String): File {
+    require(name.isNotBlank() && !name.startsWith('.') && '/' !in name && '\\' !in name) { "Choose a shader pack root" }
+    val base = root.canonicalFile
+    val pack = File(base, name)
+    require(!Files.isSymbolicLink(pack.toPath()) && pack.isDirectory && pack.canonicalFile.parentFile == base) { "Shader pack is missing or unsafe" }
+    return pack
+  }
+  fun delete(root: File, name: String) {
+    val pack = directory(root, name)
+    Files.walkFileTree(pack.toPath(), object : SimpleFileVisitor<Path>() {
+      override fun visitFile(file: Path, attrs: BasicFileAttributes): FileVisitResult {
+        Files.delete(file); return FileVisitResult.CONTINUE
+      }
+      override fun postVisitDirectory(dir: Path, error: java.io.IOException?): FileVisitResult {
+        if (error != null) throw error
+        Files.delete(dir); return FileVisitResult.CONTINUE
+      }
+    })
+  }
+}
 class ShaderStore(private val context: Context) {
   companion object { const val OFFICIAL_MAX_ENTRIES = 20000 }
   private val store = AdvancedStore(context)
   val root = File(context.filesDir, "shaders")
   fun installBuiltins() {
+    if (File(root, ".builtin-v1-removed").exists()) return
     val dir = File(root, "builtin-v1").apply { mkdirs() }
     for (name in context.assets.list("shaders").orEmpty()) {
       val file = File(dir, name)
@@ -107,6 +135,9 @@ class ShaderStore(private val context: Context) {
   fun presets(): List<String> = root.walkTopDown().onEnter { !it.name.startsWith('.') }
     .filter { it.isFile && it.extension.equals("slangp", true) }.take(50000)
     .map { it.relativeTo(root).invariantSeparatorsPath }.sorted().toList()
+  fun packRoots(): List<String> = root.listFiles().orEmpty()
+    .filter { it.isDirectory && !it.name.startsWith('.') && !Files.isSymbolicLink(it.toPath()) }
+    .map { it.name }.sortedWith(String.CASE_INSENSITIVE_ORDER)
   fun file(relative: String): File {
     val f = File(root, relative).canonicalFile
     require(relative.isNotEmpty() && f.path.startsWith(root.canonicalPath + File.separator) && f.isFile) { "Preset file is missing" }
@@ -116,6 +147,13 @@ class ShaderStore(private val context: Context) {
   fun save(game: String?, selection: ShaderSelection) = store.saveShader(game, selection)
   fun reset(game: String) = store.resetShader(game)
   fun hasOverride(game: String) = store.hasShader(game)
+  fun deletePack(name: String) {
+    ShaderPackRemoval.directory(root, name)
+    // Persist Off before removing files, including if a later filesystem error interrupts deletion.
+    store.clearShaderPack(name)
+    if (name == "builtin-v1") File(root, ".builtin-v1-removed").writeText("")
+    ShaderPackRemoval.delete(root, name)
+  }
   fun apply(game: String) {
     val selection = selected(game)
     val path = if (selection.preset.isEmpty()) "" else runCatching { file(selection.preset).absolutePath }.getOrDefault("")
