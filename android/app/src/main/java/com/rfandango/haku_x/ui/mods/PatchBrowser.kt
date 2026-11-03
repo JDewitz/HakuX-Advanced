@@ -131,13 +131,14 @@ fun PatchBrowser(gameKey: String? = null, title: String = "", onBack: () -> Unit
               Text("${selected.pack.writes.size} guarded operations · default.xbe")
               Text(selected.sources.joinToString("\n"), Modifier.padding(vertical = 8.dp))
               Text(d?.status ?: "Not checked", color = MaterialTheme.colorScheme.primary)
+              Text(OnlinePatchRegistry.description(selected, target, com.rfandango.haku_x.BuildConfig.VERSION_NAME), Modifier.padding(vertical = 8.dp))
               Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Text("Enabled for this game", Modifier.weight(1f).padding(top = 12.dp))
                 Switch(checked = d?.enabled == true, enabled = !busy && target != null && (d?.enabled == true || (selected.available && selected.pack.matches(target, com.rfandango.haku_x.BuildConfig.VERSION_NAME))), onCheckedChange = { on ->
                   runCatching { library.store.toggle(target!!, selected.hash, on) }.onSuccess { refresh() }.onFailure { message = it.message ?: "Cannot save toggle" }
                 })
               }
-              Hint("Choices are saved per game and patch content. Online protection blocks execution. Source and byte checks run again before launch; replacement versions start disabled. Turning this off takes effect at the next cold start.")
+              Hint("Choices are saved per game and patch content. Online protection blocks unreviewed patches. Reviewed compatibility patches may run online; trainers and cheats remain blocked. Source and byte checks run again before launch; replacement versions start disabled. Turning this off takes effect at the next cold start.")
               Hint("Imported patches currently support cold starts only. Save-state saving/loading is unavailable in a patched session. Loaded at launch does not prove every native write applied; inspect the patch log.")
               Text("SHA-256: ${selected.hash}", style = MaterialTheme.typography.bodySmall)
             }

@@ -71,7 +71,7 @@ class AdvancedMenu(
   ))
   private fun sessionMode() {
     show(AlertDialog.Builder(activity).setTitle("Online play protection · next cold start")
-      .setSingleChoiceItems(arrayOf("ON — networking allowed, trainers/mods/state loads blocked", "OFFLINE — trainers allowed, all Xbox networking off"), if (store.onlinePlay) 0 else 1) { dialog, index ->
+      .setSingleChoiceItems(arrayOf("ON — networking allowed; trainers, gameplay mods and state loads blocked", "OFFLINE — trainers allowed, all Xbox networking off"), if (store.onlinePlay) 0 else 1) { dialog, index ->
         runCatching { store.onlinePlay = index == 0 }.onSuccess {
           dialog.dismiss(); toast("Saved. Fully exit to the library and start the game again. The running session cannot change modes.")
         }.onFailure { toast(it.message ?: "Could not save protection mode") }
@@ -109,7 +109,7 @@ class AdvancedMenu(
               val p = d.entry.pack
               val current = activity.importedPatchLaunch.decisions.firstOrNull { it.entry.hash == d.entry.hash }?.status ?: "Not loaded in this session"
               val b = AlertDialog.Builder(activity).setTitle(p.name)
-                .setMessage("${p.version} · ${p.author}\n${p.description}\n\nNext start: ${d.status}\n${if (loaded) "Loaded in this session's manifest; native log confirms individual writes." else current}\n\nToggle changes require a cold start. Save states are unavailable while imported patches are loaded.")
+                .setMessage("${p.version} · ${p.author}\n${p.description}\n${com.rfandango.haku_x.patches.OnlinePatchRegistry.description(d.entry, game(), BuildConfig.VERSION_NAME)}\n\nNext start: ${d.status}\n${if (loaded) "Loaded in this session's manifest; native log confirms individual writes." else current}\n\nToggle changes require a cold start. Save states are unavailable while imported patches are loaded.")
                 .setNegativeButton("Back", null)
               if (d.enabled || (d.entry.available && p.matches(game(), BuildConfig.VERSION_NAME))) {
                 b.setPositiveButton(if (d.enabled) "Disable for next start" else "Enable for next start") { _, _ ->

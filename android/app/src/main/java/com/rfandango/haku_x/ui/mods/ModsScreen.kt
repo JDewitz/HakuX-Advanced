@@ -43,7 +43,7 @@ fun ModsScreen(gameKey: String, title: String, onBack: () -> Unit, onTrainers: (
       if (game.isEmpty) {
         EmptyText(stringResource(R.string.mods_none))
       }
-      if (online) Hint("Online play protection blocks all guest mods, cheats and trainers. Use Advanced to choose an offline trainer session; networking will be forced off.")
+      if (online) Hint("Online play protection blocks gameplay mods, cheats and trainers. Built-in compatibility fixes remain allowed; imported fixes need release-registry approval. Use Advanced to choose an offline trainer session; networking will be forced off.")
       if (game.mods.isNotEmpty() && !online) {
         Section(stringResource(R.string.mods_section_mods))
         Hint(stringResource(R.string.mods_mods_desc))

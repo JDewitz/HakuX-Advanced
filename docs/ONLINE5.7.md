@@ -1,3 +1,6 @@
+Current online compatibility exception: see [ONLINE5.11.md](ONLINE5.11.md).
+Trainers, cheats and gameplay mods remain blocked in protected sessions.
+
 # Advanced5.7 — online play protection
 
 User requirement: trainers must never run during Xbox online play. This build

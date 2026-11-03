@@ -1,5 +1,9 @@
 # Advanced5.10 — importable game patches
 
+Historical 5.10 online restriction below is superseded by ONLINE5.11.md: reviewed
+compatibility imports have a dedicated protected-online path; the release
+registry currently has no imported game-fix approvals.
+
 Version `1.3.0-advanced5.10-patches`, versionCode 27. Same update package
 `com.rfandango.haku_x.themes` and existing signing certificate. Native libraries
 are unchanged from 5.8/5.9/5.9.1. Halo revision 8 Auto behavior is retained.

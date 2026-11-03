@@ -3,6 +3,9 @@ package com.rfandango.haku_x.data
 import android.content.Context
 import android.content.res.AssetManager
 import android.util.Log
+import com.rfandango.haku_x.BuildConfig
+import com.rfandango.haku_x.patches.OnlineCompatibilityManifest
+import com.rfandango.haku_x.patches.PatchLaunch
 import org.json.JSONObject
 import java.io.File
 import java.util.Locale
@@ -227,13 +230,20 @@ object ModRun {
   private fun choicesFor(context: Context, game: String, id: String) = ModChoices(context, game).mod(id)
 
   /** The manifest written (null: the game has none), and the run's cheats. */
-  fun write(context: Context, gameKey: String, policy: com.rfandango.haku_x.advanced.OnlinePlayPolicy, imported: ((List<ModInfo>, Boolean) -> List<String>)? = null): Pair<File, List<CheatInfo>>? {
-    // Before any trainer/mod parsing or extraction; no manifest enters an online session.
-    if (!policy.allowGuestMods) return null
+  fun write(context: Context, gameKey: String, policy: com.rfandango.haku_x.advanced.OnlinePlayPolicy, imported: ((List<ModInfo>, Boolean) -> PatchLaunch)? = null): Pair<File, List<CheatInfo>>? {
+    // Protected sessions never read the legacy trainer/mod/cheat selections.
+    // Rebuild the only allowed payload from reviewed typed entries, not callback lines.
+    if (!policy.allowGuestMods) {
+      val compatibility = imported?.invoke(emptyList(), false) ?: return null
+      val lines = OnlineCompatibilityManifest.forLaunch(compatibility, gameKey, BuildConfig.VERSION_NAME)
+      if (lines.isEmpty()) return null
+      Log.i(TAG, "$gameKey: protected online session; ${compatibility.loadedEntries.size} reviewed compatibility patches; trainers/cheats/mods excluded")
+      return writeManifest(context, lines) to emptyList()
+    }
     val game = ModCatalog.load(context, gameKey)
     val trainer = TrainerStore(context, gameKey).load()?.takeIf { it.enabled }
     val on = game.mods.filter { choicesFor(context, gameKey, it.id) }
-    val importedLines = imported?.invoke(on, trainer != null).orEmpty()
+    val importedLines = imported?.invoke(on, trainer != null)?.lines.orEmpty()
     if (game.isEmpty && trainer == null && importedLines.isEmpty()) return null
     val choices = ModChoices(context, gameKey)
     val lines = mutableListOf<String>()
@@ -254,10 +264,15 @@ object ModRun {
       lines += "cheat\t${if (choices.cheat(c.name)) 1 else 0}\t${if (c.once) 1 else 0}\t${c.name}"
       for (l in c.code) lines += "code\t$l"
     }
+    Log.i(TAG, "$gameKey: ${on.size} of ${game.mods.size} mods on, ${game.cheats.size} cheats")
+    return writeManifest(context, lines) to game.cheats
+  }
+  private fun writeManifest(context: Context, lines: List<String>): File {
     val file = File(context.filesDir, "native/mods.txt")
     file.parentFile?.mkdirs()
-    file.writeText(lines.joinToString("\n", postfix = "\n"))
-    Log.i(TAG, "$gameKey: ${on.size} of ${game.mods.size} mods on, ${game.cheats.size} cheats")
-    return file to game.cheats
+    val tmp = File(file.parentFile, "mods.txt.tmp")
+    tmp.outputStream().use { it.write(lines.joinToString("\n", postfix = "\n").toByteArray()); it.fd.sync() }
+    check(tmp.renameTo(file)) { "Could not save launch manifest" }
+    return file
   }
 }

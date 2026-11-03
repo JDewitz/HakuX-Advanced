@@ -93,10 +93,11 @@ fun AdvancedScreen(game: String?, onBack: () -> Unit) {
           runCatching { store.resetProfile(game); profile = store.profile(game); own = false }.onFailure { message(it.message ?: "Could not reset") }
         }
         Section("Online play · global session policy")
-        SwitchItem("Online play protection", "Default on: trainers, cheats, guest mods, memory tools and save-state loading are blocked. Off: offline trainer sessions only; all Xbox networking is forced off. Fully exit and start the game again after changing this setting.", onlinePlay) { value ->
+        SwitchItem("Online play protection", "Default on: trainers, cheats, gameplay mods, unreviewed imported patches, memory tools and save-state loading are blocked. Reviewed compatibility fixes remain allowed. Off: offline trainer sessions only; all Xbox networking is forced off. Fully exit and start the game again after changing this setting.", onlinePlay) { value ->
           runCatching { store.onlinePlay = value }.onSuccess { onlinePlay = value }
             .onFailure { message(it.message ?: "Could not save online protection") }
         }
+        Hint("Halo revision 8’s built-in compatibility fix remains available online. Imported patches need an exact-content approval in the release registry; no imported game fixes are approved yet.")
         Hint("This global policy cannot be overridden by a game profile. Saved trainer options are retained; this setting controls whether they can run. NAT/Insignia, LAN and Kai are all unavailable in offline trainer mode.")
         Section("CPU & memory · restart required")
         SwitchItem("128 MB Xbox RAM", "Off: retail 64 MB. On: development-kit memory size.", profile.ram128) { save(profile.copy(ram128 = it)) }

@@ -11,17 +11,18 @@ import org.json.JSONArray
 import java.io.File
 
 data class PatchLaunch(val loaded: List<String> = emptyList(), val decisions: List<PatchDecision> = emptyList(),
-  val errors: List<String> = emptyList(), val lines: List<String> = emptyList())
+  val errors: List<String> = emptyList(), val lines: List<String> = emptyList(),
+  val loadedEntries: List<PatchEntry> = emptyList())
 
 object PatchRun {
   fun preview(context: Context, entries: List<PatchEntry>, game: String?, online: Boolean): List<PatchDecision> {
     if (game == null) return PatchPlanner.plan(entries, emptySet(), null, BuildConfig.VERSION_NAME, online)
     val enabled = runCatching { PatchStore(context).choices(game) }.getOrDefault(emptySet())
-    val mods = ModCatalog.load(context, game).mods.filter { ModChoices(context, game).mod(it.id) }
+    val mods = if (online) emptyList() else ModCatalog.load(context, game).mods.filter { ModChoices(context, game).mod(it.id) }
     val (ranges, bad) = blockers(mods)
     val replaced = !online && mods.any { ModCatalog.extract(context, game, it.id).any { (path, _) -> path.replace('\\', '/').equals("default.xbe", true) } }
     return PatchPlanner.plan(entries, enabled, game, BuildConfig.VERSION_NAME, online, ranges, bad || replaced,
-      runCatching { TrainerStore(context, game).load()?.enabled == true }.getOrDefault(true)).map {
+      !online && runCatching { TrainerStore(context, game).load()?.enabled == true }.getOrDefault(true)).map {
       if (it.ready && hasUpdate(context, game)) it.copy(ready = false, status = "Incompatible · installed title updates are unsupported") else it
     }
   }
@@ -77,6 +78,6 @@ object PatchRun {
     errors.forEach { Log.w("hakuX-patches", it) }
     return PatchLaunch(loaded.map { it.entry.hash }, resolved.map { if (it.ready) it.copy(status = "Loaded at launch · native writes remain guarded") else it }, errors, loaded.flatMap { d -> d.entry.pack.writes.map {
       "patch\tdefault.xbe\tp-${d.entry.hash.take(32)}\t${it.line()}"
-    } })
+    } }, loaded.map { it.entry })
   }
 }

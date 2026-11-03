@@ -705,7 +705,7 @@ class NativeCoreActivity : SDLActivity(), InputManager.InputDeviceListener {
   /** "mods=<manifest>" when the disc's title has mods or cheats (SDL's thread: may extract a mod's files). */
   private fun modsArg(): String? {
     runCheats = emptyList()
-    if (!onlinePolicy.allowGuestMods || discUri == null) return null
+    if (discUri == null) return null
     val key = gameKey()
     return runCatching { ModRun.write(this, key, onlinePolicy) { mods, trainer ->
       importedPatchLaunch = runCatching {
@@ -716,7 +716,7 @@ class NativeCoreActivity : SDLActivity(), InputManager.InputDeviceListener {
         Log.e(TAG, "imported patches rejected: ${e.message}")
         com.rfandango.haku_x.patches.PatchLaunch(errors = listOf(e.message ?: "Patch preparation failed"))
       }
-      importedPatchLaunch.lines
+      importedPatchLaunch
     } }
       .onFailure { importedPatchLaunch = com.rfandango.haku_x.patches.PatchLaunch(); Log.e(TAG, "mods: ${it.message}") }
       .getOrNull()

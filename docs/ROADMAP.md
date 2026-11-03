@@ -32,6 +32,14 @@ expected-byte, availability, conflict and online checks precede launch. Imported
 patch sessions use cold starts; patch-aware state fingerprints and broader
 formats remain follow-ups. No Snowblind fix is included. See PATCHES5.10.md.
 
+## Current implementation: Advanced5.11 online compatibility
+
+A release-owned exact-content registry separates reviewed imported compatibility
+fixes from trainers/cheats. The protected serializer only emits reviewed guarded
+XBE operations, with no legacy ETM/cheat/file/refresh commands. The registry is
+currently empty; Halo’s built-in fix remains online-eligible independently.
+See ONLINE5.11.md.
+
 ## Next: validate patch behavior and expand compatibility profiles
 
 Extend the initial pool-layout framework to additional independently validated

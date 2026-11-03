@@ -7,7 +7,7 @@ HakuX-Advanced is an unofficial experimental fork of
 for arm64 Android. The original authors and dependency contributors retain
 all attribution and licenses. This project is not an official hakuX release.
 
-The current source is **1.3.0-advanced5.10-patches** (versionCode **27**), built on
+The current source is **1.3.0-advanced5.11-onlinecompat** (versionCode **28**), built on
 **official hakuX 1.3.0**. It retains the fork's history from the original 1.2.0
 base and the subsequent 1.3.0 integration. The default development branch is
 `main`; `upstream` tracks rfandango/hakuX. The repository starts private.
@@ -21,7 +21,8 @@ base and the subsequent 1.3.0 integration. The default development branch is
 - Shared app/pause themes, imported presets, multi-select import and live preview.
 - Cards, list, stats, info/play and icon library layouts, with trainer/config badges.
 - Experimental EvoX ETM trainer import and folder-backed per-game trainer browser.
-- Online protection: mutually exclusive protected online and offline trainer sessions.
+- Online protection: trainers/cheats blocked; built-in fixes and release-reviewed compatibility patches remain eligible online.
+  The imported-patch approval registry is currently empty.
 - Importable guarded XBE patch packs, folder scanning and persistent per-game toggles.
 - Optional high initial kernel pool placement for the Halo CE 1.3.0 crash.
 
@@ -34,7 +35,7 @@ patch plugins and broader formats remain planned.
 
 ## Latest validation
 
-Advanced5.10 passed Android compilation/APK assembly and its JVM suite: **109 passed, zero
+Advanced5.11 passed Android compilation/APK assembly and its JVM suite: **117 passed, zero
 failures and one optional shader-archive skip**. Native pool/Advanced/fast-forward
 checks and Android/native GitHub CI passed for the unchanged 5.9 baseline. This update reuses
 the native libraries from the tested Advanced5.8 APK; it does not rebuild the
@@ -51,6 +52,7 @@ Recorded state placement takes precedence when a state is loaded.
 
 ## Documentation
 
+- [Online compatibility policy and approval registry](docs/ONLINE5.11.md)
 - [Importable patch browser and format](docs/PATCHES5.10.md)
 - [Halo revision 8 Auto update](docs/HALO5.9.1.md)
 - [Compatibility profiles and Halo controls](docs/COMPATIBILITY5.9.md)

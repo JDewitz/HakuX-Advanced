@@ -72,10 +72,11 @@ data class PatchEntry(val hash: String, val pack: PatchPack, val sources: List<S
 data class PatchDecision(val entry: PatchEntry, val enabled: Boolean, val status: String, val ready: Boolean = false)
 
 object PatchPlanner {
-  fun plan(entries: List<PatchEntry>, enabled: Set<String>, game: String?, emulator: String, online: Boolean,
+  internal fun plan(entries: List<PatchEntry>, enabled: Set<String>, game: String?, emulator: String, online: Boolean,
            builtIn: List<PatchWrite> = emptyList(), otherMods: Boolean = false, trainer: Boolean = false,
-           stateLoad: Boolean = false): List<PatchDecision> {
-    val eligible = entries.filter { it.available && it.hash in enabled && it.pack.matches(game, emulator) }
+           stateLoad: Boolean = false, onlineApprovals: List<OnlinePatchApproval> = OnlinePatchRegistry.approvals): List<PatchDecision> {
+    val eligible = entries.filter { it.available && it.hash in enabled && it.pack.matches(game, emulator) &&
+      (!online || OnlinePatchRegistry.approval(it, game, emulator, onlineApprovals) != null) }
     return entries.map { e ->
       val on = e.hash in enabled
       val reason = when {
@@ -83,7 +84,7 @@ object PatchPlanner {
         game == null -> "Select a game to configure"
         !e.pack.matches(game, emulator) -> "Incompatible · title, revision or core build differs"
         !on -> "Off"
-        online -> "Blocked by online play protection"
+        online && OnlinePatchRegistry.approval(e, game, emulator, onlineApprovals) == null -> "Blocked by online play protection · patch is not reviewed for online use"
         stateLoad -> "Blocked · imported patches require a cold start"
         eligible.size > 32 || eligible.sumOf { it.pack.writes.size } > 256 -> "Conflicting · session patch limit exceeded"
         trainer -> "Conflicting · disable the active trainer first"
@@ -92,7 +93,7 @@ object PatchPlanner {
         eligible.any { x -> x.hash != e.hash && (x.pack.id == e.pack.id || x.pack.id in e.pack.conflicts || e.pack.id in x.pack.conflicts || e.pack.writes.any { a -> x.pack.writes.any { a.overlaps(it) } }) } -> "Conflicting · another enabled imported patch"
         else -> null
       }
-      PatchDecision(e, on, reason ?: "Enabled for next cold launch", reason == null)
+      PatchDecision(e, on, reason ?: if (online) "Reviewed compatibility patch · enabled for next cold launch" else "Enabled for next cold launch", reason == null)
     }
   }
   fun preflight(pack: PatchPack, read: (Long, Int) -> ByteArray?): Boolean = pack.writes.all { op ->

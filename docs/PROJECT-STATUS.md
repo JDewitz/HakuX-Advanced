@@ -1,6 +1,14 @@
 # HakuX-Advanced project status — 2026-11-03
 
-Current update: Advanced5.10, `1.3.0-advanced5.10-patches`, versionCode 27.
+Current update: Advanced5.11, `1.3.0-advanced5.11-onlinecompat`, versionCode 28.
+Protected online sessions now have a separate compatibility-only manifest path
+for exact-content release-reviewed patches. The registry starts empty. Halo
+revision 8’s built-in Auto fix remains eligible online; trainers, cheats and
+gameplay mods remain blocked. Native libraries are unchanged. Android APK assembly passed; 117 JVM tests passed,
+zero failed and one optional skip. Signature/package/native library checks passed.
+Actual online device testing remains pending. See ONLINE5.11.md.
+
+Previous update: Advanced5.10, `1.3.0-advanced5.10-patches`, versionCode 27.
 Imported guarded patches have a folder browser, per-game toggles, preflight
 checks, conflict rejection and protected-online blocking. Native libraries are
 unchanged. Save-state use is blocked in imported-patch sessions. Device testing
