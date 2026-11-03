@@ -47,6 +47,7 @@ class LibraryFeatureIndex(private val context: Context) {
     val mods = if (modsFile.exists()) json("mod_choices.json") else JSONObject().apply {
       context.getSharedPreferences(ModChoices.NAME, Context.MODE_PRIVATE).all.forEach { (key, value) -> if (value is Boolean) put(key,value) }
     }
+    val patches = com.rfandango.haku_x.patches.PatchStore(context)
     return games.associate { game ->
       val d = info[game.uri]
       val key = GameOverrides.gameKey(d?.titleId ?: 0L, d?.version ?: 0L, game.relativePath)
@@ -59,7 +60,7 @@ class LibraryFeatureIndex(private val context: Context) {
         trainerOptions = t?.options?.count { it == '1' } ?: 0,
         trainerError = trainer.isFailure,
         customSetup = LibraryMarkers.hasSettings(key,settings) || advanced.optJSONObject("games")?.has(key) == true ||
-          advanced.optJSONObject("shaderGames")?.has(key) == true || LibraryMarkers.hasEnabledMods(key,mods),
+          advanced.optJSONObject("shaderGames")?.has(key) == true || LibraryMarkers.hasEnabledMods(key,mods) || patches.configured(key),
       )
     }
   }

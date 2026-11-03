@@ -62,6 +62,7 @@ import java.util.GregorianCalendar
 @Composable
 fun SettingsScreen(
   onTrainers: () -> Unit,
+  onPatches: () -> Unit,
   onAdvanced: () -> Unit,
   onBack: () -> Unit,
   onEditControls: () -> Unit,
@@ -168,6 +169,7 @@ fun SettingsScreen(
         pickFolder.launch(folders.lastOrNull())
       }
 
+      ActionItem(title = "Game patches", summary = "Import guarded patches, select a game and configure individual toggles", icon = null, onClick = onPatches)
       ActionItem(title = "Trainers", summary = "Folder browser, game matching and EvoX trainer options", icon = null, onClick = onTrainers)
       ActionItem(title = "Advanced & experimental", summary = "Startup profiles, GPU workarounds and emulator hotkeys", icon = null, onClick = onAdvanced)
       Section(stringResource(R.string.settings_section_controls))

@@ -75,6 +75,7 @@ class RelaunchActivity : Activity() {
         if (state != null) putExtra(NativeCoreActivity.EXTRA_LOADSTATE, state)
         else if (!intent.getBooleanExtra(NativeCoreActivity.EXTRA_RESTART, false)) {
           putExtra(NativeCoreActivity.EXTRA_RELAUNCH, true)
+          intent.getStringExtra(NativeCoreActivity.EXTRA_PATCHES)?.let { putExtra(NativeCoreActivity.EXTRA_PATCHES, it) }
         }
       }
       .putExtra(

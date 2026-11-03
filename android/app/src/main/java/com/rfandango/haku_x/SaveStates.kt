@@ -70,6 +70,7 @@ class SaveStates(
   }
 
   fun save(slot: Int, done: () -> Unit = {}) {
+    if (!activity.allowImportedPatchStates()) { done(); return }
     store.prepare()
     val progress = showDialog(
       AlertDialog.Builder(activity)

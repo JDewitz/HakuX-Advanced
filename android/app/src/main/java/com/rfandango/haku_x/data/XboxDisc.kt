@@ -43,6 +43,27 @@ class XboxDisc private constructor(private val ch: FileChannel, private val part
     Xbe(at, h.getInt(0x104).toLong() and MASK, readAt(ch, at, size.toInt()) ?: return@lazy null)
   }
 
+  /** Guarded imported patches may touch file-backed sections only, never XBE headers. */
+  fun readPatchBytes(address: Long, size: Int): ByteArray? {
+    val x = xbe ?: return null
+    if (size !in 1..256 || address < x.base + x.headers.capacity() || address + size > 0x100000000L) return null
+    val count = x.headers.getInt(0x11C).toLong() and MASK
+    if (count !in 1..96) return null
+    val table = headerOffset(x, x.headers.getInt(0x120), (count * 0x38).toInt()) ?: return null
+    for (i in 0 until count.toInt()) {
+      val at = table + i * 0x38
+      val va = x.headers.getInt(at + 4).toLong() and MASK
+      val virtual = x.headers.getInt(at + 8).toLong() and MASK
+      val raw = x.headers.getInt(at + 12).toLong() and MASK
+      val length = x.headers.getInt(at + 16).toLong() and MASK
+      if (address >= va && address + size <= va + minOf(virtual, length)) {
+        val bytes = readAt(ch, x.start + raw + address - va, size) ?: return null
+        return ByteArray(size).also { bytes.get(it) }
+      }
+    }
+    return null
+  }
+
   /**
    * The certificate (its address at 0x118): title ID at +8, title name (40
    * UTF-16 characters) at +0x0C, game region flags (XBE_REGION_*) at +0xA0,

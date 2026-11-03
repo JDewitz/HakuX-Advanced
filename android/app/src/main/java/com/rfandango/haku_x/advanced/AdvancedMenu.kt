@@ -58,6 +58,7 @@ class AdvancedMenu(
     "Online play protection · current session: ${if (activity.onlinePolicy.onlinePlay) "ON" else "OFFLINE"}" to ::sessionMode,
     "Startup profile for this game · restart required" to ::startup,
     "Game compatibility · high kernel pool placement" to ::compatibility,
+    "Imported game patches · next cold start" to ::importedPatches,
     "GPU driver workaround overrides · restart required" to ::quirks,
     "RetroArch Slang shaders" to { shaders.show() },
     "Live presentation filters" to ::presentation,
@@ -88,6 +89,40 @@ class AdvancedMenu(
       }.setNeutralButton("Use global") { _, _ ->
         runCatching { store.resetProfile(game()) }.onSuccess { toast("Global profile will apply at the next start") }.onFailure { toast("Reset failed") }
       }.setNegativeButton("Cancel", null))
+  }
+  private fun importedPatches() {
+    Thread {
+      val result = runCatching {
+        val scanned = com.rfandango.haku_x.patches.PatchLibrary(activity).scan()
+        scanned to com.rfandango.haku_x.patches.PatchRun.preview(activity, scanned.entries, game(), AdvancedStore(activity).onlinePlay)
+      }
+      activity.runOnUiThread {
+        result.onFailure { toast(it.message ?: "Cannot read patches") }.onSuccess { (scan, decisions) ->
+          if (decisions.isEmpty()) {
+            show(AlertDialog.Builder(activity).setTitle("Imported game patches")
+              .setMessage("Import .hakuxpatch files from Settings → Game patches or the game's Mods & cheats screen.\n" + scan.errors.take(5).joinToString("\n"))
+              .setPositiveButton("Back", null)); return@onSuccess
+          }
+          choice("Game patches · next cold start", decisions.map { d ->
+            val loaded = d.entry.hash in activity.importedPatchLaunch.loaded
+            "${d.entry.pack.name}: ${if (loaded) "Loaded at launch; " else ""}${d.status}" to {
+              val p = d.entry.pack
+              val current = activity.importedPatchLaunch.decisions.firstOrNull { it.entry.hash == d.entry.hash }?.status ?: "Not loaded in this session"
+              val b = AlertDialog.Builder(activity).setTitle(p.name)
+                .setMessage("${p.version} · ${p.author}\n${p.description}\n\nNext start: ${d.status}\n${if (loaded) "Loaded in this session's manifest; native log confirms individual writes." else current}\n\nToggle changes require a cold start. Save states are unavailable while imported patches are loaded.")
+                .setNegativeButton("Back", null)
+              if (d.enabled || (d.entry.available && p.matches(game(), BuildConfig.VERSION_NAME))) {
+                b.setPositiveButton(if (d.enabled) "Disable for next start" else "Enable for next start") { _, _ ->
+                  runCatching { com.rfandango.haku_x.patches.PatchStore(activity).toggle(game(), d.entry.hash, !d.enabled) }
+                    .onSuccess { toast("Saved. Fully exit and cold start to apply it.") }.onFailure { toast(it.message ?: "Cannot save patch toggle") }
+                }
+              }
+              show(b)
+            }
+          })
+        }
+      }
+    }.start()
   }
   private fun compatibility() {
     val p = store.profile(game())

@@ -1,0 +1,19 @@
+{
+  "schema": 1,
+  "id": "hakux.fixture.halo8-guard-probe",
+  "name": "Halo 8 guard probe (no-op)",
+  "version": "1",
+  "author": "HakuX-Advanced",
+  "description": "Import/toggle/byte-guard test only. Synthetic bytes should be rejected. Expected and replacement bytes are identical, so this never intentionally changes game bytes. This is not a game fix.",
+  "titleId": "4D530004",
+  "revisions": [8],
+  "emulatorBase": "1.3.0",
+  "patches": [
+    {
+      "xbe": "default.xbe",
+      "address": "0x11000",
+      "expected": "DE AD BE EF",
+      "replacement": "DE AD BE EF"
+    }
+  ]
+}

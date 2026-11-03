@@ -26,7 +26,7 @@ import com.rfandango.haku_x.ui.common.SwitchItem
  * menu while it runs.
  */
 @Composable
-fun ModsScreen(gameKey: String, title: String, onBack: () -> Unit, onTrainers: () -> Unit) {
+fun ModsScreen(gameKey: String, title: String, onBack: () -> Unit, onTrainers: () -> Unit, onPatches: () -> Unit) {
   val context = LocalContext.current
   val online = com.rfandango.haku_x.advanced.AdvancedStore(context).onlinePlay
   val game = remember(gameKey) { ModCatalog.load(context, gameKey) }
@@ -38,6 +38,7 @@ fun ModsScreen(gameKey: String, title: String, onBack: () -> Unit, onTrainers: (
 
   SubScreen(title = stringResource(R.string.mods_title), subtitle = title, onBack = onBack) { padding ->
     Column(Modifier.padding(padding).fillMaxSize().verticalScroll(rememberScrollState())) {
+      com.rfandango.haku_x.ui.common.ActionItem("Game patches", "Import and toggle guarded patches for this game revision", null, onClick = onPatches)
       com.rfandango.haku_x.ui.common.ActionItem("Trainer browser", "Scan a folder, choose matching trainers and configure options", null, onClick = onTrainers)
       if (game.isEmpty) {
         EmptyText(stringResource(R.string.mods_none))

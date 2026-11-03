@@ -24,7 +24,15 @@ entry. Advanced5.9.1 enables Auto only for user-reported Halo revision 8 on
 the 1.3.0 core. Other revisions remain off. Independent logs and repeat cold
 boots remain follow-ups. The native fix is unchanged. See HALO5.9.1.md.
 
-## Next: expand and validate compatibility profiles
+## Current implementation: Advanced5.10 imported patches
+
+A folder/import browser and per-game content-bound toggles feed guarded
+`default.xbe` operations through the existing offline mod loader. Identity,
+expected-byte, availability, conflict and online checks precede launch. Imported
+patch sessions use cold starts; patch-aware state fingerprints and broader
+formats remain follow-ups. No Snowblind fix is included. See PATCHES5.10.md.
+
+## Next: validate patch behavior and expand compatibility profiles
 
 Extend the initial pool-layout framework to additional independently validated
 workarounds, with per-workaround Auto / On / Off and explicit user overrides. Match XBE title ID plus verified revision/hash constraints; never

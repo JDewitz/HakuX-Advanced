@@ -47,6 +47,8 @@ private object Routes {
   const val SETUP = "setup"
   const val LIBRARY = "library"
   const val SETTINGS = "settings"
+  const val PATCHES = "patches?key={key}&title={title}"
+  fun patches(key: String = "", title: String = "") = "patches?key=${Uri.encode(key)}&title=${Uri.encode(title)}"
   const val TRAINERS = "trainers?key={key}&title={title}"
   fun trainers(key: String = "", title: String = "") = "trainers?key=${Uri.encode(key)}&title=${Uri.encode(title)}"
   const val CONTROLS = "controls"
@@ -169,7 +171,15 @@ fun HakuXApp(
         title = entry.arguments?.getString("title").orEmpty(),
         onBack = { nav.popBackStack() },
         onTrainers = { nav.navigate(Routes.trainers(entry.arguments?.getString("key").orEmpty(),entry.arguments?.getString("title").orEmpty())) },
+        onPatches = { nav.navigate(Routes.patches(entry.arguments?.getString("key").orEmpty(),entry.arguments?.getString("title").orEmpty())) },
       )
+    }
+    composable(Routes.PATCHES, arguments = listOf(
+      navArgument("key") { type = NavType.StringType; defaultValue = "" },
+      navArgument("title") { type = NavType.StringType; defaultValue = "" },
+    )) { entry ->
+      com.rfandango.haku_x.ui.mods.PatchBrowser(entry.arguments?.getString("key")?.takeIf { it.isNotEmpty() },
+        entry.arguments?.getString("title").orEmpty(), onBack = { nav.popBackStack() })
     }
     composable(Routes.TRAINERS, arguments = listOf(
       navArgument("key") { type = NavType.StringType; defaultValue = "" },
@@ -182,6 +192,7 @@ fun HakuXApp(
     composable(Routes.SETTINGS) {
       SettingsScreen(
         onTrainers = { nav.navigate(Routes.trainers()) },
+        onPatches = { nav.navigate(Routes.patches()) },
         onBack = { nav.popBackStack() },
         onAdvanced = { nav.navigate(Routes.advanced()) },
         onEditControls = { nav.navigate(Routes.CONTROLS) },

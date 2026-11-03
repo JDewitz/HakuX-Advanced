@@ -224,17 +224,20 @@ class ModChoices(context: Context, private val game: String) {
 object ModRun {
   private const val TAG = "hakuX-mods"
 
+  private fun choicesFor(context: Context, game: String, id: String) = ModChoices(context, game).mod(id)
+
   /** The manifest written (null: the game has none), and the run's cheats. */
-  fun write(context: Context, gameKey: String, policy: com.rfandango.haku_x.advanced.OnlinePlayPolicy): Pair<File, List<CheatInfo>>? {
+  fun write(context: Context, gameKey: String, policy: com.rfandango.haku_x.advanced.OnlinePlayPolicy, imported: ((List<ModInfo>, Boolean) -> List<String>)? = null): Pair<File, List<CheatInfo>>? {
     // Before any trainer/mod parsing or extraction; no manifest enters an online session.
     if (!policy.allowGuestMods) return null
     val game = ModCatalog.load(context, gameKey)
     val trainer = TrainerStore(context, gameKey).load()?.takeIf { it.enabled }
-    if (game.isEmpty && trainer == null) return null
+    val on = game.mods.filter { choicesFor(context, gameKey, it.id) }
+    val importedLines = imported?.invoke(on, trainer != null).orEmpty()
+    if (game.isEmpty && trainer == null && importedLines.isEmpty()) return null
     val choices = ModChoices(context, gameKey)
     val lines = mutableListOf<String>()
     if (trainer != null) lines += "etm\t${trainer.file.absolutePath}\t${trainer.options}"
-    val on = game.mods.filter { choices.mod(it.id) }
     for (mod in on) {
       for ((disc, file) in ModCatalog.extract(context, gameKey, mod.id)) {
         lines += "file\t${disc.replace('/', '\\')}\t${file.absolutePath}"
@@ -245,6 +248,7 @@ object ModRun {
       val kind = if (mod in on) "patch" else "patchoff"
       for ((xbe, line) in mod.patches) lines += "$kind\t$xbe\t${mod.id}\t$line"
     }
+    lines += importedLines
     on.maxOfOrNull { it.refresh }?.takeIf { it > 0 }?.let { lines += "refresh\t$it" }
     for (c in game.cheats) {
       lines += "cheat\t${if (choices.cheat(c.name)) 1 else 0}\t${if (c.once) 1 else 0}\t${c.name}"

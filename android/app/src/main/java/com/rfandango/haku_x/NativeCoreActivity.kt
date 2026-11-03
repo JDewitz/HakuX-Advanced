@@ -231,7 +231,15 @@ class NativeCoreActivity : SDLActivity(), InputManager.InputDeviceListener {
     com.rfandango.haku_x.advanced.OnlineLaunchGuard.resolve(configured.propagateFrom(
       if (intent.hasExtra(EXTRA_ONLINE_PLAY)) intent.getBooleanExtra(EXTRA_ONLINE_PLAY, true) else null))
   }
+  @Volatile var importedPatchLaunch = com.rfandango.haku_x.patches.PatchLaunch()
+    private set
+  fun allowImportedPatchStates(): Boolean {
+    if (importedPatchLaunch.loaded.isEmpty()) return true
+    Toast.makeText(this, "Imported patches use cold starts only in this release. Fully exit and disable patches before using save states.", Toast.LENGTH_LONG).show()
+    return false
+  }
   fun allowStateLoad(): Boolean {
+    if (!allowImportedPatchStates()) return false
     if (onlinePolicy.allowStateLoad) return true
     Toast.makeText(this, com.rfandango.haku_x.advanced.OnlinePlayPolicy.BLOCK_MESSAGE, Toast.LENGTH_LONG).show()
     return false
@@ -699,8 +707,18 @@ class NativeCoreActivity : SDLActivity(), InputManager.InputDeviceListener {
     runCheats = emptyList()
     if (!onlinePolicy.allowGuestMods || discUri == null) return null
     val key = gameKey()
-    return runCatching { ModRun.write(this, key, onlinePolicy) }
-      .onFailure { Log.e(TAG, "mods: ${it.message}") }
+    return runCatching { ModRun.write(this, key, onlinePolicy) { mods, trainer ->
+      importedPatchLaunch = runCatching {
+        com.rfandango.haku_x.patches.PatchRun.prepare(this, key, discUri!!, !onlinePolicy.allowGuestMods,
+          mods, trainer, intent.hasExtra(EXTRA_LOADSTATE),
+          intent.getStringExtra(EXTRA_PATCHES).takeIf { intent.getBooleanExtra(EXTRA_RELAUNCH, false) })
+      }.getOrElse { e ->
+        Log.e(TAG, "imported patches rejected: ${e.message}")
+        com.rfandango.haku_x.patches.PatchLaunch(errors = listOf(e.message ?: "Patch preparation failed"))
+      }
+      importedPatchLaunch.lines
+    } }
+      .onFailure { importedPatchLaunch = com.rfandango.haku_x.patches.PatchLaunch(); Log.e(TAG, "mods: ${it.message}") }
       .getOrNull()
       ?.let { (file, cheats) ->
         runKey = key
@@ -1079,6 +1097,7 @@ class NativeCoreActivity : SDLActivity(), InputManager.InputDeviceListener {
     startActivity(
       Intent(this, RelaunchActivity::class.java)
         .putExtra(EXTRA_ONLINE_PLAY, onlinePolicy.onlinePlay)
+        .putExtra(EXTRA_PATCHES, org.json.JSONArray(importedPatchLaunch.loaded).toString())
         .putExtra(EXTRA_DVD_URI, uri)
         .putExtra(
           LauncherActivity.EXTRA_LAUNCHED_EXTERNALLY,
@@ -1277,6 +1296,7 @@ class NativeCoreActivity : SDLActivity(), InputManager.InputDeviceListener {
     const val EXTRA_DVD_URI = "dvdUri"
     /** Boot the XBE of the saved launch data page (a title's XLaunchNewImage). */
     const val EXTRA_RELAUNCH = "relaunch"
+    const val EXTRA_PATCHES = "imported_patch_snapshot"
     /** Boot into the savestate at this path (SaveStates' Load state). */
     const val EXTRA_ONLINE_PLAY = "online_play_session"
     const val EXTRA_LOADSTATE = "loadstate"

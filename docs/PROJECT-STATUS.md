@@ -1,6 +1,14 @@
 # HakuX-Advanced project status — 2026-11-03
 
-Current update: Advanced5.9.1, `1.3.0-advanced5.9.1-halo8`, versionCode 26.
+Current update: Advanced5.10, `1.3.0-advanced5.10-patches`, versionCode 27.
+Imported guarded patches have a folder browser, per-game toggles, preflight
+checks, conflict rejection and protected-online blocking. Native libraries are
+unchanged. Save-state use is blocked in imported-patch sessions. Device testing
+is pending. Android compilation/APK assembly passed; 109 JVM tests passed, zero
+failed and one optional shader-archive test skipped. The final APK has the
+existing certificate and 11 unchanged native libraries. See PATCHES5.10.md.
+
+Previous update: Advanced5.9.1, `1.3.0-advanced5.9.1-halo8`, versionCode 26.
 Auto enables the Halo pool workaround for user-reported title/revision
 `4D530004.8` on emulator base 1.3.0. Explicit On/Off choices remain unchanged.
 Other revisions are not enabled. See HALO5.9.1.md for evidence and use notes.
