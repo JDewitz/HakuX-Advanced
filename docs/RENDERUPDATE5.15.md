@@ -1,13 +1,21 @@
 # RenderUpdate — Advanced5.15
 
-Version `1.3.0-advanced5.15-renderupdate`, versionCode 32. Same Android package
+Current menu update: `1.3.0-advanced5.15.1-renderupdate`, versionCode 33. Same Android package
 and signing certificate. This is a renderer-enhancement test batch.
 
 ## In this APK
 
 Open **Options → Graphics → RenderUpdate**, or the corresponding per-game
-Graphics setting. The same control is in the shared Shaders browser, including
-when opened from a paused game. Choose:
+Graphics setting. The same control is in the shared Shaders browser.
+
+From a running game, open **Pause → Advanced → RenderUpdate**. Its dedicated
+submenu offers this game's settings, global defaults, Use global for this game,
+and Shader status. Mode controls include a sharpness slider. Apply saves the
+selection and queues it directly in the running core; the menu keeps emulation
+paused throughout the change. Closing the last dialog resumes the game. Global
+changes respect an existing per-game override. Reapplying retries the shader
+chain, including if its previous load failed. No separate settings Activity or
+restart is needed for these pause-menu controls. Choose:
 
 - Off: clear the shader selection for this scope.
 - Adaptive sharpening: one output-sized pass, strength 0–100%, default 25%.

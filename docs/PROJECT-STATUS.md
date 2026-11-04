@@ -1,7 +1,8 @@
 # HakuX-Advanced project status — 2026-11-03
 
-Current update: RenderUpdate / Advanced5.15, `1.3.0-advanced5.15-renderupdate`,
-versionCode 32. Bundled SMAA 1x and contrast-adaptive sharpening use the existing
+Current update: RenderUpdate / Advanced5.15.1, `1.3.0-advanced5.15.1-renderupdate`,
+versionCode 33. The Advanced pause menu now has a dedicated RenderUpdate submenu
+for per-game/global modes, sharpness, inheritance and native shader status. Bundled SMAA 1x and contrast-adaptive sharpening use the existing
 Vulkan Slang runtime, with global/per-game controls under Graphics. Effects are
 opt-in and occupy the shader slot. Native binaries are unchanged; anisotropic
 filtering, texture replacement and depth/temporal features are planned, not

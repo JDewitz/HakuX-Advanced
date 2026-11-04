@@ -32,6 +32,7 @@ class AdvancedMenu(
 ) {
   private val store = AdvancedStore(activity)
   private val shaders by lazy { ShaderMenu(activity, show, game) }
+  private val renderUpdate by lazy { RenderUpdateMenu(activity, show, game) }
   private val handler = Handler(Looper.getMainLooper())
   private val root get() = File(activity.getExternalFilesDir(null) ?: activity.filesDir, "advanced").apply { mkdirs() }
   private var token = 0L
@@ -60,6 +61,7 @@ class AdvancedMenu(
     "Game compatibility · high kernel pool placement" to ::compatibility,
     "Imported game patches · next cold start" to ::importedPatches,
     "GPU driver workaround overrides · restart required" to ::quirks,
+    "RenderUpdate · SMAA / sharpening" to { renderUpdate.show() },
     "RetroArch Slang shaders" to { shaders.show() },
     "Live presentation filters" to ::presentation,
     "Record 10-second benchmark" to ::recordBenchmark,
