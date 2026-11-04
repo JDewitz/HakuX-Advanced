@@ -63,7 +63,14 @@ import org.libsdl.app.SDLActivity
 class NativeCoreActivity : SDLActivity(), InputManager.InputDeviceListener {
   private var discArg = ""
   private var onScreenController: OnScreenController? = null
-  private var fpsView: TextView? = null
+  private var fpsView: PerformanceHudView? = null
+  var performanceHudLevel = 1
+    private set
+  private val hudWorker = java.util.concurrent.Executors.newSingleThreadExecutor()
+  private val hudSampler by lazy { PerformanceHudSampler(applicationContext) }
+  private var hudHost = HudHost()
+  private var hudSamplePending = false
+  private var hudSampleAt = 0L
   private var fastForwardView: TextView? = null
   private var shaderNameView: TextView? = null
   private val shaderWorker = java.util.concurrent.Executors.newSingleThreadExecutor()
@@ -88,12 +95,17 @@ class NativeCoreActivity : SDLActivity(), InputManager.InputDeviceListener {
       }
       linesWantedSince = 0L
       val s = nativeGetFrameStats()
-      if (fpsOn && s != null && s.size >= 3) {
-        var text = "FPS: %.0f  |  %.1fms avg  /  %.1fms last".format(s[0], s[1], s[2])
-        if (s[1] > 0f && s[2] > 2f * s[1]) {
-          text += " *" /* the last frame took over twice the average */
+      if (fpsOn) {
+        val now = SystemClock.elapsedRealtime()
+        val running = !activityPaused && !manualPaused && menuDialogs == 0
+        if (running && performanceHudLevel >= 2 && !hudSamplePending && now - hudSampleAt >= 1000) {
+          hudSampleAt = now; hudSamplePending = true
+          hudWorker.execute {
+            val sampled = runCatching { hudSampler.sample() }.getOrDefault(HudHost())
+            runOnUiThread { hudSamplePending = false; if (!isDestroyed) hudHost = sampled }
+          }
         }
-        fpsView?.text = text
+        fpsView?.update(HudFrame.fromNative(s), hudHost, now, running)
       }
       hitchView?.takeIf { hitchesOn }?.let { v ->
         val hitches = nativeGetHleHitches()
@@ -104,7 +116,7 @@ class NativeCoreActivity : SDLActivity(), InputManager.InputDeviceListener {
           v.visibility = View.GONE
         }
       }
-      fpsHandler.postDelayed(this, FPS_INTERVAL_MS)
+      fpsHandler.postDelayed(this, if (performanceHudLevel >= 3) 250L else FPS_INTERVAL_MS)
     }
   }
 
@@ -495,7 +507,9 @@ class NativeCoreActivity : SDLActivity(), InputManager.InputDeviceListener {
     syncPause() /* where it stopped (onPause), unless the menu is open */
     hideSystemBars()
     val prefs = getSharedPreferences("x1box_prefs", Context.MODE_PRIVATE)
-    fpsOn = prefs.getBoolean("show_fps", true)
+    performanceHudLevel = HudLevels.resolve(advanced.performanceHudLevel, prefs.getBoolean("show_fps", true))
+    fpsOn = performanceHudLevel > 0
+    fpsView?.level = performanceHudLevel
     hitchesOn = BuildConfig.DEBUG && prefs.getBoolean(PREF_SHOW_HITCHES, true)
     fpsView?.visibility = if (fpsOn) View.VISIBLE else View.GONE
     if (!hitchesOn) hitchView?.visibility = View.GONE
@@ -559,6 +573,7 @@ class NativeCoreActivity : SDLActivity(), InputManager.InputDeviceListener {
     fpsHandler.removeCallbacks(rumbleRunnable)
     loadingDialog?.dismiss()
     shaderWorker.shutdownNow()
+    hudWorker.shutdownNow()
     fpsHandler.removeCallbacks(hideShaderName)
     (getSystemService(Context.INPUT_SERVICE) as InputManager).unregisterInputDeviceListener(this)
     multicastLock?.release()
@@ -618,18 +633,17 @@ class NativeCoreActivity : SDLActivity(), InputManager.InputDeviceListener {
    * counts, the ongoing or last hang and the last stutter, with their causes.
    * Each has its own switch; the monitor takes the top with the FPS off.
    */
+  fun choosePerformanceHudLevel(level: Int) {
+    require(level in 0..4)
+    AdvancedStore(this).performanceHudLevel = level
+    getSharedPreferences("x1box_prefs", Context.MODE_PRIVATE).edit().putBoolean("show_fps", level > 0).apply()
+    performanceHudLevel = level; fpsOn = level > 0; fpsView?.level = level
+    fpsHandler.removeCallbacks(fpsRunnable); linesWantedSince = 0L
+    if (!activityPaused && (fpsOn || hitchesOn)) fpsHandler.post(fpsRunnable)
+  }
+
   private fun setupFpsOverlay() {
-    val fps = TextView(this).apply {
-      id = View.generateViewId()
-      text = "FPS: --"
-      setTextColor(Color.WHITE)
-      setTextSize(TypedValue.COMPLEX_UNIT_SP, 11f)
-      typeface = Typeface.MONOSPACE
-      setShadowLayer(2f, 1f, 1f, Color.BLACK)
-      setPadding(16, 8, 16, 8)
-      setBackgroundColor(Color.argb(100, 0, 0, 0))
-      maxLines = 1
-    }
+    val fps = PerformanceHudView(this).apply { id = View.generateViewId(); level = performanceHudLevel }
     val params = RelativeLayout.LayoutParams(
       RelativeLayout.LayoutParams.WRAP_CONTENT,
       RelativeLayout.LayoutParams.WRAP_CONTENT,

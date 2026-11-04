@@ -61,6 +61,7 @@ class AdvancedMenu(
     "Game compatibility · high kernel pool placement" to ::compatibility,
     "Imported game patches · next cold start" to ::importedPatches,
     "GPU driver workaround overrides · restart required" to ::quirks,
+    "Performance overlay · level ${activity.performanceHudLevel}" to ::performanceHud,
     "RenderUpdate · SMAA / sharpening" to { renderUpdate.show() },
     "RetroArch Slang shaders" to { shaders.show() },
     "Live presentation filters" to ::presentation,
@@ -71,6 +72,17 @@ class AdvancedMenu(
     "Dump a texture by ID" to ::texture,
     "Export Advanced files as ZIP" to ::export,
   ))
+  private fun performanceHud() {
+    show(AlertDialog.Builder(activity).setTitle("Performance overlay")
+      .setSingleChoiceItems(HudLevels.labels, activity.performanceHudLevel) { dialog, index ->
+        runCatching { activity.choosePerformanceHudLevel(index) }.onSuccess { dialog.dismiss() }
+          .onFailure { toast(it.message ?: "Could not save overlay level") }
+      }.setNeutralButton("About metrics") { _, _ ->
+        show(AlertDialog.Builder(activity).setTitle("Performance overlay metrics")
+          .setMessage("FPS and frame times are core presentation counters, not an emulation-speed percentage. The graph samples the last completed frame up to four times per second; it is not a complete frame trace.\n\nCPU APP is this process's CPU time divided by total logical CPU capacity. SYS RAM is device-wide used/total memory; APP RSS is resident process memory. Battery watts describe the whole device's battery rate, including charging, not app power. Unsupported readings show -- or N/A. GPU utilization and VRAM usage are not exposed by this core.\n\nLevels apply immediately and are remembered globally. The launcher Show FPS switch also controls visibility. The full panel costs slightly more to draw; use a lower level when comparing performance.")
+          .setPositiveButton("Back") { _, _ -> performanceHud() })
+      }.setNegativeButton("Back", null))
+  }
   private fun sessionMode() {
     show(AlertDialog.Builder(activity).setTitle("Online play protection · next cold start")
       .setSingleChoiceItems(arrayOf("ON — networking and state loads allowed; trainers and gameplay mods blocked", "OFFLINE — trainers allowed, all Xbox networking off"), if (store.onlinePlay) 0 else 1) { dialog, index ->

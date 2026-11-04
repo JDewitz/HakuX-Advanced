@@ -72,6 +72,9 @@ class AdvancedStore internal constructor(private val dir: File) {
       }
     }
   }
+  var performanceHudLevel: Int?
+    get() = read().optInt("performanceHudLevel", -1).takeIf { it in 0..4 }
+    set(value) { require(value == null || value in 0..4); change { if (value == null) it.remove("performanceHudLevel") else it.put("performanceHudLevel", value) } }
   var onlinePlay: Boolean
     get() = OnlinePlayPolicy.fromJson(read()).onlinePlay
     set(value) = change { it.put("onlinePlay", value) }

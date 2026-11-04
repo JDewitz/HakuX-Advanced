@@ -107,3 +107,7 @@ was built by this sync; signing material remains outside Git.
 The earlier dashboard/kernel experiment is excluded. The Halo revision 8 Auto rule uses user-reported identity and success evidence;
 independent logs and repeat tests remain pending. General patch
 packs, Steel Battalion device emulation and RetroAchievements remain planned. See ROADMAP.md.
+
+## Advanced 5.16 · Performance HUD
+
+Steam Deck-style performance overlay levels 0–4 are available in Pause → Advanced. See [usage and metric definitions](PERFORMANCE-HUD5.16.md). Android build and host tests are checked; device validation is pending.
