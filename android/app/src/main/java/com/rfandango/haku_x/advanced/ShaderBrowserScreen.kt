@@ -53,6 +53,7 @@ fun ShaderBrowserScreen(game: String?, onBack: () -> Unit, onKeys: () -> Unit, o
     if ('/' in path) return path.substringAfterLast('/')
     return when {
       path == "builtin-v1" -> "Built-in examples"
+      path == RenderUpdate.PACK -> "RenderUpdate · SMAA / adaptive sharpening"
       path.startsWith("libretro-") -> "Libretro shaders · " + DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT).format(Date(java.io.File(store.root, path).lastModified()))
       path.startsWith("pack-") -> "Imported pack · " + DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT).format(Date(java.io.File(store.root, path).lastModified()))
       else -> path
@@ -108,6 +109,11 @@ fun ShaderBrowserScreen(game: String?, onBack: () -> Unit, onKeys: () -> Unit, o
     onBack = { if (folder.isNotEmpty()) { folder = ShaderCatalog.up(folder); query = "" } else onBack() },
     actions = { TextButton(onClick = onKeys) { Text("Keys") } }) { padding ->
     Column(Modifier.padding(padding).fillMaxSize()) {
+      RenderUpdateControl(game, observed=selected) {
+        selected=store.selected(game);own=game!=null && store.hasOverride(game)
+        scope.launch { runCatching { reload() }.onFailure { message=it.message ?: "Cannot refresh shader packs" } }
+        onSelected()
+      }
       Text("Selected: ${selected.preset.substringAfterLast('/').ifEmpty { "Off" }}", Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
         style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
       Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp), horizontalArrangement = Arrangement.SpaceBetween) {

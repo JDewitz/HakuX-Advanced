@@ -92,6 +92,7 @@ class ShaderStore(private val context: Context) {
   private val store = AdvancedStore(context)
   val root = File(context.filesDir, "shaders")
   fun installBuiltins() {
+    installRenderUpdate()
     if (File(root, ".builtin-v1-removed").exists()) return
     val dir = File(root, "builtin-v1").apply { mkdirs() }
     for (name in context.assets.list("shaders").orEmpty()) {
@@ -102,6 +103,14 @@ class ShaderStore(private val context: Context) {
         check(tmp.renameTo(file))
       }
     }
+  }
+  fun installRenderUpdate(restore: Boolean = false) = RenderUpdate.install(root, restore) { stage ->
+    fun copy(path: String, out: File) {
+      val children = context.assets.list(path).orEmpty()
+      if (children.isEmpty()) context.assets.open(path).use { input -> out.outputStream().use { input.copyTo(it) } }
+      else { check(out.isDirectory || out.mkdirs()); for (child in children) copy("$path/$child", File(out,child)) }
+    }
+    copy("renderupdate", stage)
   }
   fun import(input: InputStream, cancelled: () -> Boolean = { false }): Int {
     val id = UUID.randomUUID().toString(); val stage = File(root, ".import-$id")
@@ -151,7 +160,7 @@ class ShaderStore(private val context: Context) {
     ShaderPackRemoval.directory(root, name)
     // Persist Off before removing files, including if a later filesystem error interrupts deletion.
     store.clearShaderPack(name)
-    if (name == "builtin-v1") File(root, ".builtin-v1-removed").writeText("")
+    if (name == "builtin-v1" || name == RenderUpdate.PACK) File(root, ".$name-removed").writeText("")
     ShaderPackRemoval.delete(root, name)
   }
   fun apply(game: String) {

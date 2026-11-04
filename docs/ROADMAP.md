@@ -1,5 +1,15 @@
 # HakuX-Advanced roadmap
 
+## Rendering pipeline — RenderUpdate
+
+First test batch (Advanced5.15): opt-in bundled SMAA 1x and bounded adaptive
+sharpening, with global/per-game controls. Native libraries are reused.
+Next: a native anisotropic-filtering implementation/rebuild, then stable texture
+dumping and replacement. GPU profiling/dynamic resolution and depth/temporal
+experiments follow only with the required renderer data and device validation.
+See RENDERUPDATE5.15.md for scope, prerequisites and acceptance checks.
+
+
 Updated 2026-11-03. Working fork based on official hakuX 1.3.0.
 This is a proposed development order, not a dated release commitment or a claim
 that rfandango has adopted these changes upstream.

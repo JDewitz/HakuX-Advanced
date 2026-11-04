@@ -1,6 +1,19 @@
 # HakuX-Advanced project status — 2026-11-03
 
-Current update: Advanced5.14, `1.3.0-advanced5.14-trainerindex`, versionCode 31.
+Current update: RenderUpdate / Advanced5.15, `1.3.0-advanced5.15-renderupdate`,
+versionCode 32. Bundled SMAA 1x and contrast-adaptive sharpening use the existing
+Vulkan Slang runtime, with global/per-game controls under Graphics. Effects are
+opt-in and occupy the shader slot. Native binaries are unchanged; anisotropic
+filtering, texture replacement and depth/temporal features are planned, not
+active. Shader SPIR-V compilation/validation passed; device rendering/performance
+checks remain pending. See RENDERUPDATE5.15.md.
+
+User confirmation: Advanced5.14 trainer indexing works very well on device.
+Shader pack deletion was previously confirmed. These reports do not establish
+RenderUpdate shader/device compatibility.
+
+
+Previous update: Advanced5.14, `1.3.0-advanced5.14-trainerindex`, versionCode 31.
 Trainer imports and explicit folder refreshes persist parsed metadata. Opening
 trainer selection and matching games use the saved title-ID index without
 reopening the complete ETM pack. Old catalogs migrate once; chosen executable

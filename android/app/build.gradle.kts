@@ -31,8 +31,8 @@ android {
     minSdk = 28
     targetSdk = 36
 
-    versionCode = 31
-    versionName = "1.3.0-advanced5.14-trainerindex"
+    versionCode = 32
+    versionName = "1.3.0-advanced5.15-renderupdate"
 
     ndk {
       abiFilters += listOf("arm64-v8a")

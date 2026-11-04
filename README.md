@@ -7,7 +7,7 @@ HakuX-Advanced is an unofficial experimental fork of
 for arm64 Android. The original authors and dependency contributors retain
 all attribution and licenses. This project is not an official hakuX release.
 
-The current source is **1.3.0-advanced5.14-trainerindex** (versionCode **31**), built on
+The current source is **1.3.0-advanced5.15-renderupdate** (versionCode **32**), built on
 **official hakuX 1.3.0**. It retains the fork's history from the original 1.2.0
 base and the subsequent 1.3.0 integration. The default development branch is
 `main`; `upstream` tracks rfandango/hakuX. The repository starts private.
@@ -52,6 +52,8 @@ choices are preserved.
 Recorded state placement takes precedence when a state is loaded.
 
 ## Documentation
+
+- [RenderUpdate features, testing and implementation pipeline](docs/RENDERUPDATE5.15.md)
 
 - [Trainer import-time indexing](docs/TRAINER-INDEX5.14.md)
 
