@@ -31,7 +31,7 @@ class ShaderMenu(private val activity: NativeCoreActivity,
       "Download shaders (Libretro)" to ::download,
       "Import shader pack ZIP" to ::import,
       "Retry selected preset" to { NativeCoreActivity.nativeRetryShader(); store.apply(game()); toast("Retry queued; resume the game") },
-      "Turn shaders Off for this game" to { change { store.save(game(), ShaderSelection()) } },
+      "Turn post-render shaders Off for this game" to { change { store.save(game(), ShaderSelection()) } },
     ))
   }
   private fun change(action: () -> Unit) {

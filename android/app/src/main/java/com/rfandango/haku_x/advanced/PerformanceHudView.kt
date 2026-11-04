@@ -7,25 +7,28 @@ import android.graphics.Paint
 import android.graphics.Path
 import android.graphics.Typeface
 import android.view.View
+import android.text.TextUtils
+import android.text.TextPaint
 import java.util.Locale
 import kotlin.math.max
 
 /** Steam Deck-style tiers, rendered only when the activity's overlay pacer allows it. */
 class PerformanceHudView(context: Context) : View(context) {
-  private val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply { typeface = Typeface.MONOSPACE }
+  private val paint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply { typeface = Typeface.MONOSPACE }
   private val graph = Path()
   private val history = HudHistory()
   private var frame: HudFrame? = null
   private var host = HudHost()
+  private var renderLine = "FX: Native presentation"
   var level = 1
     set(value) { field = value.coerceIn(0, 4); visibility = if (field == 0) GONE else VISIBLE; requestLayout(); invalidate() }
   init { isClickable = false; isFocusable = false; importantForAccessibility = IMPORTANT_FOR_ACCESSIBILITY_NO }
-  fun update(next: HudFrame?, system: HudHost, time: Long, running: Boolean) {
-    frame = next; host = system
+  fun update(next: HudFrame?, system: HudHost, time: Long, running: Boolean, renderStatus: String) {
+    frame = next; host = system; renderLine = renderStatus
     if (running && next != null && next.fps > 0 && level == 4) history.add(time, next.lastMs)
     invalidate()
   }
-  private fun dimensions() = when (level) { 1 -> 88f to 30f; 2 -> 454f to 48f; 3 -> 280f to 176f; else -> 300f to 278f }
+  private fun dimensions() = when (level) { 1 -> 224f to 45f; 2 -> 454f to 62f; 3 -> 280f to 176f; else -> 300f to 292f }
   override fun onMeasure(w: Int, h: Int) {
     val (dw, dh) = dimensions(); val density = resources.displayMetrics.density
     val width = resolveSize((dw * density).toInt(), w)
@@ -59,8 +62,7 @@ class PerformanceHudView(context: Context) : View(context) {
       row("BATTERY", "${host.battery ?: "--"}%  ${number(host.watts)} W ${if (host.charging) "CHG" else ""}", 108f, green)
       canvas.text(fps, 10f, 145f, green, 29f); canvas.text("FPS", 76f, 144f, muted)
       canvas.text("$avg ms avg", 125f, 135f); canvas.text("$last ms last", 125f, 151f, muted, 11f)
-      if (level == 3) canvas.text("HakuX · presentation stats", 10f, 168f, muted, 10f)
-      else {
+      if (level == 4) {
         canvas.text("BAT ${number(host.temperature)}°C · Thermal ${host.thermal}", 10f, 171f, muted, 11f)
         canvas.text("FRAME TIME · SAMPLED", 10f, 191f, yellow, 10f)
         val samples = history.snapshot(); val now = android.os.SystemClock.elapsedRealtime()
@@ -83,6 +85,10 @@ class PerformanceHudView(context: Context) : View(context) {
         canvas.text("30s window · ${number(ceiling, 0)} ms scale", 10f, 269f, muted, 10f)
       }
     }
+    val lineY=when(level) { 1 -> 39f; 2 -> 56f; 3 -> 169f; else -> 285f }
+    paint.textSize=9f
+    val clipped=TextUtils.ellipsize(renderLine,paint,dw-18f,TextUtils.TruncateAt.END).toString()
+    canvas.text(clipped,9f,lineY,muted,9f)
     canvas.restore()
   }
 }

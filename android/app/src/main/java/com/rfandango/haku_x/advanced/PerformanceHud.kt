@@ -34,3 +34,24 @@ data class HudHost(
   val totalGiB: Float? = null, val battery: Int? = null, val watts: Float? = null,
   val temperature: Float? = null, val charging: Boolean = false, val thermal: String = "N/A",
 )
+
+/** Native status is the authority: a requested preset may still be pending or have failed. */
+object HudRenderStatus {
+  fun line(status: String, stackBlocked: Boolean = false): String {
+    val value=status.trim()
+    return when {
+      value.equals("Off",ignoreCase=true) -> "FX: Native presentation"
+      value.contains("Using normal presentation",ignoreCase=true) -> "FX: Native · shader fallback"
+      value.startsWith("Pending",ignoreCase=true) -> "FX: Pending · resume to apply"
+      value.startsWith("Active: ",ignoreCase=true) -> {
+        val name=value.substringAfter(":").trim().substringAfterLast('/').substringAfterLast('\\')
+          .replace(Regex("[\\p{Cntrl}\\s]+")," ").trim().take(120)
+        if(name.isEmpty()) "FX: Shader status unknown" else if(stackBlocked) "FX: Stack blocked · $name" else {
+          val parts=name.removeSuffix(".slangp").split("--")
+          if(parts.size==4 && parts[0]=="stack") "FX: ${parts[1]} → ${parts[2]}" else "FX: $name"
+        }
+      }
+      else -> "FX: Shader status unknown"
+    }
+  }
+}

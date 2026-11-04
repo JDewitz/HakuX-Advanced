@@ -21,9 +21,11 @@ class RenderUpdateMenu(private val activity: NativeCoreActivity,
   fun show() {
     val key=game()
     val items=listOf<Pair<String,()->Unit>>(
-      "This game · ${label(store.selected(key))}${if(store.hasOverride(key)) " · override" else " · using global"}" to { edit(key) },
-      "Global defaults · ${label(store.selected(null))}" to { edit(null) },
-      "Use global settings for this game" to { change { store.reset(key) } },
+      "This game · ${label(store.renderSelected(key))}${if(store.renderHasOverride(key)) " · override" else " · using global"}" to { edit(key) },
+      "Global defaults · ${label(store.renderSelected(null))}" to { edit(null) },
+      "Use global settings for this game" to { change { store.resetRender(key) } },
+      "Experimental stacking · ${if(store.allowStacking) "ON" else "OFF"}" to ::stacking,
+      "Post-render shader · ${store.selected(key).preset.substringAfterLast('/').ifEmpty { "Off" }}" to { ShaderMenu(activity,dialog,game).show() },
       "Shader status" to { dialog(AlertDialog.Builder(activity).setTitle("RenderUpdate · shader status")
         .setMessage(NativeCoreActivity.nativeShaderStatus()).setPositiveButton("Close",null)) }
     )
@@ -31,8 +33,15 @@ class RenderUpdateMenu(private val activity: NativeCoreActivity,
       .setItems(items.map { it.first }.toTypedArray()) { _,n -> items[n].second() }
       .setNegativeButton("Back",null))
   }
+  fun stacking() {
+    val enabled=store.allowStacking
+    dialog(AlertDialog.Builder(activity).setTitle("Experimental rendering stack")
+      .setMessage("Opt in to running RenderUpdate BEFORE the selected CRT/custom Slang preset in the same frame. This adds GPU work, memory use and shader compilation. It can lower FPS, increase heat or expose driver bugs. Unsupported presets are blocked and use the post-render preset alone.\n\nDefault is OFF. With both stages selected and stacking OFF, the post-render shader takes priority. Disabling this restores that single-stage policy. This is a global setting; existing per-game stage selections remain separate.\n\nCurrent: ${if(enabled) "ON" else "OFF"}")
+      .setPositiveButton(if(enabled) "Disable stacking" else "I understand · enable") { _,_ -> change { store.allowStacking=!enabled } }
+      .setNegativeButton("Cancel",null))
+  }
   private fun edit(scope: String?) {
-    val selected=store.selected(scope)
+    val selected=store.renderSelected(scope)
     var mode=RenderUpdate.mode(selected) ?: RenderUpdate.Mode.SHARPEN
     var strength=RenderUpdate.strength(selected)
     var budget=RenderUpdate.budget(selected)
@@ -40,7 +49,7 @@ class RenderUpdateMenu(private val activity: NativeCoreActivity,
     val pad=(16*activity.resources.displayMetrics.density).roundToInt()
     val content=LinearLayout(activity).apply { orientation=LinearLayout.VERTICAL;setPadding(pad,pad,pad,pad) }
     fun text(value: String) = TextView(activity).apply { text=value;textSize=14f;setPadding(0,pad/2,0,pad/2) }.also { content.addView(it) }
-    text("Current: ${label(selected)}. Applying replaces the shader preset for this scope.")
+    text("Current: ${label(selected)}. This configures the pre-shader stage. CRT/custom Slang is selected separately.")
     val group=RadioGroup(activity)
     val choices=RenderUpdate.Mode.entries.associateBy { View.generateViewId() }
     for((id,choice) in choices) group.addView(RadioButton(activity).apply { this.id=id;text=choice.label })
@@ -76,8 +85,8 @@ class RenderUpdateMenu(private val activity: NativeCoreActivity,
       override fun onStopTrackingTouch(bar:SeekBar) {}
     })
     updateStrength()
-    text("Requires Vulkan 1.3. Uses the shader slot: custom/CRT presets and native FXAA/SGSR do not stack with it. All modes add some processing cost; lower internal resolution separately when testing an upscaling tradeoff.")
-    if(scope==null && store.hasOverride(game())) text("The current game has an override. Use global settings for this game from the RenderUpdate menu to inherit these defaults.")
+    text("Requires Vulkan 1.3. Experimental stacking is ${if(store.allowStacking) "ON" else "OFF"}. With both stages selected and stacking OFF, post-render Slang takes priority. Enable stacking from Advanced to run both. Native FXAA/SGSR remain bypassed by the Slang path.")
+    if(scope==null && store.renderHasOverride(game())) text("The current game has an override. Use global settings for this game from the RenderUpdate menu to inherit these defaults.")
     val window=dialog(AlertDialog.Builder(activity).setTitle(if(scope==null) "RenderUpdate · global defaults" else "RenderUpdate · this game")
       .setView(ScrollView(activity).apply { addView(content) })
       .setPositiveButton("Apply",null).setNegativeButton("Cancel",null))
@@ -85,7 +94,7 @@ class RenderUpdateMenu(private val activity: NativeCoreActivity,
       val selection=RenderUpdate.selection(mode,strength,budget,subpixel.isChecked,cubic)
       change {
         if(mode!=RenderUpdate.Mode.OFF) store.installRenderUpdate(restore=true)
-        store.save(scope,selection)
+        store.saveRender(scope,selection)
       }
       window.dismiss()
     }

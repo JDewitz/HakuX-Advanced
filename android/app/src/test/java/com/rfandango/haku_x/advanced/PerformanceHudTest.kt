@@ -55,4 +55,20 @@ class PerformanceHudTest {
     assertNull(HudFrame.fromNative(floatArrayOf(-1f, 33f, 33f)))
     assertEquals(HudFrame(0f, 33f, 200f), HudFrame.fromNative(floatArrayOf(0f, 33f, 200f, 1f)))
   }
+  @Test fun renderLineUsesNativeStateInsteadOfRequestedSelection() {
+    assertEquals("FX: fsr1 → crt",HudRenderStatus.line("Active: stack--fsr1--crt--abcdef.slangp"))
+    assertEquals("FX: Stack blocked · crt.slangp",HudRenderStatus.line("Active: crt.slangp",true))
+    assertEquals("FX: fsr1.slangp",HudRenderStatus.line("Active: fsr1.slangp"))
+    assertEquals("FX: Native presentation",HudRenderStatus.line("Off"))
+    assertEquals("FX: Pending · resume to apply",HudRenderStatus.line("Pending; resume to apply"))
+    assertEquals("FX: Native · shader fallback",HudRenderStatus.line("Compile preset: failed. Using normal presentation."))
+    assertEquals("FX: Native · shader fallback",HudRenderStatus.line("Shader output allocation failed. Using normal presentation."))
+    assertEquals("FX: Shader status unknown",HudRenderStatus.line(""))
+    assertEquals("FX: Shader status unknown",HudRenderStatus.line("Active: "))
+  }
+  @Test fun shaderNamesAreBoundedAndDoNotExposePathsOrControlCharacters() {
+    assertEquals("FX: my preset.slangp",HudRenderStatus.line("Active: /private/shaders/my\npreset.slangp"))
+    assertEquals("FX: "+"x".repeat(120),HudRenderStatus.line("Active: "+"x".repeat(300)))
+  }
+
 }

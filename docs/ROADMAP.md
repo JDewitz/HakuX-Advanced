@@ -295,3 +295,7 @@ Primary references checked 2026-10-31:
 ## Rendering experiments · 5.17
 
 Implemented spatial options: FSR 1 EASU, EASU + RCAS, source-sized FXAA + FSR, five-sample bicubic, standalone FXAA, AA search budgets and FXAA subpixel control. See [test protocol](RENDERLAB5.17.md). The next performance stage is native timing/bottleneck measurement, followed by dynamic resolution and anisotropic filtering. Post-processing does not unlock fixed-rate game logic; 60 fps patches require game-specific timing/online compatibility validation.
+
+## Advanced 5.18 · Separate render stages
+
+RenderUpdate preprocessing and post-render CRT/custom Slang now have separate selections. Experimental stacking requires explicit global opt-in; the HUD reports actual native shader status. See [render stack and lighting experiment notes](RENDERSTACK5.18.md). Device validation pending.

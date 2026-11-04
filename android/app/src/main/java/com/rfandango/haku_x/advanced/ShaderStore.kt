@@ -88,9 +88,14 @@ internal object ShaderPackRemoval {
   }
 }
 class ShaderStore(private val context: Context) {
-  companion object { const val OFFICIAL_MAX_ENTRIES = 20000 }
+  companion object {
+    const val OFFICIAL_MAX_ENTRIES = 20000
+    @Volatile var stackWarning: String? = null
+      private set
+  }
   private val store = AdvancedStore(context)
   val root = File(context.filesDir, "shaders")
+  init { store.migrateRenderStages() }
   fun installBuiltins() {
     installRenderUpdate()
     if (File(root, ".builtin-v1-removed").exists()) return
@@ -153,7 +158,18 @@ class ShaderStore(private val context: Context) {
     return f
   }
   fun selected(game: String?) = store.shader(game)
-  fun save(game: String?, selection: ShaderSelection) = store.saveShader(game, selection)
+  fun save(game: String?, selection: ShaderSelection) {
+    if(RenderUpdate.mode(selection)?.let { it != RenderUpdate.Mode.OFF } == true) {
+      store.saveRenderShader(game,selection);store.saveShader(game,ShaderSelection())
+    } else store.saveShader(game, selection)
+  }
+  fun renderSelected(game: String?) = store.renderShader(game)
+  fun saveRender(game: String?, selection: ShaderSelection) = store.saveRenderShader(game,selection)
+  fun resetRender(game: String) = store.resetRenderShader(game)
+  fun renderHasOverride(game: String) = store.hasRenderShader(game)
+  var allowStacking: Boolean
+    get() = store.shaderStacking
+    set(value) { store.shaderStacking=value }
   fun reset(game: String) = store.resetShader(game)
   fun hasOverride(game: String) = store.hasShader(game)
   fun deletePack(name: String) {
@@ -164,9 +180,29 @@ class ShaderStore(private val context: Context) {
     ShaderPackRemoval.delete(root, name)
   }
   fun apply(game: String) {
-    val selection = selected(game)
-    val path = if (selection.preset.isEmpty()) "" else runCatching { file(selection.preset).absolutePath }.getOrDefault("")
-    val params = selection.parameters.toSortedMap()
-    check(NativeCoreActivity.nativeSetShader(path, params.keys.toTypedArray(), params.values.toFloatArray())) { "Shader request rejected" }
+    val pre=renderSelected(game);val post=selected(game)
+    fun submit(selection: ShaderSelection) {
+      val path=if(selection.preset.isEmpty()) "" else file(selection.preset).absolutePath
+      val params=selection.parameters.toSortedMap()
+      check(NativeCoreActivity.nativeSetShader(path,params.keys.toTypedArray(),params.values.toFloatArray())) { "Shader request rejected" }
+    }
+    stackWarning=null
+    if(pre.preset.isNotEmpty() && post.preset.isNotEmpty() && allowStacking) {
+      val result=runCatching { ShaderStack.build(root,file(pre.preset),pre.parameters,file(post.preset),post.parameters) }
+      result.onSuccess { combined ->
+        val params=combined.parameters.toSortedMap()
+        check(NativeCoreActivity.nativeSetShader(combined.file.absolutePath,params.keys.toTypedArray(),params.values.toFloatArray())) { "Stack request rejected" }
+      }.onFailure { error ->
+        stackWarning=error.message ?: "Unsupported shader stack"
+        // Fail closed to the post-render preset; never claim both stages are active.
+        runCatching { submit(post) }.onFailure { NativeCoreActivity.nativeSetShader("",emptyArray(),floatArrayOf()) }
+        throw IllegalStateException("Stack blocked; using post-render preset only. ${stackWarning}",error)
+      }
+    } else {
+      val selection=if(post.preset.isNotEmpty()) post else pre
+      runCatching { submit(selection) }.onFailure {
+        NativeCoreActivity.nativeSetShader("",emptyArray(),floatArrayOf());throw it
+      }
+    }
   }
 }

@@ -94,6 +94,43 @@ class AdvancedStore internal constructor(private val dir: File) {
     if (game == null) o.remove("global") else o.optJSONObject("games")?.remove(game)
   }
   fun hasShader(game: String) = read().optJSONObject("shaderGames")?.has(game) == true
+  var shaderStacking: Boolean
+    get() = read().optBoolean("shaderStacking", false)
+    set(value) = change { it.put("shaderStacking",value) }
+  fun renderShader(game: String?): ShaderSelection {
+    val o=read()
+    return ShaderSelection.parse(game?.let { o.optJSONObject("renderGames")?.optJSONObject(it) }
+      ?: o.optJSONObject("renderGlobal") ?: JSONObject())
+  }
+  fun hasRenderShader(game: String) = read().optJSONObject("renderGames")?.has(game) == true
+  fun saveRenderShader(game: String?, selection: ShaderSelection) = change { o ->
+    if(game==null) o.put("renderGlobal",selection.json()) else {
+      val games=o.optJSONObject("renderGames") ?: JSONObject();games.put(game,selection.json());o.put("renderGames",games)
+    }
+  }
+  fun resetRenderShader(game: String) = change { it.optJSONObject("renderGames")?.remove(game) }
+  /** One-time split preserves old RenderUpdate choices without enabling experimental stacking. */
+  fun migrateRenderStages() {
+    if(read().optBoolean("renderStagesV1",false)) return
+    change { o ->
+      if(!o.optBoolean("renderStagesV1",false)) {
+        fun move(selection: JSONObject?, save: (JSONObject) -> Unit) {
+          if(selection != null && RenderUpdate.mode(ShaderSelection.parse(selection))?.let { it != RenderUpdate.Mode.OFF } == true) {
+            save(JSONObject(selection.toString()));selection.put("preset","").put("parameters",JSONObject())
+          }
+        }
+        move(o.optJSONObject("shaderGlobal")) { if(!o.has("renderGlobal")) o.put("renderGlobal",it) }
+        val pre=o.optJSONObject("renderGames") ?: JSONObject()
+        val post=o.optJSONObject("shaderGames")
+        post?.keys()?.asSequence()?.toList()?.forEach { game ->
+          val selection=post.optJSONObject(game)
+          if(selection?.optString("preset")=="" && !pre.has(game)) pre.put(game,ShaderSelection().json())
+          move(selection) { if(!pre.has(game)) pre.put(game,it) }
+        }
+        o.put("renderGames",pre).put("renderStagesV1",true)
+      }
+    }
+  }
   fun shader(game: String?): ShaderSelection {
     val o = read()
     return ShaderSelection.parse(game?.let { o.optJSONObject("shaderGames")?.optJSONObject(it) }
@@ -115,6 +152,9 @@ class AdvancedStore internal constructor(private val dir: File) {
       }
     }
     clear(o.optJSONObject("shaderGlobal"))
+    clear(o.optJSONObject("renderGlobal"))
+    val renderGames=o.optJSONObject("renderGames")
+    renderGames?.keys()?.asSequence()?.toList()?.forEach { clear(renderGames.optJSONObject(it)) }
     val games = o.optJSONObject("shaderGames")
     games?.keys()?.asSequence()?.toList()?.forEach { clear(games.optJSONObject(it)) }
   }

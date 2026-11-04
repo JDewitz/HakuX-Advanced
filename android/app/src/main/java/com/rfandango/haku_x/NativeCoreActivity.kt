@@ -105,7 +105,7 @@ class NativeCoreActivity : SDLActivity(), InputManager.InputDeviceListener {
             runOnUiThread { hudSamplePending = false; if (!isDestroyed) hudHost = sampled }
           }
         }
-        fpsView?.update(HudFrame.fromNative(s), hudHost, now, running)
+        fpsView?.update(HudFrame.fromNative(s), hudHost, now, running, HudRenderStatus.line(nativeShaderStatus(), ShaderStore.stackWarning != null))
       }
       hitchView?.takeIf { hitchesOn }?.let { v ->
         val hitches = nativeGetHleHitches()
@@ -502,7 +502,7 @@ class NativeCoreActivity : SDLActivity(), InputManager.InputDeviceListener {
       for ((action, code) in advanced.keys()) if (code != ffKey) put(action, code)
     }
     emulatorHotkeys.holdFastForward = advanced.holdFastForward
-    runCatching { com.rfandango.haku_x.advanced.ShaderStore(this).apply(gameKey()) }
+    shaderWorker.submit { runCatching { ShaderStore(this).apply(gameKey()) } }
     activityPaused = false
     syncPause() /* where it stopped (onPause), unless the menu is open */
     hideSystemBars()

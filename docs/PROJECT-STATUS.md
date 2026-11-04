@@ -115,3 +115,7 @@ Steam Deck-style performance overlay levels 0–4 are available in Pause → Adv
 ## Advanced 5.17 · RenderLab
 
 New spatial upscaling/AA modes and explicit AA budgets in the in-game Advanced RenderUpdate menu and launcher controls. See [RenderLab notes](RENDERLAB5.17.md). Native core unchanged; Android visual/performance testing pending.
+
+## Advanced 5.18 · Separate render stages
+
+RenderUpdate preprocessing and post-render CRT/custom Slang now have separate selections. Experimental stacking requires explicit global opt-in; the HUD reports actual native shader status. See [render stack and lighting experiment notes](RENDERSTACK5.18.md). Device validation pending.

@@ -1,5 +1,7 @@
 # RenderLab · Advanced 5.17
 
+For the separate pre/post stages and opt-in stacking introduced in 5.18, see [Render stages](RENDERSTACK5.18.md). The single-slot behavior below describes 5.17.
+
 Open **Pause → Advanced → RenderUpdate · upscaling / AA / budget**. Choose This game or Global defaults, select a mode, then Apply. Existing graphics/shader-browser controls have the same options. Changes apply in the running game; per-game overrides and Use global work as before. The app keeps the game paused during installation and shader requests.
 
 | Mode | Passes | Tradeoff |

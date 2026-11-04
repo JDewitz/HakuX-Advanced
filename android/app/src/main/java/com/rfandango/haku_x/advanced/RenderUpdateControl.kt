@@ -20,7 +20,7 @@ fun RenderUpdateControl(game: String? = null, observed: ShaderSelection? = null,
   val context = LocalContext.current
   val store = remember { ShaderStore(context) }
   val scope = rememberCoroutineScope()
-  var selected by remember(game) { mutableStateOf(store.selected(game)) }
+  var selected by remember(game) { mutableStateOf(store.renderSelected(game)) }
   var open by remember { mutableStateOf(false) }
   var busy by remember { mutableStateOf(false) }
   var mode by remember { mutableStateOf(RenderUpdate.Mode.SHARPEN) }
@@ -29,10 +29,10 @@ fun RenderUpdateControl(game: String? = null, observed: ShaderSelection? = null,
   var cubic by remember { mutableStateOf(RenderUpdate.Cubic.BALANCED) }
   var subpixel by remember { mutableStateOf(true) }
   var message by remember { mutableStateOf("") }
-  LifecycleResumeEffect(game) { selected=store.selected(game); onPauseOrDispose {} }
-  val current = RenderUpdate.mode(observed ?: selected)
+  LifecycleResumeEffect(game) { selected=store.renderSelected(game); onPauseOrDispose {} }
+  val current = RenderUpdate.mode(selected)
   ActionItem(title="RenderUpdate", summary=current?.label ?: "Custom shader preset active", icon=null) {
-    selected=store.selected(game)
+    selected=store.renderSelected(game)
     mode=RenderUpdate.mode(selected) ?: RenderUpdate.Mode.SHARPEN
     strength=RenderUpdate.strength(selected);budget=RenderUpdate.budget(selected);cubic=RenderUpdate.cubic(selected);subpixel=RenderUpdate.subpixel(selected)
     message="";open=true
@@ -42,20 +42,20 @@ fun RenderUpdateControl(game: String? = null, observed: ShaderSelection? = null,
     busy=true; message=""
     scope.launch {
       val result=runCatching { withContext(Dispatchers.IO) {
-        if (useGlobal && game!=null) store.reset(game) else {
+        if (useGlobal && game!=null) store.resetRender(game) else {
           if (mode!=RenderUpdate.Mode.OFF) store.installRenderUpdate(restore=true)
-          store.save(game,RenderUpdate.selection(mode,strength,budget,subpixel,cubic))
+          store.saveRender(game,RenderUpdate.selection(mode,strength,budget,subpixel,cubic))
         }
       } }
       busy=false
-      result.onSuccess { selected=store.selected(game);open=false;onSaved() }
+      result.onSuccess { selected=store.renderSelected(game);open=false;onSaved() }
         .onFailure { message=it.message ?: "Cannot save RenderUpdate settings" }
     }
   }
   if (open) AlertDialog(onDismissRequest={if(!busy)open=false},title={Text("RenderUpdate")},
     text={ Column(Modifier.verticalScroll(rememberScrollState())) {
       Text(if(game==null) "Global graphics" else "Graphics for this game",style=MaterialTheme.typography.labelLarge)
-      Text("Uses the shader slot and replaces its selected preset. Requires the Vulkan 1.3 Slang runtime.",Modifier.padding(vertical=8.dp))
+      Text("Pre-shader stage. Requires Vulkan 1.3. Select CRT/custom Slang separately; opt in to simultaneous use through Pause → Advanced → Experimental rendering stack.",Modifier.padding(vertical=8.dp))
       for (choice in RenderUpdate.Mode.entries) Row(Modifier.fillMaxWidth().clickable(enabled=!busy){mode=choice}) {
         RadioButton(selected=mode==choice,onClick={mode=choice},enabled=!busy)
         Text(choice.label,Modifier.padding(top=12.dp))
@@ -80,7 +80,7 @@ fun RenderUpdateControl(game: String? = null, observed: ShaderSelection? = null,
         Text("Sharpness: ${(strength*100).toInt()}%",Modifier.padding(top=8.dp))
         Slider(value=strength,onValueChange={strength=it},enabled=!busy,valueRange=0f..1f,steps=19)
       }
-      Text("Internal resolution scaling still applies. All modes add processing cost; lowering game resolution is a separate tradeoff. Native FXAA and SGSR are bypassed while a Slang preset is active.",style=MaterialTheme.typography.bodySmall)
+      Text("Internal resolution scaling still applies. All modes add processing cost; lowering game resolution is a separate tradeoff. With stacking OFF and both stages selected, post-render Slang takes priority. Native FXAA and SGSR remain bypassed by the Slang path.",style=MaterialTheme.typography.bodySmall)
       if(busy) LinearProgressIndicator(Modifier.fillMaxWidth().padding(top=8.dp))
       if(message.isNotEmpty()) Text(message,color=MaterialTheme.colorScheme.error)
     } },
