@@ -45,7 +45,14 @@ with tempfile.TemporaryDirectory(prefix='renderupdate-spirv-') as tmp:
             if texture:
                 with Image.open(preset.parent/values[texture]) as image:
                     image.load();assert image.width>0 and image.height>0
+        if 'fsr1' in preset.name:
+            assert values['FSR_FILMGRAIN']=='0.0', 'Grain must stay off by default'
+            assert values['scale_type'+str(int(values['shaders'])-1)]=='source'
+        if preset.name=='fxaa-fsr1.slangp':
+            assert values['scale_type0']=='source' and values['scale_type1']=='viewport'
+        if preset.name=='bicubic.slangp':
+            assert values['filter_linear0']=='true'
         if preset.name.startswith('smaa'):
             assert values['alias0']=='SMAA_Input'
             assert int(values['shaders'])==(5 if 'sharpen' in preset.name else 4)
-print(json.dumps({'validated_stages':len(compiled),'stages':compiled,'presets':3,'device_gpu_tested':False}))
+print(json.dumps({'validated_stages':len(compiled),'stages':compiled,'presets':len(list(assets.glob('*.slangp'))),'device_gpu_tested':False}))

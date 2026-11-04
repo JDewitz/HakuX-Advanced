@@ -25,13 +25,16 @@ fun RenderUpdateControl(game: String? = null, observed: ShaderSelection? = null,
   var busy by remember { mutableStateOf(false) }
   var mode by remember { mutableStateOf(RenderUpdate.Mode.SHARPEN) }
   var strength by remember { mutableFloatStateOf(.25f) }
+  var budget by remember { mutableStateOf(RenderUpdate.Budget.QUALITY) }
+  var cubic by remember { mutableStateOf(RenderUpdate.Cubic.BALANCED) }
+  var subpixel by remember { mutableStateOf(true) }
   var message by remember { mutableStateOf("") }
   LifecycleResumeEffect(game) { selected=store.selected(game); onPauseOrDispose {} }
   val current = RenderUpdate.mode(observed ?: selected)
   ActionItem(title="RenderUpdate", summary=current?.label ?: "Custom shader preset active", icon=null) {
     selected=store.selected(game)
     mode=RenderUpdate.mode(selected) ?: RenderUpdate.Mode.SHARPEN
-    strength=(selected.parameters[RenderUpdate.PARAMETER] ?: .25f).coerceIn(0f,1f)
+    strength=RenderUpdate.strength(selected);budget=RenderUpdate.budget(selected);cubic=RenderUpdate.cubic(selected);subpixel=RenderUpdate.subpixel(selected)
     message="";open=true
   }
   fun save(useGlobal: Boolean = false) {
@@ -41,7 +44,7 @@ fun RenderUpdateControl(game: String? = null, observed: ShaderSelection? = null,
       val result=runCatching { withContext(Dispatchers.IO) {
         if (useGlobal && game!=null) store.reset(game) else {
           if (mode!=RenderUpdate.Mode.OFF) store.installRenderUpdate(restore=true)
-          store.save(game,RenderUpdate.selection(mode,strength))
+          store.save(game,RenderUpdate.selection(mode,strength,budget,subpixel,cubic))
         }
       } }
       busy=false
@@ -57,11 +60,27 @@ fun RenderUpdateControl(game: String? = null, observed: ShaderSelection? = null,
         RadioButton(selected=mode==choice,onClick={mode=choice},enabled=!busy)
         Text(choice.label,Modifier.padding(top=12.dp))
       }
+      Text("${mode.passes} passes · ${mode.description}",style=MaterialTheme.typography.bodySmall)
+      if(mode.budgeted) {
+        Text("AA search budget",Modifier.padding(top=8.dp))
+        for(b in RenderUpdate.Budget.entries) Row(Modifier.fillMaxWidth().clickable(enabled=!busy){budget=b}) {
+          RadioButton(selected=budget==b,onClick={budget=b},enabled=!busy);Text(b.label,Modifier.padding(top=12.dp))
+        }
+      }
+      if(mode.fxaa) Row(Modifier.fillMaxWidth().clickable(enabled=!busy){subpixel=!subpixel}) {
+        Checkbox(checked=subpixel,onCheckedChange={subpixel=it},enabled=!busy);Text("FXAA subpixel smoothing",Modifier.padding(top=12.dp))
+      }
+      if(mode==RenderUpdate.Mode.BICUBIC) {
+        Text("Bicubic shape",Modifier.padding(top=8.dp))
+        for(c in RenderUpdate.Cubic.entries) Row(Modifier.fillMaxWidth().clickable(enabled=!busy){cubic=c}) {
+          RadioButton(selected=cubic==c,onClick={cubic=c},enabled=!busy);Text(c.label,Modifier.padding(top=12.dp))
+        }
+      }
       if(mode.sharpens) {
         Text("Sharpness: ${(strength*100).toInt()}%",Modifier.padding(top=8.dp))
         Slider(value=strength,onValueChange={strength=it},enabled=!busy,valueRange=0f..1f,steps=19)
       }
-      Text("SMAA uses 4 passes; adding sharpening uses 5. Internal resolution scaling still applies. The normal FXAA and SGSR presentation paths are bypassed while a Slang preset is active.",style=MaterialTheme.typography.bodySmall)
+      Text("Internal resolution scaling still applies. All modes add processing cost; lowering game resolution is a separate tradeoff. Native FXAA and SGSR are bypassed while a Slang preset is active.",style=MaterialTheme.typography.bodySmall)
       if(busy) LinearProgressIndicator(Modifier.fillMaxWidth().padding(top=8.dp))
       if(message.isNotEmpty()) Text(message,color=MaterialTheme.colorScheme.error)
     } },

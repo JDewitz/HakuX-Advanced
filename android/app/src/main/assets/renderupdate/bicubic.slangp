@@ -1,0 +1,9 @@
+shaders = 1
+shader0 = shaders/interpolation/bicubic-5-taps.slang
+filter_linear0 = true
+scale_type0 = viewport
+scale0 = 1.0
+wrap_mode0 = clamp_to_edge
+parameters = "B;C"
+B = 0.333333
+C = 0.333333

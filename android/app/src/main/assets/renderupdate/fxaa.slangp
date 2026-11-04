@@ -1,0 +1,9 @@
+shaders = 1
+shader0 = shaders/fxaa.slang
+filter_linear0 = true
+scale_type0 = viewport
+scale0 = 1.0
+wrap_mode0 = clamp_to_edge
+parameters = "RU_FXAA_STEPS;RU_FXAA_SUBPIX"
+RU_FXAA_STEPS = 32.0
+RU_FXAA_SUBPIX = 1.0

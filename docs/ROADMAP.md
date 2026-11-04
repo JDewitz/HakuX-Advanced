@@ -291,3 +291,7 @@ Primary references checked 2026-10-31:
 - https://retroachievements.org/forums/topic/29989
 - https://docs.retroachievements.org/general/hardcore-compliance-requirements.html
 - https://xemu.app/docs/controller/ (comparison only; local hakuX source determines its own device support)
+
+## Rendering experiments · 5.17
+
+Implemented spatial options: FSR 1 EASU, EASU + RCAS, source-sized FXAA + FSR, five-sample bicubic, standalone FXAA, AA search budgets and FXAA subpixel control. See [test protocol](RENDERLAB5.17.md). The next performance stage is native timing/bottleneck measurement, followed by dynamic resolution and anisotropic filtering. Post-processing does not unlock fixed-rate game logic; 60 fps patches require game-specific timing/online compatibility validation.

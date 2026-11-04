@@ -2,6 +2,7 @@ package com.rfandango.haku_x.advanced
 
 import android.app.AlertDialog
 import android.view.View
+import android.widget.CheckBox
 import android.widget.LinearLayout
 import android.widget.RadioButton
 import android.widget.RadioGroup
@@ -33,7 +34,9 @@ class RenderUpdateMenu(private val activity: NativeCoreActivity,
   private fun edit(scope: String?) {
     val selected=store.selected(scope)
     var mode=RenderUpdate.mode(selected) ?: RenderUpdate.Mode.SHARPEN
-    var strength=(selected.parameters[RenderUpdate.PARAMETER] ?: .25f).coerceIn(0f,1f)
+    var strength=RenderUpdate.strength(selected)
+    var budget=RenderUpdate.budget(selected)
+    var cubic=RenderUpdate.cubic(selected)
     val pad=(16*activity.resources.displayMetrics.density).roundToInt()
     val content=LinearLayout(activity).apply { orientation=LinearLayout.VERTICAL;setPadding(pad,pad,pad,pad) }
     fun text(value: String) = TextView(activity).apply { text=value;textSize=14f;setPadding(0,pad/2,0,pad/2) }.also { content.addView(it) }
@@ -42,10 +45,30 @@ class RenderUpdateMenu(private val activity: NativeCoreActivity,
     val choices=RenderUpdate.Mode.entries.associateBy { View.generateViewId() }
     for((id,choice) in choices) group.addView(RadioButton(activity).apply { this.id=id;text=choice.label })
     group.check(choices.entries.first { it.value==mode }.key);content.addView(group)
+    val details=text(mode.description)
+    val budgetLabel=text("AA search budget")
+    val budgetGroup=RadioGroup(activity).apply { orientation=RadioGroup.HORIZONTAL }
+    val budgets=RenderUpdate.Budget.entries.associateBy { View.generateViewId() }
+    for((id,b) in budgets) budgetGroup.addView(RadioButton(activity).apply { this.id=id;text=b.label })
+    budgetGroup.check(budgets.entries.first { it.value==budget }.key);content.addView(budgetGroup)
+    budgetGroup.setOnCheckedChangeListener { _,id -> budgets[id]?.let { budget=it } }
+    val subpixel=CheckBox(activity).apply { text="FXAA subpixel smoothing · may soften fine detail";isChecked=RenderUpdate.subpixel(selected) }
+    content.addView(subpixel)
+    val cubicLabel=text("Bicubic shape")
+    val cubicGroup=RadioGroup(activity).apply { orientation=RadioGroup.HORIZONTAL }
+    val cubics=RenderUpdate.Cubic.entries.associateBy { View.generateViewId() }
+    for((id,b) in cubics) cubicGroup.addView(RadioButton(activity).apply { this.id=id;text=b.label })
+    cubicGroup.check(cubics.entries.first { it.value==cubic }.key);content.addView(cubicGroup)
+    cubicGroup.setOnCheckedChangeListener { _,id -> cubics[id]?.let { cubic=it } }
     val strengthLabel=text("")
     val slider=SeekBar(activity).apply { max=100;progress=(strength*100).roundToInt() }
     content.addView(slider)
-    fun updateStrength() { slider.isEnabled=mode.sharpens;strengthLabel.text="Sharpness: ${(strength*100).roundToInt()}%${if(mode.sharpens) "" else " · not used by this mode"}" }
+    fun updateStrength() {
+      details.text="${mode.passes} passes · ${mode.description}"
+      budgetLabel.visibility=if(mode.budgeted) View.VISIBLE else View.GONE;budgetGroup.visibility=budgetLabel.visibility
+      subpixel.visibility=if(mode.fxaa) View.VISIBLE else View.GONE
+      cubicLabel.visibility=if(mode==RenderUpdate.Mode.BICUBIC) View.VISIBLE else View.GONE;cubicGroup.visibility=cubicLabel.visibility
+      slider.isEnabled=mode.sharpens;strengthLabel.text="Sharpness: ${(strength*100).roundToInt()}%${if(mode.sharpens) "" else " · not used by this mode"}" }
     group.setOnCheckedChangeListener { _,id -> choices[id]?.let { mode=it;updateStrength() } }
     slider.setOnSeekBarChangeListener(object:SeekBar.OnSeekBarChangeListener {
       override fun onProgressChanged(bar:SeekBar,progress:Int,fromUser:Boolean) { if(fromUser) { strength=progress/100f;updateStrength() } }
@@ -53,13 +76,13 @@ class RenderUpdateMenu(private val activity: NativeCoreActivity,
       override fun onStopTrackingTouch(bar:SeekBar) {}
     })
     updateStrength()
-    text("SMAA uses 4 passes; SMAA + sharpening uses 5. Requires Vulkan 1.3. Native FXAA and SGSR presentation are bypassed while the preset is active.")
+    text("Requires Vulkan 1.3. Uses the shader slot: custom/CRT presets and native FXAA/SGSR do not stack with it. All modes add some processing cost; lower internal resolution separately when testing an upscaling tradeoff.")
     if(scope==null && store.hasOverride(game())) text("The current game has an override. Use global settings for this game from the RenderUpdate menu to inherit these defaults.")
     val window=dialog(AlertDialog.Builder(activity).setTitle(if(scope==null) "RenderUpdate · global defaults" else "RenderUpdate · this game")
       .setView(ScrollView(activity).apply { addView(content) })
       .setPositiveButton("Apply",null).setNegativeButton("Cancel",null))
     window.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
-      val selection=RenderUpdate.selection(mode,strength)
+      val selection=RenderUpdate.selection(mode,strength,budget,subpixel.isChecked,cubic)
       change {
         if(mode!=RenderUpdate.Mode.OFF) store.installRenderUpdate(restore=true)
         store.save(scope,selection)

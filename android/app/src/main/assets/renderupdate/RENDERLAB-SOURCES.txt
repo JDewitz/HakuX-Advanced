@@ -1,0 +1,14 @@
+RenderUpdate / RenderLab revision 2 (Advanced 5.17)
+Pinned source: libretro/slang-shaders commit 53deb2efcb79f4fc3e94e9602d5974b4b64e8f94
+
+shaders/fsr/: edge-smoothing/fsr/shaders/{ffx_a.h,ffx_fsr1.h,fsr-pass0.slang,fsr-pass1.slang}
+AMD MIT notices are embedded in both FFX headers. Libretro wrappers carry Unlicense notices.
+Local changes: clamp texelFetch coordinates explicitly (wrap mode does not affect texelFetch), disable default film grain. Whitespace normalized; header algorithms unchanged.
+
+shaders/fxaa.slang: anti-aliasing/shaders/fxaa.slang
+NVIDIA notice is retained. Local changes: runtime search-step limit and subpixel smoothing parameter. Whitespace normalized.
+
+shaders/interpolation/bicubic-5-taps.slang: interpolation/shaders/bicubic-5-taps.slang
+Hyllian port and original references retained. Shader algorithm unchanged; whitespace normalized.
+
+SMAA sources and attribution are unchanged from revision 1. Adaptive sharpening is the existing original CC0 filter; it is not CAS or RCAS. Local preset files select source/output processing scales and default parameters.

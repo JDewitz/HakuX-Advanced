@@ -111,3 +111,7 @@ packs, Steel Battalion device emulation and RetroAchievements remain planned. Se
 ## Advanced 5.16 · Performance HUD
 
 Steam Deck-style performance overlay levels 0–4 are available in Pause → Advanced. See [usage and metric definitions](PERFORMANCE-HUD5.16.md). Android build and host tests are checked; device validation is pending.
+
+## Advanced 5.17 · RenderLab
+
+New spatial upscaling/AA modes and explicit AA budgets in the in-game Advanced RenderUpdate menu and launcher controls. See [RenderLab notes](RENDERLAB5.17.md). Native core unchanged; Android visual/performance testing pending.

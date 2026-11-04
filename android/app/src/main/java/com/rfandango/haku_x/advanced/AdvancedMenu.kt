@@ -62,7 +62,7 @@ class AdvancedMenu(
     "Imported game patches · next cold start" to ::importedPatches,
     "GPU driver workaround overrides · restart required" to ::quirks,
     "Performance overlay · level ${activity.performanceHudLevel}" to ::performanceHud,
-    "RenderUpdate · SMAA / sharpening" to { renderUpdate.show() },
+    "RenderUpdate · upscaling / AA / budget" to { renderUpdate.show() },
     "RetroArch Slang shaders" to { shaders.show() },
     "Live presentation filters" to ::presentation,
     "Record 10-second benchmark" to ::recordBenchmark,
