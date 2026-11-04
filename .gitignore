@@ -47,6 +47,7 @@ profile-out-*/
 /tools/*
 !/tools/native/
 !/tools/mods/
+!/tools/release/
 
 # Shared build/device lock between sessions (not versioned)
 /.device.lock

@@ -7,7 +7,7 @@ HakuX-Advanced is an unofficial experimental fork of
 for arm64 Android. The original authors and dependency contributors retain
 all attribution and licenses. This project is not an official hakuX release.
 
-The current source is **1.3.0-advanced5.15.1-renderupdate** (versionCode **33**), built on
+The current runtime is **1.3.0-advanced5.19-upstream** (versionCode **38**), built on
 **official hakuX 1.3.0**. It retains the fork's history from the original 1.2.0
 base and the subsequent 1.3.0 integration. The default development branch is
 `main`; `upstream` tracks rfandango/hakuX. The repository starts private.
@@ -98,14 +98,13 @@ cd android
 
 The debug application ID remains **com.rfandango.haku_x.themes**, preserving
 updates from Advanced5.7/5.8. Its displayed name is now **HakuX-Advanced** in
-source; the previously tested APK is unchanged and retains its old label.
+source and the signed 5.19 preview APK.
 The former `themeTestApp` property remains accepted but is no longer needed
 for choosing the current debug package identity.
 
 Use the existing signing key privately when making an update. A newly generated
 key cannot update the distributed APK. No signing key or password belongs in
-Git, Actions logs, source packages or releases. The source-only setup/branding
-update is not a newly built or device-tested APK.
+Git, Actions logs, source packages or releases. The 5.19 preview includes a rebuilt native core; its device validation remains pending.
 
 ## License and distribution
 
