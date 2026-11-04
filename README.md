@@ -7,7 +7,7 @@ HakuX-Advanced is an unofficial experimental fork of
 for arm64 Android. The original authors and dependency contributors retain
 all attribution and licenses. This project is not an official hakuX release.
 
-The current source is **1.3.0-advanced5.13-stateload** (versionCode **30**), built on
+The current source is **1.3.0-advanced5.14-trainerindex** (versionCode **31**), built on
 **official hakuX 1.3.0**. It retains the fork's history from the original 1.2.0
 base and the subsequent 1.3.0 integration. The default development branch is
 `main`; `upstream` tracks rfandango/hakuX. The repository starts private.
@@ -20,7 +20,7 @@ base and the subsequent 1.3.0 integration. The default development branch is
 - Experimental RetroArch Slang shaders, folder browser, ZIP import, download and root-level pack deletion.
 - Shared app/pause themes, imported presets, multi-select import and live preview.
 - Cards, list, stats, info/play and icon library layouts, with trainer/config badges.
-- Experimental EvoX ETM trainer import and folder-backed per-game trainer browser.
+- Experimental EvoX ETM trainer import, persistent metadata index and per-game trainer browser.
 - Online protection: save-state loading allowed; trainers/cheats blocked; built-in fixes and release-reviewed compatibility patches remain eligible online.
   The imported-patch approval registry is currently empty.
 - Importable guarded XBE patch packs, folder scanning and persistent per-game toggles.
@@ -35,13 +35,14 @@ patch plugins and broader formats remain planned.
 
 ## Latest validation
 
-Advanced5.11 passed Android compilation/APK assembly and its JVM suite: **117 passed, zero
-failures and one optional shader-archive skip**. Native pool/Advanced/fast-forward
-checks and Android/native GitHub CI passed for the unchanged 5.9 baseline. This update reuses
-the native libraries from the tested Advanced5.8 APK; it does not rebuild the
-native core. The Halo workaround still has an initial successful 5.8 user report;
-the user also reports that 5.9 runs well and looks correct. Testing the 5.9.1
-Auto rule, repeatable cold boots and broader compatibility checks remain pending.
+Advanced5.13 passed Android compilation/APK assembly, 120 JVM tests with zero
+failures and one optional shader-archive skip, and GitHub Android/native host
+checks. Advanced5.12 shader deletion has a user device confirmation. The
+Advanced5.14 trainer index moves parsing to import/refresh and migrates older
+catalogs once; see [trainer indexing](docs/TRAINER-INDEX5.14.md) for behavior and
+validation. The native libraries are reused unchanged from the tested baseline.
+The Halo workaround has a successful initial user report; broader repeatability
+and Insignia gameplay checks remain pending.
 
 For Halo, choose **On** for **High kernel pool placement** in the per-game Advanced
 settings, retain retail **64 MiB**, fully exit and launch fresh. Compare OFF/ON;
@@ -51,6 +52,8 @@ choices are preserved.
 Recorded state placement takes precedence when a state is loaded.
 
 ## Documentation
+
+- [Trainer import-time indexing](docs/TRAINER-INDEX5.14.md)
 
 - [Online compatibility policy and approval registry](docs/ONLINE5.11.md)
 - [Importable patch browser and format](docs/PATCHES5.10.md)

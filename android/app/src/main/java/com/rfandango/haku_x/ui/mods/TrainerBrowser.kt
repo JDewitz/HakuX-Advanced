@@ -55,26 +55,35 @@ fun TrainerBrowser(gameKey: String? = null, title: String = "", onBack: () -> Un
   var revision by remember { mutableIntStateOf(0) }
   var listOnly by rememberSaveable { mutableStateOf(true) }
 
-  fun refresh() {
+  fun refresh(rebuild: Boolean = false) {
     scanJob?.cancel()
     scanJob = scope.launch {
       scanning = true
       try {
-        val result = withContext(Dispatchers.IO) { library.scan() }
-        entries = result.entries; message = result.message; revision++
+        val cached = withContext(Dispatchers.IO) { library.cached() }
+        entries = cached.entries; message = cached.message
+        if (rebuild || library.needsScan) {
+          val owner = coroutineContext[Job]
+          message = "Indexing trainer folder…"
+          val result = withContext(Dispatchers.IO) { library.scan { count ->
+            scope.launch { if (owner?.isActive == true) message = "Indexed $count trainer files…" }
+          } }
+          entries = result.entries; message = result.message
+        }
+        revision++
       } catch (e: CancellationException) { throw e }
       catch (e: Exception) { message = "Cannot scan trainer library: ${e.message}" }
       finally { if(isActive) scanning = false }
     }
   }
-  val refreshNow by rememberUpdatedState(newValue = { refresh() })
+  val refreshNow by rememberUpdatedState(newValue = { rebuild: Boolean -> refresh(rebuild) })
   val writingNow by rememberUpdatedState(writing)
-  LifecycleResumeEffect(folder) { refreshNow(); onPauseOrDispose {} }
+  LifecycleResumeEffect(folder) { refreshNow(false); onPauseOrDispose {} }
   DisposableEffect(folder) {
     var pending: Job? = null
     val observer = object: ContentObserver(Handler(Looper.getMainLooper())) {
       override fun onChange(selfChange: Boolean) {
-        pending?.cancel(); pending = scope.launch { delay(700); if (!writingNow) refreshNow() }
+        pending?.cancel(); pending = scope.launch { delay(700); if (!writingNow) message = "Trainer folder changed. Refresh to update the index." }
       }
     }
     val registered = folder?.let { runCatching { context.contentResolver.registerContentObserver(it,true,observer); true }.getOrDefault(false) } == true
@@ -83,7 +92,7 @@ fun TrainerBrowser(gameKey: String? = null, title: String = "", onBack: () -> Un
   val chooseFolder = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
     if (uri != null) runCatching {
       Storage.persistPermission(context,uri,write=false)
-      library.folder = uri; folder = uri
+      library.folder = uri; if (folder == uri) refresh(true) else folder = uri
     }.onFailure { message = "Cannot select folder: ${it.message}" }
   }
   val importFiles = rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
@@ -93,17 +102,21 @@ fun TrainerBrowser(gameKey: String? = null, title: String = "", onBack: () -> Un
         message=withContext(Dispatchers.IO) {
           val good=mutableListOf<TrainerEntry>();val errors=mutableListOf<String>()
           for ((i,uri) in uris.distinct().withIndex()) {
+            currentCoroutineContext().ensureActive()
+            if (i % 25 == 0) withContext(Dispatchers.Main) { message = "Importing and indexing trainer ${i+1} of ${uris.distinct().size}…" }
             try {
               val name=runCatching { context.contentResolver.query(uri,arrayOf(OpenableColumns.DISPLAY_NAME),null,null,null)?.use { c -> if(c.moveToFirst()) c.getString(0) else null } }.getOrNull() ?: "File ${i+1}"
               val bytes=context.contentResolver.openInputStream(uri)?.use { it.readTrainerBytes() } ?: error("Cannot open trainer")
               good+=library.catalog.cache(bytes,"Imported: $name")
-            } catch(e: Exception) { errors+="File ${i+1}: ${e.message}" }
+            } catch(e: CancellationException) { throw e }
+            catch(e: Exception) { errors+="File ${i+1}: ${e.message}" }
           }
           library.importFiles(good)
           "${good.size} valid files imported; ${errors.size} failed.\n"+errors.take(5).joinToString("\n")
         }
         entries=withContext(Dispatchers.IO) { library.catalog.read() };revision++
-      } catch (e: Exception) { message="Cannot import trainers: ${e.message}" }
+      } catch (e: CancellationException) { throw e }
+      catch (e: Exception) { message="Cannot import trainers: ${e.message}" }
       finally { writing=false }
     }
   }
@@ -118,20 +131,30 @@ fun TrainerBrowser(gameKey: String? = null, title: String = "", onBack: () -> Un
     loadedKey=key
   }
   val legacy = active?.let { s -> TrainerEntry(s.file.name.removeSuffix(".etm"),s.trainer,s.file,listOf("Previously selected for this game")) }
-  val all = TrainerCatalog.merge(entries + listOfNotNull(legacy))
-  val visible = all.filter { e ->
-    (gameKey==null || e.trainer.matches(gameKey)) &&
-      (query.isBlank() || listOf(e.trainer.name,e.trainer.note,e.sources.joinToString(),e.trainer.titleIds.joinToString { "%08X".format(it) }).any { it.contains(query.trim(),true) })
+  val all = remember(entries,legacy) { TrainerCatalog.merge(entries + listOfNotNull(legacy)) }
+  val lookup = remember(all) { TrainerLookup(all) }
+  val searchText = remember(all) { all.associate { e -> e.id to
+    listOf(e.trainer.name,e.trainer.note,e.sources.joinToString(),e.trainer.titleIds.joinToString { it.toString(16).padStart(8,'0') })
+      .joinToString("\n").lowercase(Locale.ROOT) } }
+  val visible = remember(all,lookup,gameKey,query,searchText) {
+    val needle = query.trim().lowercase(Locale.ROOT)
+    (gameKey?.let { lookup.forGame(it) } ?: all).filter { needle.isEmpty() || searchText[it.id]?.contains(needle) == true }
   }
   val selected = visible.firstOrNull { it.id==picked } ?: visible.firstOrNull { active?.file?.name=="${it.id}.etm" } ?: visible.firstOrNull()
   val detailsScroll = rememberScrollState()
   LaunchedEffect(selected?.id,target) { detailsScroll.scrollTo(0) }
-  val gameChoices = libraryState?.visibleGames.orEmpty().mapNotNull { g ->
-    libraryState?.info?.get(g.uri)?.takeIf { it.titleId!=0L }?.let { d ->
-      GameOverrides.gameKey(d.titleId,d.version,g.relativePath) to "${g.title} · ${d.titleIdText}.${d.version}"
-    }
-  }.distinctBy { it.first }.sortedBy { it.second.lowercase(Locale.ROOT) }
-  val matches = gameChoices.filter { selected?.trainer?.matches(it.first)==true }
+  val gameChoices = remember(libraryState?.visibleGames,libraryState?.info) {
+    libraryState?.visibleGames.orEmpty().mapNotNull { g ->
+      libraryState?.info?.get(g.uri)?.takeIf { it.titleId!=0L }?.let { d ->
+        GameOverrides.gameKey(d.titleId,d.version,g.relativePath) to "${g.title} · ${d.titleIdText}.${d.version}"
+      }
+    }.distinctBy { it.first }.sortedBy { it.second.lowercase(Locale.ROOT) }
+  }
+  val gamesByTitle = remember(gameChoices) { gameChoices.groupBy { it.first.substringBefore('.').toLongOrNull(16) } }
+  val matches = remember(gamesByTitle,selected?.trainer) {
+    selected?.trainer?.titleIds.orEmpty().filter { it != 0L }.distinct()
+      .flatMap { gamesByTitle[it].orEmpty() }.distinctBy { it.first }.sortedBy { it.second.lowercase(Locale.ROOT) }
+  }
   val online = com.rfandango.haku_x.advanced.AdvancedStore(context).onlinePlay
   val ready = !online && !writing && !scanning && target!=null && loadedKey==target
   val activeHere = active?.file?.name?.removeSuffix(".etm")==selected?.id
@@ -153,7 +176,7 @@ fun TrainerBrowser(gameKey: String? = null, title: String = "", onBack: () -> Un
         Row(Modifier.fillMaxWidth().padding(horizontal=12.dp),horizontalArrangement=Arrangement.spacedBy(6.dp)) {
           TextButton(enabled=!writing&&!scanning,onClick={ chooseFolder.launch(folder) }) { Text("Choose folder") }
           TextButton(enabled=!writing&&!scanning,onClick={ importFiles.launch(arrayOf("*/*")) }) { Text("Import files") }
-          TextButton(enabled=!writing&&!scanning,onClick={ refresh() }) { Text("Refresh") }
+          TextButton(enabled=!writing&&!scanning,onClick={ refresh(true) }) { Text("Refresh index") }
         }
         Text(folder?.let { runCatching { Storage.folderPlace(context,it) }.getOrDefault(it.toString()) } ?: "No trainer folder selected",
           Modifier.padding(horizontal=16.dp),style=MaterialTheme.typography.bodySmall,maxLines=2,overflow=TextOverflow.Ellipsis)
@@ -196,7 +219,7 @@ fun TrainerBrowser(gameKey: String? = null, title: String = "", onBack: () -> Un
               Hint("Title ID matched does not verify the region or executable revision. Options take a fresh start; loading a save state keeps its existing injected code.")
               val compatible=target?.let { selected.trainer.matches(it) }==true
               if(!activeHere) {
-                Button(enabled=ready&&compatible,onClick={change { val bytes=selected.file.inputStream().use { input -> input.readTrainerBytes() }; require(trainerHash(bytes)==selected.id) { "Cached trainer changed; refresh or import it again" }; it.select(bytes) }}) {Text("Use this trainer for this game")}
+                Button(enabled=ready&&compatible,onClick={change { it.select(library.catalog.verifiedBytes(selected)) }}) {Text("Use this trainer for this game")}
                 Text(if(compatible) "Browsing only. Select this trainer to edit its remembered options." else "Choose a matching library game to use this trainer.",style=MaterialTheme.typography.bodySmall)
                 selected.trainer.labels.forEach { Text("• $it",Modifier.padding(vertical=4.dp)) }
               } else active?.let { s ->

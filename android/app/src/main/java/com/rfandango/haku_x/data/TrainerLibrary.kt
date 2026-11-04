@@ -15,18 +15,23 @@ class TrainerLibrary(private val context: Context) {
   val catalog = TrainerCatalog(File(context.filesDir,"trainer-catalog"))
   var folder: Uri?
     get() = prefs.getString("folder",null)?.let(Uri::parse)
-    set(value) { check(prefs.edit().putString("folder",value?.toString()).commit()) { "Cannot save trainer folder" } }
+    set(value) { check(prefs.edit().putString("folder",value?.toString()).putBoolean("scanNeeded",value!=null).commit()) { "Cannot save trainer folder" } }
   private val mutex=Mutex()
   data class Scan(val entries: List<TrainerEntry>, val message: String)
-  suspend fun scan(): Scan = mutex.withLock { scanFolder() }
-  private suspend fun scanFolder(): Scan {
+  val needsScan get() = folder != null && (prefs.getBoolean("scanNeeded",false) || !catalog.hasIndex)
+  fun cached(): Scan {
+    val entries = catalog.read()
+    return Scan(entries,"${entries.size} indexed trainers. Choose a trainer or game; Refresh index checks folder changes.")
+  }
+  suspend fun scan(progress: (Int) -> Unit = {}): Scan = mutex.withLock { scanFolder(progress) }
+  private suspend fun scanFolder(progress: (Int) -> Unit): Scan {
     val old = catalog.read()
     val uri = folder ?: return Scan(old,"Choose a folder containing classic .etm trainers, or import individual files.")
     val root = DocumentFile.fromTreeUri(context,uri)
     if (!Storage.hasReadPermission(context,uri) || root == null || !root.exists() || !root.isDirectory)
       return Scan(old,"Trainer folder unavailable. Showing cached trainers; reselect the folder if access was revoked.")
     val entries = mutableListOf<TrainerEntry>(); val errors = mutableListOf<String>(); val visited = HashSet<String>()
-    var inspected = 0
+    var inspected = 0; var indexed = 0
     suspend fun walk(dir: Uri, path: String, depth: Int) {
       currentCoroutineContext().ensureActive()
       require(depth<=32) { "Trainer folder nesting exceeds 32 levels" }
@@ -51,7 +56,9 @@ class TrainerLibrary(private val context: Context) {
           try {
             val bytes=context.contentResolver.openInputStream(child)?.use { it.readTrainerBytes() } ?: error("Cannot open file")
             entries+=catalog.cache(bytes,"Folder: $rel")
-          } catch(e: Exception) { errors+="$rel: ${e.message}" }
+          } catch(e: kotlinx.coroutines.CancellationException) { throw e }
+          catch(e: Exception) { errors+="$rel: ${e.message}" }
+          indexed++; if (indexed % 25 == 0) progress(indexed)
         }
       }
     }
@@ -60,12 +67,14 @@ class TrainerLibrary(private val context: Context) {
     catch (e: kotlinx.coroutines.CancellationException) { throw e }
     catch (e: Exception) { return Scan(old,"Scan incomplete; showing previous catalog. ${e.message}") }
     currentCoroutineContext().ensureActive()
-    val manual = old.mapNotNull { e -> e.sources.filter { it.startsWith("Imported: ") }.takeIf { it.isNotEmpty() }?.let { e.copy(sources=it) } }
-    val merged = TrainerCatalog.merge(entries+manual);catalog.save(merged)
+    if (folder != uri) return Scan(old,"Folder changed; refresh the newly selected folder.")
+    val merged = catalog.replaceFolder(entries)
+    check(prefs.edit().putBoolean("scanNeeded",false).commit()) { "Cannot save trainer index status" }
+    progress(indexed)
     return Scan(merged,buildString {
       append("${merged.size} trainers found; ${entries.size-TrainerCatalog.merge(entries).size} duplicate files; ${errors.size} invalid/unreadable.")
       if (errors.isNotEmpty()) append("\n").append(errors.take(5).joinToString("\n"))
     })
   }
-  suspend fun importFiles(entries: List<TrainerEntry>) = mutex.withLock { catalog.save(TrainerCatalog.merge(catalog.read()+entries)) }
+  suspend fun importFiles(entries: List<TrainerEntry>) = mutex.withLock { catalog.add(entries) }
 }

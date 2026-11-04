@@ -1,6 +1,13 @@
 # HakuX-Advanced project status — 2026-11-03
 
-Current update: Advanced5.13, `1.3.0-advanced5.13-stateload`, versionCode 30.
+Current update: Advanced5.14, `1.3.0-advanced5.14-trainerindex`, versionCode 31.
+Trainer imports and explicit folder refreshes persist parsed metadata. Opening
+trainer selection and matching games use the saved title-ID index without
+reopening the complete ETM pack. Old catalogs migrate once; chosen executable
+bytes are still checked on selection/start. See TRAINER-INDEX5.14.md.
+
+
+Previous update: Advanced5.13, `1.3.0-advanced5.13-stateload`, versionCode 30.
 Online protection no longer blocks save-state loading from the library, pause
 menu, mapped actions, debug requests or relaunch. Trainer/cheat injection,
 memory tools and imported-patch state compatibility rules are unchanged.
