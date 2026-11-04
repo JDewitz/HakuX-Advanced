@@ -80,6 +80,7 @@ fun SettingsScreen(
   val previous by produceState(false) { value = withContext(Dispatchers.IO) { PreviousVersion(context).find() != null } }
   val scope = rememberCoroutineScope()
 
+  var updatePreviews by remember { mutableStateOf(prefs.updatePreviews) }
   var folders by remember { mutableStateOf(prefs.gamesFolders) }
   var replacing by remember { mutableStateOf<Uri?>(null) }     /* the folder a pick replaces; null: adds */
   var removing by remember { mutableStateOf<Uri?>(null) }
@@ -352,6 +353,16 @@ fun SettingsScreen(
       )
 
       Section(stringResource(R.string.settings_section_updates))
+      Hint("Updates come from JDewitz/HakuX-Advanced. Official hakuX and theme packs are excluded.")
+      SwitchItem(
+        title = "Include preview updates",
+        summary = "On: stable and preview APKs. Off: stable Advanced APKs only.",
+        checked = updatePreviews,
+        onChange = {
+          updatePreviews = it; prefs.updatePreviews = it
+          updateRelease = null; Updates.clearAvailable()
+        },
+      )
       ListItem(
         headlineContent = { Text(stringResource(R.string.settings_update_check)) },
         supportingContent = {

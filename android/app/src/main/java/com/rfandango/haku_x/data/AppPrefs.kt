@@ -75,6 +75,11 @@ class AppPrefs(context: Context) {
     get() = sp.getBoolean(KEY_TURNIP_NOTE, false)
     set(value) = sp.edit { putBoolean(KEY_TURNIP_NOTE, value) }
 
+  /** Include testing releases from this fork. Preview builds default to the preview channel. */
+  var updatePreviews: Boolean
+    get() = sp.getBoolean("advanced_update_previews", true)
+    set(value) = sp.edit { putBoolean("advanced_update_previews", value) }
+
   /** The app's look: the phone's (light or dark as it is), light or dark (ui/theme AppTheme). */
   var theme: String
     get() = sp.getString(KEY_THEME, THEME_SYSTEM) ?: THEME_SYSTEM
