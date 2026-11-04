@@ -10,12 +10,20 @@ set -euo pipefail
 here=$(cd "$(dirname "$0")/../.." && pwd)
 build=${1:-$here/build/native/core}
 ndk=${ANDROID_NDK:-/c/Users/USER/AppData/Local/Android/Sdk/ndk/29.0.14206865}
-case "$(uname -s)" in
-  Linux*) host=linux-x86_64; exe= ;;
-  Darwin*) host=darwin-x86_64; exe= ;;
-  *) host=windows-x86_64; exe=.exe ;;
-esac
-strip="$ndk/toolchains/llvm/prebuilt/$host/bin/llvm-strip$exe"
+# Locate the host NDK tools, retaining upstream's explicit missing-tool error.
+strip=
+for host in linux-x86_64 darwin-x86_64 windows-x86_64; do
+  for exe in "" .exe; do
+    if [ -x "$ndk/toolchains/llvm/prebuilt/$host/bin/llvm-strip$exe" ]; then
+      strip="$ndk/toolchains/llvm/prebuilt/$host/bin/llvm-strip$exe"
+      break 2
+    fi
+  done
+done
+if [ -z "$strip" ]; then
+  echo "app-libs.sh: no llvm-strip under $ndk (set ANDROID_NDK)" >&2
+  exit 1
+fi
 out="$here/android/app/src/main/jniLibs/arm64-v8a"
 mkdir -p "$out"
 "$strip" -o "$out/libhakuxcore.so" "$build/libhakuxcore.so"

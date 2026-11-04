@@ -12,6 +12,8 @@ The current source is **1.3.0-advanced5.15.1-renderupdate** (versionCode **33**)
 base and the subsequent 1.3.0 integration. The default development branch is
 `main`; `upstream` tracks rfandango/hakuX. The repository starts private.
 
+Current integration: **Advanced 5.19**, official master through `a7cdb5a` with a rebuilt native core. See [upstream merge notes](docs/UPSTREAM5.19.md).
+
 ## Current features
 
 - Mappable fast forward (toggle/hold), small `>>` indicator, and next-shader hotkey.

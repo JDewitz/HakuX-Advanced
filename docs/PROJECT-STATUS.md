@@ -1,3 +1,7 @@
+# Current: Advanced 5.19 · upstream merge
+
+Official master through a7cdb5a is integrated. The native core is rebuilt; pinned Slang runtime retained. See [merge notes and device checks](UPSTREAM5.19.md). Historical release records follow.
+
 # HakuX-Advanced project status — 2026-11-03
 
 Current update: RenderUpdate / Advanced5.15.1, `1.3.0-advanced5.15.1-renderupdate`,

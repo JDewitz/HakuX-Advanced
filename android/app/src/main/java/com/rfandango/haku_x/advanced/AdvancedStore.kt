@@ -39,6 +39,8 @@ data class AdvancedProfile(
       "swap_w32" to "Align swapchain width to 32 pixels",
       "no_timestamps" to "Disable GPU timestamp queries",
       "present_cpu_wait" to "CPU wait before presentation",
+      "no_wbuf" to "Use rasterizer depth instead of W-buffer writes",
+      "no_sem_wait" to "Poll timeline counters instead of host semaphore waits",
     )
     fun fromJson(o: JSONObject) = AdvancedProfile(o.optBoolean("ram128", false),
       o.optBoolean("fullX87", false), o.optBoolean("precisionControl", true), o.optBoolean("armAfp", true),
