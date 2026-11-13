@@ -21,6 +21,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import com.rfandango.haku_x.BuildConfig
 import com.rfandango.haku_x.R
+import com.rfandango.haku_x.advanced.CompatibilityProfiles
 import com.rfandango.haku_x.data.AppPrefs
 import com.rfandango.haku_x.data.GameOverrides
 import com.rfandango.haku_x.data.GameSetting
@@ -83,6 +84,10 @@ fun GameSettingsScreen(gameKey: String, title: String, onBack: () -> Unit, onAdv
     mutableStateMapOf<GameSetting, String?>().apply { GameSetting.entries.forEach { put(it, overrides[it]) } }
   }
   var editing by remember { mutableStateOf<Overridable?>(null) }
+  fun hasCompatibilityDefault(item: Overridable) =
+    item.setting == GameSetting.PREBUILD_SHADERS && CompatibilityProfiles.isJadeEmpire(gameKey)
+  fun defaultValue(item: Overridable) =
+    if (hasCompatibilityDefault(item)) "false" else item.global(prefs)
 
   SubScreen(
     title = stringResource(R.string.game_settings_title),
@@ -120,7 +125,9 @@ fun GameSettingsScreen(gameKey: String, title: String, onBack: () -> Unit, onAdv
                   color = MaterialTheme.colorScheme.primary,
                 )
               } else {
-                Text(stringResource(R.string.game_settings_global, item.label(item.global(prefs))))
+                val label = if (hasCompatibilityDefault(item)) R.string.game_settings_compatibility_default
+                  else R.string.game_settings_global
+                Text(stringResource(label, item.label(defaultValue(item))))
               }
             },
             modifier = Modifier.clickable { editing = item },
@@ -131,10 +138,12 @@ fun GameSettingsScreen(gameKey: String, title: String, onBack: () -> Unit, onAdv
   }
 
   editing?.let { item ->
-    val useGlobal = stringResource(R.string.game_settings_use_global, item.label(item.global(prefs)))
+    val defaultLabel = if (hasCompatibilityDefault(item)) R.string.game_settings_use_compatibility_default
+      else R.string.game_settings_use_global
+    val useDefault = stringResource(defaultLabel, item.label(defaultValue(item)))
     ChoiceDialog(
       title = stringResource(item.title),
-      options = listOf<String?>(null).map { it to useGlobal } + item.values.map { it to item.label(it) },
+      options = listOf<String?>(null).map { it to useDefault } + item.values.map { it to item.label(it) },
       current = values[item.setting],
       onPick = { v ->
         overrides[item.setting] = v

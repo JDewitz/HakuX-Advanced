@@ -4,6 +4,7 @@ import android.app.Application
 import android.content.Context
 import androidx.core.content.edit
 import com.rfandango.haku_x.BuildConfig
+import com.rfandango.haku_x.advanced.CompatibilityProfiles
 import java.util.Locale
 
 /** The settings a game can override; the rest are the app's for every game. */
@@ -88,7 +89,8 @@ class RunSettings(private val app: AppPrefs, private val game: GameOverrides?) {
   val uncapped get() = bool(GameSetting.UNCAPPED, app.uncapped)
   val renderScale get() = game?.get(GameSetting.RENDER_SCALE)?.toIntOrNull() ?: app.renderScale
   val asyncShaders get() = bool(GameSetting.ASYNC_SHADERS, app.asyncShaders)
-  val prebuildShaders get() = bool(GameSetting.PREBUILD_SHADERS, app.prebuildShaders)
+  val prebuildShaders get() = bool(GameSetting.PREBUILD_SHADERS,
+    CompatibilityProfiles.prebuildShadersDefault(game?.game, app.prebuildShaders))
   /** A debug build's setting (off for A/B); always on in the others. */
   val consoleTiming get() = !BuildConfig.DEBUG || bool(GameSetting.CONSOLE_TIMING, app.consoleTiming)
   val aspectRatio get() = text(GameSetting.ASPECT, app.aspectRatio)

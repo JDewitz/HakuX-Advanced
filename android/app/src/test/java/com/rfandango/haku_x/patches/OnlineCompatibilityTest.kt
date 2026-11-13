@@ -130,6 +130,13 @@ class OnlineCompatibilityTest {
     assertFalse(CompatibilityProfiles.useSagacious("4D530004.8", enabled = true, forceOn = true))
     assertFalse(CompatibilityProfiles.useSagacious("path:jade.iso", enabled = true, forceOn = true))
   }
+  @Test fun jadeEmpireUsesTheSaferShaderPrebuildDefault() {
+    assertFalse(CompatibilityProfiles.prebuildShadersDefault("4D53006D.1", true))
+    assertFalse(CompatibilityProfiles.prebuildShadersDefault("4d53006d.2", true))
+    assertTrue(CompatibilityProfiles.prebuildShadersDefault("4D530004.8", true))
+    assertFalse(CompatibilityProfiles.prebuildShadersDefault("4D530004.8", false))
+    assertTrue(CompatibilityProfiles.prebuildShadersDefault(null, true))
+  }
   @Test fun semanticFingerprintIsDeterministicAndBindsOperationPayload() {
     val e = entry()
     val reconstructed = entry(JSONObject(json().toString()))

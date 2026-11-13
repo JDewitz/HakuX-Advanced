@@ -93,6 +93,8 @@
   <string name="game_settings_desc">These apply to this game only; the others follow the app\'s settings. Changes take effect at the game\'s next start.</string>
   <string name="game_settings_reset">Reset</string>
   <string name="game_settings_global">App setting: %1$s</string>
+  <string name="game_settings_compatibility_default">Compatibility default: %1$s</string>
+  <string name="game_settings_use_compatibility_default">Use compatibility default (%1$s)</string>
   <string name="game_settings_use_global">Use the app setting (%1$s)</string>
   <string name="game_settings_this_game">%1$s, for this game</string>
   <string name="game_settings_on">On</string>

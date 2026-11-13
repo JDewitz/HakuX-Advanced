@@ -31,8 +31,8 @@ android {
     minSdk = 28
     targetSdk = 36
 
-    versionCode = 40
-    versionName = "1.3.0-advanced5.19.2-sagacious"
+    versionCode = 41
+    versionName = "1.3.0-advanced5.19.3-sagacious"
 
     ndk {
       abiFilters += listOf("arm64-v8a")

@@ -48,6 +48,9 @@ object CompatibilityProfiles {
   fun useSagacious(game: String?, enabled: Boolean, forceOn: Boolean) =
     isJadeEmpire(game) && (enabled || forceOn)
 
+  fun prebuildShadersDefault(game: String?, appDefault: Boolean) =
+    appDefault && !isJadeEmpire(game)
+
   val haloPool = CompatibilityRule(
     id = "halo-ce-high-pool-v1", titleId = 0x4D530004L,
     revisions = setOf(8L), emulatorBase = "1.3.0", automatic = true,
