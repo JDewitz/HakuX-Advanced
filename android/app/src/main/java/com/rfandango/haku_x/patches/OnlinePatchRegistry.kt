@@ -44,7 +44,7 @@ object OnlinePatchRegistry {
   internal fun approval(entry: PatchEntry, game: String?, emulator: String,
                         registry: List<OnlinePatchApproval> = approvals): OnlinePatchApproval? {
     val identity = CompatibilityIdentity.fromGameKey(game) ?: return null
-    if (!entry.available || !entry.pack.matches(game, emulator)) return null
+    if (entry.pack.compatibility != null || !entry.available || !entry.pack.matches(game, emulator)) return null
     val hashPattern = Regex("[0-9a-f]{64}")
     return registry.singleOrNull { r ->
       hashPattern.matches(r.contentSha256) && hashPattern.matches(r.semanticSha256) &&
@@ -58,7 +58,8 @@ object OnlinePatchRegistry {
   }
 
   fun description(entry: PatchEntry, game: String?, emulator: String): String =
-    approval(entry, game, emulator)?.let { "Reviewed for online play · ${it.reviewReference}\n${it.rationale}" }
+    if (entry.pack.sagacious) "Renderer workaround only · allowed in protected sessions"
+    else approval(entry, game, emulator)?.let { "Reviewed for online play · ${it.reviewReference}\n${it.rationale}" }
       ?: "Not approved for online play · offline only"
 }
 
@@ -76,7 +77,7 @@ internal object OnlineCompatibilityManifest {
     val decisions = PatchPlanner.plan(entries, entries.map { it.hash }.toSet(), game, emulator,
       online = true, onlineApprovals = registry)
     require(decisions.all { it.ready }) { "Online compatibility manifest contains an unapproved or conflicting patch" }
-    return entries.sortedBy { it.hash }.flatMap { e -> e.pack.writes.map { op ->
+    return entries.filterNot { it.pack.sagacious }.sortedBy { it.hash }.flatMap { e -> e.pack.writes.map { op ->
       "patch\tdefault.xbe\tp-${e.hash.take(32)}\t${op.line()}"
     } }
   }

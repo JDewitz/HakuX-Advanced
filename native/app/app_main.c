@@ -22,6 +22,7 @@
 #include "native/core/cheats.h"
 #include "native/core/advanced.h"
 #include "hw/xbox/hle/vk/slang.h"
+#include "hw/xbox/hle/vk/vkdev.h"
 #include "native/core/core.h"
 #include "native/core/mods.h"
 #include "native/core/options.h"
@@ -611,6 +612,7 @@ EXPORT int SDL_main(int argc, char *argv[])
     }
     NcOptions opt;
     nc_options_init(&opt);
+    hle_vk_set_no_fbfetch(false);
     for (int i = 3; i < argc; i++) {
         if (!strncmp(argv[i], "advanced=", 9)) {
             const char *v = argv[i] + 9;
@@ -624,6 +626,9 @@ EXPORT int SDL_main(int argc, char *argv[])
             } else if (!strcmp(v, "afp:0") || !strcmp(v, "afp:1")) {
                 setenv("NC_FEX_AFP", v + 4, 1);
                 nc_advanced_set("debug.hakux.fex_afp", v + 4);
+            } else if (!strcmp(v, "sagacious")) {
+                hle_vk_set_no_fbfetch(true);
+                nc_log("hakuX-app", "Sagacious: disabling framebuffer fetch for Jade Empire");
             } else if (!strncmp(v, "quirks:", 7)) {
                 /* Workarounds used during device creation must be in place now. */
                 setenv("HAKUX_HLE_QUIRKS", v + 7, 1);

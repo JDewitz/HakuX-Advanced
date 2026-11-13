@@ -205,6 +205,13 @@ int hle_vk_memtype(uint32_t bits, VkMemoryPropertyFlags want,
     return -1;
 }
 
+static bool no_fbfetch_for_title;
+
+void hle_vk_set_no_fbfetch(bool disabled)
+{
+    no_fbfetch_for_title = disabled;
+}
+
 int hle_vk_init(void)
 {
     HleVk *v = &g_hvk;
@@ -514,7 +521,7 @@ int hle_vk_init(void)
     c->maint5 = has_ext(ext, ne, "VK_KHR_maintenance5");
     /* local read is dynamic rendering's: 1.3 devices only */
     c->local_read = v13 && e_lr && q_lr.dynamicRenderingLocalRead;
-    c->fbfetch = c->local_read && !getenv("HAKUX_HLE_NO_FBFETCH");
+    c->fbfetch = c->local_read && !no_fbfetch_for_title && !getenv("HAKUX_HLE_NO_FBFETCH");
     c->exec_props = has_ext(ext, ne, VK_KHR_PIPELINE_EXECUTABLE_PROPERTIES_EXTENSION_NAME);
     c->aniso = q.features.samplerAnisotropy;
     c->host_query_reset = v13 ? q12.hostQueryReset : e_hqr && q_hqr.hostQueryReset;

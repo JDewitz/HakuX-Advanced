@@ -112,6 +112,8 @@ extern HleVk g_hvk;
 /* 0 = ready; -1 = no Vulkan; -2 = floor not met (g_hvk.caps.missing).
  * Vulkan 1.1 is the floor's version: 1.2's and 1.3's parts come from their
  * extensions (timeline semaphores required) or vk/compat.c. */
+/* Call before device initialization. */
+void hle_vk_set_no_fbfetch(bool disabled);
 int hle_vk_init(void);
 /* The back end is up (hle_back_start done): other threads may use g_hvk. */
 bool hle_vk_ready(void);

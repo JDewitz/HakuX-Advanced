@@ -1,6 +1,7 @@
 package com.rfandango.haku_x.patches
 
 import com.rfandango.haku_x.advanced.CompatibilityIdentity
+import com.rfandango.haku_x.advanced.CompatibilityProfiles
 import org.json.JSONObject
 import java.nio.ByteBuffer
 import java.nio.charset.CodingErrorAction
@@ -14,12 +15,17 @@ data class PatchWrite(val address: Long, val expected: List<Int>, val replacemen
   companion object { fun hex(bytes: List<Int>) = bytes.joinToString(" ") { "%02X".format(Locale.ROOT, it) } }
 }
 
+internal const val SAGACIOUS_OPTION = "sagacious"
+
 data class PatchPack(val id: String, val name: String, val version: String, val author: String,
   val description: String, val titleId: Long, val revisions: Set<Long>, val emulatorBase: String,
-  val conflicts: Set<String>, val writes: List<PatchWrite>) {
+  val conflicts: Set<String>, val writes: List<PatchWrite>, val compatibility: String? = null) {
+  val sagacious: Boolean get() = compatibility == SAGACIOUS_OPTION && titleId == CompatibilityProfiles.JADE_EMPIRE_TITLE_ID &&
+    emulatorBase == "1.3.0" && writes.isEmpty()
   fun matches(game: String?, emulator: String): Boolean {
     val identity = CompatibilityIdentity.fromGameKey(game) ?: return false
-    return identity.titleId == titleId && identity.revision in revisions && emulator.substringBefore('-') == emulatorBase
+    return identity.titleId == titleId && (identity.revision in revisions || (sagacious && revisions.isEmpty())) &&
+      emulator.substringBefore('-') == emulatorBase
   }
   companion object {
     const val MAX_BYTES = 256 * 1024
@@ -30,14 +36,23 @@ data class PatchPack(val id: String, val name: String, val version: String, val 
       val text = Charsets.UTF_8.newDecoder().onMalformedInput(CodingErrorAction.REPORT).onUnmappableCharacter(CodingErrorAction.REPORT).decode(ByteBuffer.wrap(bytes)).toString()
       val o = JSONObject(text)
       fun keys(obj: JSONObject, allowed: Set<String>) { require(obj.keys().asSequence().all { it in allowed }) { "Unsupported patch field" } }
-      keys(o, setOf("schema", "id", "name", "version", "author", "description", "titleId", "revisions", "emulatorBase", "conflicts", "patches"))
+      keys(o, setOf("schema", "id", "name", "version", "author", "description", "titleId", "revisions", "emulatorBase", "conflicts", "patches", "compatibility"))
       require(o.opt("schema") is Number && o.getInt("schema") == 1 && o.get("schema").toString() == "1") { "Unsupported schema" }
       fun field(name: String, max: Int = 200): String {
         val v = o.get(name); require(v is String && v.isNotBlank() && v.length <= max && v.none { it == '\t' || it == '\n' || it == '\r' || it.code < 32 }) { "Invalid $name" }; return v
       }
       val id = field("id"); require(ID.matches(id)) { "Invalid patch id" }
       val title = field("titleId"); require(title.matches(Regex("[0-9A-Fa-f]{8}")) && title.toLong(16) != 0L) { "Invalid titleId" }
-      val revisions = o.getJSONArray("revisions"); require(revisions.length() in 1..64) { "Explicit revisions required" }
+      val compatibility = if (o.has("compatibility")) {
+        require(field("compatibility") == SAGACIOUS_OPTION &&
+          title.toLong(16) == CompatibilityProfiles.JADE_EMPIRE_TITLE_ID && !o.has("patches")) {
+          "Sagacious requires Jade Empire and cannot include guest writes"
+        }
+        SAGACIOUS_OPTION
+      } else null
+      // A title-wide scope is allowed only for the built-in renderer option.
+      val revisions = if (compatibility != null && !o.has("revisions")) org.json.JSONArray()
+        else o.getJSONArray("revisions").also { require(it.length() in 1..64) { "Explicit revisions required" } }
       val versions = (0 until revisions.length()).map { i ->
         val v = revisions.get(i); require(v is Number && v.toString().matches(Regex("[0-9]+"))) { "Revision must be an integer" }
         v.toString().toLong().also { require(it in 0..0xffffffffL) { "Revision out of range" } }
@@ -49,7 +64,8 @@ data class PatchPack(val id: String, val name: String, val version: String, val 
       val conflictIds = (0 until (conflicts?.length() ?: 0)).map {
         val v = conflicts!!.get(it); require(v is String && ID.matches(v) && v != id) { "Invalid conflict id" }; v
       }.toSet()
-      val patches = o.getJSONArray("patches"); require(patches.length() in 1..256) { "Use 1–256 guarded operations" }
+      val patches = if (compatibility == null) o.getJSONArray("patches") else org.json.JSONArray()
+      require(compatibility != null || patches.length() in 1..256) { "Use 1–256 guarded operations" }
       fun bytes(value: Any): List<Int> {
         require(value is String && value.matches(Regex("[0-9a-fA-F]{2}( [0-9a-fA-F]{2}){0,255}"))) { "Bytes must be space-separated hex pairs, at most 256" }
         return value.split(' ').map { it.toInt(16) }
@@ -63,7 +79,7 @@ data class PatchPack(val id: String, val name: String, val version: String, val 
         PatchWrite(address.substring(2).toLong(16), old, new).also { require(it.address >= 0x10000 && it.end <= 0x100000000L) { "Address range is invalid" } }
       }
       for (i in writes.indices) require(writes.drop(i + 1).none { writes[i].overlaps(it) }) { "Overlapping operations inside patch" }
-      return PatchPack(id, field("name"), field("version", 40), field("author"), field("description", 2000), title.toLong(16), versions, base, conflictIds, writes)
+      return PatchPack(id, field("name"), field("version", 40), field("author"), field("description", 2000), title.toLong(16), versions, base, conflictIds, writes, compatibility)
     }
   }
 }
@@ -76,7 +92,7 @@ object PatchPlanner {
            builtIn: List<PatchWrite> = emptyList(), otherMods: Boolean = false, trainer: Boolean = false,
            stateLoad: Boolean = false, onlineApprovals: List<OnlinePatchApproval> = OnlinePatchRegistry.approvals): List<PatchDecision> {
     val eligible = entries.filter { it.available && it.hash in enabled && it.pack.matches(game, emulator) &&
-      (!online || OnlinePatchRegistry.approval(it, game, emulator, onlineApprovals) != null) }
+      (!online || it.pack.sagacious || OnlinePatchRegistry.approval(it, game, emulator, onlineApprovals) != null) }
     return entries.map { e ->
       val on = e.hash in enabled
       val reason = when {
@@ -84,16 +100,20 @@ object PatchPlanner {
         game == null -> "Select a game to configure"
         !e.pack.matches(game, emulator) -> "Incompatible · title, revision or core build differs"
         !on -> "Off"
-        online && OnlinePatchRegistry.approval(e, game, emulator, onlineApprovals) == null -> "Blocked by online play protection · patch is not reviewed for online use"
-        stateLoad -> "Blocked · imported patches require a cold start"
+        online && !e.pack.sagacious && OnlinePatchRegistry.approval(e, game, emulator, onlineApprovals) == null -> "Blocked by online play protection · patch is not reviewed for online use"
+        stateLoad && !e.pack.sagacious -> "Blocked · imported patches require a cold start"
         eligible.size > 32 || eligible.sumOf { it.pack.writes.size } > 256 -> "Conflicting · session patch limit exceeded"
-        trainer -> "Conflicting · disable the active trainer first"
-        otherMods -> "Conflicting · active built-in XBE file replacement or unsupported patch syntax"
+        trainer && !e.pack.sagacious -> "Conflicting · disable the active trainer first"
+        otherMods && !e.pack.sagacious -> "Conflicting · active built-in XBE file replacement or unsupported patch syntax"
         e.pack.writes.any { a -> builtIn.any { a.overlaps(it) } } -> "Conflicting · overlaps an enabled built-in mod"
         eligible.any { x -> x.hash != e.hash && (x.pack.id == e.pack.id || x.pack.id in e.pack.conflicts || e.pack.id in x.pack.conflicts || e.pack.writes.any { a -> x.pack.writes.any { a.overlaps(it) } }) } -> "Conflicting · another enabled imported patch"
         else -> null
       }
-      PatchDecision(e, on, reason ?: if (online) "Reviewed compatibility patch · enabled for next cold launch" else "Enabled for next cold launch", reason == null)
+      PatchDecision(e, on, reason ?: when {
+        e.pack.sagacious -> "Sagacious enabled for next launch"
+        online -> "Reviewed compatibility patch · enabled for next cold launch"
+        else -> "Enabled for next cold launch"
+      }, reason == null)
     }
   }
   fun preflight(pack: PatchPack, read: (Long, Int) -> ByteArray?): Boolean = pack.writes.all { op ->

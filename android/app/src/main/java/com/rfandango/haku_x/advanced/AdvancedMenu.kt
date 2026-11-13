@@ -55,10 +55,13 @@ class AdvancedMenu(
     show(AlertDialog.Builder(activity).setTitle(title).setItems(items.map { it.first }.toTypedArray()) { _, i -> items[i].second() }
       .setNegativeButton("Back", null))
   }
-  fun show() = choice("Advanced & experimental", listOf(
+  fun show() = choice("Advanced & experimental", listOfNotNull(
     "Online play protection · current session: ${if (activity.onlinePolicy.onlinePlay) "ON" else "OFFLINE"}" to ::sessionMode,
     "Startup profile for this game · restart required" to ::startup,
     "Game compatibility · high kernel pool placement" to ::compatibility,
+    if (CompatibilityProfiles.isJadeEmpire(game())) {
+      "Sagacious · ${if (store.sagaciousEnabled) "On" else "Off"} for next launch" to ::sagacious
+    } else null,
     "Imported game patches · next cold start" to ::importedPatches,
     "GPU driver workaround overrides · restart required" to ::quirks,
     "Performance overlay · level ${activity.performanceHudLevel}" to ::performanceHud,
@@ -73,6 +76,15 @@ class AdvancedMenu(
     "Dump a texture by ID" to ::texture,
     "Export Advanced files as ZIP" to ::export,
   ))
+  private fun sagacious() {
+    show(AlertDialog.Builder(activity).setTitle("Sagacious · Jade Empire")
+      .setMessage("Disables framebuffer fetch for Focus Mode. Restart the game after changing the setting. An enabled Sagacious patch forces this setting on.")
+      .setPositiveButton(if (store.sagaciousEnabled) "Turn off" else "Turn on") { _, _ ->
+        runCatching { store.sagaciousEnabled = !store.sagaciousEnabled }
+          .onSuccess { toast("Saved. Restart Jade Empire to apply.") }
+          .onFailure { toast(it.message ?: "Could not save Sagacious setting") }
+      }.setNegativeButton("Back", null))
+  }
   private fun performanceHud() {
     show(AlertDialog.Builder(activity).setTitle("Performance overlay")
       .setSingleChoiceItems(HudLevels.labels, activity.performanceHudLevel) { dialog, index ->
@@ -123,8 +135,13 @@ class AdvancedMenu(
             "${d.entry.pack.name}: ${if (loaded) "Loaded at launch; " else ""}${d.status}" to {
               val p = d.entry.pack
               val current = activity.importedPatchLaunch.decisions.firstOrNull { it.entry.hash == d.entry.hash }?.status ?: "Not loaded in this session"
+              val details = if (p.sagacious) {
+                "${if (loaded) "Enabled in this session." else current}\n\nRestart the game to apply changes. Save states are supported."
+              } else {
+                "${if (loaded) "Loaded in this session's manifest; native log confirms individual writes." else current}\n\nToggle changes require a cold start. Save states are unavailable while imported patches are loaded."
+              }
               val b = AlertDialog.Builder(activity).setTitle(p.name)
-                .setMessage("${p.version} · ${p.author}\n${p.description}\n${com.rfandango.haku_x.patches.OnlinePatchRegistry.description(d.entry, game(), BuildConfig.VERSION_NAME)}\n\nNext start: ${d.status}\n${if (loaded) "Loaded in this session's manifest; native log confirms individual writes." else current}\n\nToggle changes require a cold start. Save states are unavailable while imported patches are loaded.")
+                .setMessage("${p.version} · ${p.author}\n${p.description}\n${com.rfandango.haku_x.patches.OnlinePatchRegistry.description(d.entry, game(), BuildConfig.VERSION_NAME)}\n\nNext start: ${d.status}\n${details}")
                 .setNegativeButton("Back", null)
               if (d.enabled || (d.entry.available && p.matches(game(), BuildConfig.VERSION_NAME))) {
                 b.setPositiveButton(if (d.enabled) "Disable for next start" else "Enable for next start") { _, _ ->

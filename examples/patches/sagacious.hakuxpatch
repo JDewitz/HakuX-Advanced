@@ -1,0 +1,11 @@
+{
+  "schema": 1,
+  "id": "sagacious",
+  "name": "Sagacious",
+  "version": "1.1-test",
+  "author": "HakuX-Advanced",
+  "description": "Force framebuffer fetch off for Jade Empire to test Focus Mode rendering. Restart after changing the setting.",
+  "titleId": "4D53006D",
+  "emulatorBase": "1.3.0",
+  "compatibility": "sagacious"
+}

@@ -95,6 +95,41 @@ class OnlineCompatibilityTest {
     assertTrue(CompatibilityProfiles.resolvePool(CompatibilityMode.AUTO, "4D530004.8", emulator).enabled)
     assertFalse(OnlinePlayPolicy(true).allowGuestMods) // Halo does not need trainer mode to run its built-in fix
   }
+  @Test fun sagaciousPatchCanForceOnForAnyJadeEmpireRevision() {
+    val e = entry(json("sagacious").put("titleId", "4D53006D").put("compatibility", "sagacious").apply { remove("patches"); remove("revisions") })
+    assertTrue(e.pack.sagacious)
+    assertTrue(e.pack.writes.isEmpty())
+    val jade = "4D53006D.1"
+    val launch = PatchLaunch(loaded = listOf(e.hash), loadedEntries = listOf(e))
+    assertTrue(launch.sagacious)
+    assertFalse(launch.hasGuestWrites)
+    assertTrue(PatchPlanner.plan(listOf(e), setOf(e.hash), jade, emulator, online = true, stateLoad = true).single().ready)
+    assertTrue(OnlineCompatibilityManifest.forLaunch(launch, jade, emulator).isEmpty())
+    assertFalse(PatchPlanner.plan(listOf(e), emptySet(), jade, emulator, online = true).single().ready)
+    assertTrue(decision(e, emptyList(), "4D53006D.2").ready)
+    for (key in listOf("4D530004.8", "path:jade.iso")) {
+      assertFalse(decision(e, emptyList(), key).ready)
+    }
+  }
+  @Test fun sagaciousRejectsOtherCompatibilityOptionsAndGuestWrites() {
+    val o = json("sagacious").put("titleId", "4D53006D").put("compatibility", "sagacious")
+    rejected { entry(o) }
+    o.remove("patches")
+    rejected { entry(JSONObject(o.toString()).put("compatibility", "unknown")) }
+    rejected { entry(JSONObject(o.toString()).put("titleId", "4D530004")) }
+    val scoped = entry(JSONObject(o.toString()).put("revisions", JSONArray().put(2)))
+    assertFalse(decision(scoped, emptyList(), "4D53006D.1").ready)
+    assertTrue(decision(scoped, emptyList(), "4D53006D.2").ready)
+    assertTrue(runCatching { entry(json().apply { remove("revisions") }) }.isFailure)
+  }
+  @Test fun sagaciousDefaultsOnForJadeAndCanBeDisabledUnlessForced() {
+    assertTrue(CompatibilityProfiles.useSagacious("4D53006D.1", enabled = true, forceOn = false))
+    assertTrue(CompatibilityProfiles.useSagacious("4d53006d.2", enabled = true, forceOn = false))
+    assertFalse(CompatibilityProfiles.useSagacious("4D53006D.1", enabled = false, forceOn = false))
+    assertTrue(CompatibilityProfiles.useSagacious("4D53006D.1", enabled = false, forceOn = true))
+    assertFalse(CompatibilityProfiles.useSagacious("4D530004.8", enabled = true, forceOn = true))
+    assertFalse(CompatibilityProfiles.useSagacious("path:jade.iso", enabled = true, forceOn = true))
+  }
   @Test fun semanticFingerprintIsDeterministicAndBindsOperationPayload() {
     val e = entry()
     val reconstructed = entry(JSONObject(json().toString()))

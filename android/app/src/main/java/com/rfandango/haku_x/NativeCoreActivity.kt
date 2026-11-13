@@ -248,7 +248,7 @@ class NativeCoreActivity : SDLActivity(), InputManager.InputDeviceListener {
   @Volatile var importedPatchLaunch = com.rfandango.haku_x.patches.PatchLaunch()
     private set
   fun allowImportedPatchStates(): Boolean {
-    if (importedPatchLaunch.loaded.isEmpty()) return true
+    if (!importedPatchLaunch.hasGuestWrites) return true
     Toast.makeText(this, "Imported patches use cold starts only in this release. Fully exit and disable patches before using save states.", Toast.LENGTH_LONG).show()
     return false
   }
@@ -258,7 +258,8 @@ class NativeCoreActivity : SDLActivity(), InputManager.InputDeviceListener {
     private set
   override fun getArguments(): Array<String> {
     val args = mutableListOf(discArg, hddDir().absolutePath)
-    val startup = AdvancedStore(this).profile(gameKey())
+    val advancedStore = AdvancedStore(this)
+    val startup = advancedStore.profile(gameKey())
     val compatibility = startup.poolDecision(gameKey(), BuildConfig.VERSION_NAME)
     compatibilitySummary = compatibility.summary
     Log.i(TAG, "compatibility: high-kernel-pool; game=${gameKey()}; build=${BuildConfig.VERSION_NAME}; rule=${compatibility.ruleId ?: "none"}; ${compatibility.summary}")
@@ -329,6 +330,10 @@ class NativeCoreActivity : SDLActivity(), InputManager.InputDeviceListener {
     /* The game's mods (their files and XBE patches) and cheats (mods/):
      * the manifest the core reads as the disc opens. */
     modsArg()?.let { args += it }
+    if (com.rfandango.haku_x.advanced.CompatibilityProfiles.useSagacious(
+        gameKey(), advancedStore.sagaciousEnabled, importedPatchLaunch.sagacious)) {
+      args += "advanced=sagacious"
+    }
     /* The players with a controller plugged in at boot: player 1 and those a
      * connected controller plays as (later ones: syncPads). */
     plugged = Controllers.load(this).padMask(Controllers.connected())

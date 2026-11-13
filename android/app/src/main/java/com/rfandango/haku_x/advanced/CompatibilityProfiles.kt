@@ -41,6 +41,13 @@ data class CompatibilityDecision(val enabled: Boolean, val mode: CompatibilityMo
 
 /** Bundled, reviewed rules only. This is not an executable patch-pack loader. */
 object CompatibilityProfiles {
+  internal const val JADE_EMPIRE_TITLE_ID = 0x4D53006DL
+
+  fun isJadeEmpire(game: String?) = CompatibilityIdentity.fromGameKey(game)?.titleId == JADE_EMPIRE_TITLE_ID
+
+  fun useSagacious(game: String?, enabled: Boolean, forceOn: Boolean) =
+    isJadeEmpire(game) && (enabled || forceOn)
+
   val haloPool = CompatibilityRule(
     id = "halo-ce-high-pool-v1", titleId = 0x4D530004L,
     revisions = setOf(8L), emulatorBase = "1.3.0", automatic = true,

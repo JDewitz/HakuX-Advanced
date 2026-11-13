@@ -12,7 +12,10 @@ import java.io.File
 
 data class PatchLaunch(val loaded: List<String> = emptyList(), val decisions: List<PatchDecision> = emptyList(),
   val errors: List<String> = emptyList(), val lines: List<String> = emptyList(),
-  val loadedEntries: List<PatchEntry> = emptyList())
+  val loadedEntries: List<PatchEntry> = emptyList()) {
+  val sagacious: Boolean get() = loadedEntries.any { it.pack.sagacious }
+  val hasGuestWrites: Boolean get() = loadedEntries.any { it.pack.writes.isNotEmpty() }
+}
 
 object PatchRun {
   fun preview(context: Context, entries: List<PatchEntry>, game: String?, online: Boolean): List<PatchDecision> {
@@ -23,7 +26,7 @@ object PatchRun {
     val replaced = !online && mods.any { ModCatalog.extract(context, game, it.id).any { (path, _) -> path.replace('\\', '/').equals("default.xbe", true) } }
     return PatchPlanner.plan(entries, enabled, game, BuildConfig.VERSION_NAME, online, ranges, bad || replaced,
       !online && runCatching { TrainerStore(context, game).load()?.enabled == true }.getOrDefault(true)).map {
-      if (it.ready && hasUpdate(context, game)) it.copy(ready = false, status = "Incompatible · installed title updates are unsupported") else it
+      if (it.ready && !it.entry.pack.sagacious && hasUpdate(context, game)) it.copy(ready = false, status = "Incompatible · installed title updates are unsupported") else it
     }
   }
   /** Conservative conflicts with the bundled mod engine: imported packs never win by ordering. */
@@ -63,7 +66,7 @@ object PatchRun {
     val (ranges, unsupported) = blockers(mods)
     val replaced = mods.any { ModCatalog.extract(context, game, it.id).any { (path, _) -> path.replace('\\', '/').equals("default.xbe", true) } }
     val decisions = PatchPlanner.plan(entries, enabled, game, BuildConfig.VERSION_NAME, online, ranges, unsupported || replaced, trainer, stateLoad)
-      .map { if (it.ready && hasUpdate(context, game)) it.copy(ready = false, status = "Incompatible · installed title updates are unsupported") else it }
+      .map { if (it.ready && !it.entry.pack.sagacious && hasUpdate(context, game)) it.copy(ready = false, status = "Incompatible · installed title updates are unsupported") else it }
     val ready = decisions.filter { it.ready }
     if (ready.sumOf { it.entry.pack.writes.size } > 256 || ready.size > 32) return PatchLaunch(decisions = decisions.map {
       if (it.ready) it.copy(ready = false, status = "Conflicting · session patch limit exceeded") else it
@@ -76,7 +79,13 @@ object PatchRun {
     val loaded = resolved.filter { it.ready }.sortedBy { it.entry.hash }
     for (d in resolved.filter { it.enabled }) Log.i("hakuX-patches", "$game ${d.entry.pack.id} ${d.entry.hash}: ${d.status}")
     errors.forEach { Log.w("hakuX-patches", it) }
-    return PatchLaunch(loaded.map { it.entry.hash }, resolved.map { if (it.ready) it.copy(status = "Loaded at launch · native writes remain guarded") else it }, errors, loaded.flatMap { d -> d.entry.pack.writes.map {
+    return PatchLaunch(loaded.map { it.entry.hash }, resolved.map {
+      when {
+        !it.ready -> it
+        it.entry.pack.sagacious -> it.copy(status = "Sagacious enabled at launch")
+        else -> it.copy(status = "Loaded at launch · native writes remain guarded")
+      }
+    }, errors, loaded.flatMap { d -> d.entry.pack.writes.map {
       "patch\tdefault.xbe\tp-${d.entry.hash.take(32)}\t${it.line()}"
     } }, loaded.map { it.entry })
   }
