@@ -1,3 +1,4 @@
+#include "native/core/framepace.h"
 /*
  * hakuX native core — boot and run a title.
  */
@@ -199,6 +200,7 @@ bool nc_core_boot(NcCore *c, int disc_fd)
                  "it yet.", name ? name + 1 : xbe_path);
         return boot_failed(why);
     }
+    nc_framepace_boot(c->xbe.info.title_id);
     nc_kernel_title_loaded(&c->kernel, &c->disc, &c->xbe.file, c->xbe.fd, c->xbe.info.base,
                            c->xbe.info.sizeof_image);
     if (have_page) {

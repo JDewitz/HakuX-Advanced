@@ -334,6 +334,7 @@ class NativeCoreActivity : SDLActivity(), InputManager.InputDeviceListener {
         gameKey(), advancedStore.sagaciousEnabled, importedPatchLaunch.sagacious)) {
       args += "advanced=sagacious"
     }
+    importedPatchLaunch.presentLimit?.let { args += "advanced=republic-present:$it" }
     /* The players with a controller plugged in at boot: player 1 and those a
      * connected controller plays as (later ones: syncPads). */
     plugged = Controllers.load(this).padMask(Controllers.connected())

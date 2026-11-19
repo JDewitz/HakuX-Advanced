@@ -129,7 +129,8 @@ fun PatchBrowser(gameKey: String? = null, title: String = "", onBack: () -> Unit
               val revisions = selected.pack.revisions.sorted().joinToString().ifEmpty { "all" }
               Text("Title: ${"%08X".format(Locale.ROOT, selected.pack.titleId)} · revisions $revisions")
               Text("Core: ${selected.pack.emulatorBase} · cold start required")
-              if (selected.pack.sagacious) Text("Force framebuffer fetch off for Jade Empire")
+              if (selected.pack.presentLimit != null) Text("Guest present pacing · ${selected.pack.presentLimit} FPS")
+              else if (selected.pack.sagacious) Text("Force framebuffer fetch off for Jade Empire")
               else Text("${selected.pack.writes.size} guarded operations · default.xbe")
               Text(selected.sources.joinToString("\n"), Modifier.padding(vertical = 8.dp))
               Text(d?.status ?: "Not checked", color = MaterialTheme.colorScheme.primary)
@@ -141,7 +142,8 @@ fun PatchBrowser(gameKey: String? = null, title: String = "", onBack: () -> Unit
                 })
               }
               Hint("Choices are saved per game and patch content. Online protection blocks unreviewed patches. Reviewed compatibility patches may run online; trainers and cheats remain blocked. Source and byte checks run again before launch; replacement versions start disabled. Turning this off takes effect at the next cold start.")
-              if (selected.pack.sagacious) Hint("Restart the game to apply. Sagacious supports save states.")
+              if (selected.pack.presentLimit != null) Hint("Experimental timing option. Restart to apply. Save states are supported. Enable one rate at a time. Online sessions are blocked pending review.")
+              else if (selected.pack.sagacious) Hint("Restart the game to apply. Sagacious supports save states.")
               else Hint("Imported patches currently support cold starts only. Save-state saving/loading is unavailable in a patched session. Loaded at launch does not prove every native write applied; inspect the patch log.")
               Text("SHA-256: ${selected.hash}", style = MaterialTheme.typography.bodySmall)
             }

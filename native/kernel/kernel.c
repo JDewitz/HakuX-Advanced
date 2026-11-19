@@ -7,6 +7,7 @@
 #include "native/core/mmio.h"
 #include "native/core/mods.h"
 #include "native/core/irq.h"
+#include "native/core/framepace.h"
 #include "hw/xbox/hle/hitch.h"
 
 #include <ctype.h>
@@ -1527,6 +1528,7 @@ uint64_t nc_kernel_pause_cycles(void)
 
 void nc_kernel_pause_point(NcKernel *k, NcFrame *f, bool idle)
 {
+    nc_framepace_wait();
     if (!nc_paused()) {
         return;
     }

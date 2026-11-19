@@ -14,6 +14,7 @@ data class PatchLaunch(val loaded: List<String> = emptyList(), val decisions: Li
   val errors: List<String> = emptyList(), val lines: List<String> = emptyList(),
   val loadedEntries: List<PatchEntry> = emptyList()) {
   val sagacious: Boolean get() = loadedEntries.any { it.pack.sagacious }
+  val presentLimit: Int? get() = loadedEntries.mapNotNull { it.pack.presentLimit }.distinct().singleOrNull()
   val hasGuestWrites: Boolean get() = loadedEntries.any { it.pack.writes.isNotEmpty() }
 }
 
@@ -26,7 +27,7 @@ object PatchRun {
     val replaced = !online && mods.any { ModCatalog.extract(context, game, it.id).any { (path, _) -> path.replace('\\', '/').equals("default.xbe", true) } }
     return PatchPlanner.plan(entries, enabled, game, BuildConfig.VERSION_NAME, online, ranges, bad || replaced,
       !online && runCatching { TrainerStore(context, game).load()?.enabled == true }.getOrDefault(true)).map {
-      if (it.ready && !it.entry.pack.sagacious && hasUpdate(context, game)) it.copy(ready = false, status = "Incompatible · installed title updates are unsupported") else it
+      if (it.ready && !it.entry.pack.nativeCompatibility && hasUpdate(context, game)) it.copy(ready = false, status = "Incompatible · installed title updates are unsupported") else it
     }
   }
   /** Conservative conflicts with the bundled mod engine: imported packs never win by ordering. */
@@ -66,7 +67,7 @@ object PatchRun {
     val (ranges, unsupported) = blockers(mods)
     val replaced = mods.any { ModCatalog.extract(context, game, it.id).any { (path, _) -> path.replace('\\', '/').equals("default.xbe", true) } }
     val decisions = PatchPlanner.plan(entries, enabled, game, BuildConfig.VERSION_NAME, online, ranges, unsupported || replaced, trainer, stateLoad)
-      .map { if (it.ready && !it.entry.pack.sagacious && hasUpdate(context, game)) it.copy(ready = false, status = "Incompatible · installed title updates are unsupported") else it }
+      .map { if (it.ready && !it.entry.pack.nativeCompatibility && hasUpdate(context, game)) it.copy(ready = false, status = "Incompatible · installed title updates are unsupported") else it }
     val ready = decisions.filter { it.ready }
     if (ready.sumOf { it.entry.pack.writes.size } > 256 || ready.size > 32) return PatchLaunch(decisions = decisions.map {
       if (it.ready) it.copy(ready = false, status = "Conflicting · session patch limit exceeded") else it
@@ -82,6 +83,7 @@ object PatchRun {
     return PatchLaunch(loaded.map { it.entry.hash }, resolved.map {
       when {
         !it.ready -> it
+        it.entry.pack.presentLimit != null -> it.copy(status = "Guest present pacing ${it.entry.pack.presentLimit} FPS enabled at launch")
         it.entry.pack.sagacious -> it.copy(status = "Sagacious enabled at launch")
         else -> it.copy(status = "Loaded at launch · native writes remain guarded")
       }

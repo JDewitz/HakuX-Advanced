@@ -45,6 +45,8 @@ void hle_host_kick(void);
  * time already past, and its logic stopped for good. Other threads:
  * nothing. */
 void hle_host_guest_hold(bool on);
+/* Record a guest present for optional title-scoped CPU pacing. */
+void hle_host_guest_present(void);
 /* The JIT's code for guest code is stale (probes changed). */
 void hle_host_code_changed(void);
 /* How many times hle_host_code_changed took effect (diagnostics). */

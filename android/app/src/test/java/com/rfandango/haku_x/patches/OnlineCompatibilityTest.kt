@@ -137,6 +137,47 @@ class OnlineCompatibilityTest {
     assertFalse(CompatibilityProfiles.prebuildShadersDefault("4D530004.8", false))
     assertTrue(CompatibilityProfiles.prebuildShadersDefault(null, true))
   }
+  private fun pacing(rate: Int) = entry(json("republic-present-$rate")
+    .put("titleId", "4C410013").put("compatibility", "republic-present-$rate")
+    .apply { remove("patches"); remove("revisions") })
+
+  @Test fun republicPacingMatchesOnlyItsTitleAndProducesNoGuestWrites() {
+    for (rate in listOf(30, 60)) {
+      val e = pacing(rate)
+      assertEquals(rate, e.pack.presentLimit)
+      assertTrue(e.pack.matches("4c410013.1", emulator))
+      assertTrue(e.pack.matches("4C410013.4294967295", emulator))
+      assertFalse(e.pack.matches("4D530004.8", emulator))
+      assertFalse(e.pack.matches("path:republic.iso", emulator))
+      assertFalse(e.pack.matches("4C410013.1", "1.2.0"))
+      assertTrue(e.pack.writes.isEmpty())
+      val launch = PatchLaunch(loaded = listOf(e.hash), loadedEntries = listOf(e))
+      assertEquals(rate, launch.presentLimit)
+      assertFalse(launch.hasGuestWrites)
+      assertTrue(PatchPlanner.plan(listOf(e), setOf(e.hash), "4C410013.1", emulator,
+        online = false, trainer = true, otherMods = true, stateLoad = true).single().ready)
+      assertFalse(PatchPlanner.plan(listOf(e), emptySet(), "4C410013.1", emulator,
+        online = false).single().ready)
+      assertFalse(decision(e, emptyList(), "4C410013.1").ready)
+      rejected { OnlineCompatibilityManifest.lines(listOf(e), "4C410013.1", emulator) }
+    }
+  }
+
+  @Test fun republicRatesConflictEvenWithoutDeclaredConflicts() {
+    val entries = listOf(pacing(30), pacing(60))
+    assertTrue(PatchPlanner.plan(entries, entries.map { it.hash }.toSet(), "4C410013.1",
+      emulator, online = false).none { it.ready })
+    assertNull(PatchLaunch(loadedEntries = entries).presentLimit)
+  }
+
+  @Test fun republicPacingRejectsWrongTitlesRatesAndGuestWrites() {
+    for (o in listOf(
+      json().put("titleId", "4C410013").put("compatibility", "republic-present-60"),
+      json().put("titleId", "4D530004").put("compatibility", "republic-present-60").apply { remove("patches") },
+      json().put("titleId", "4C410013").put("compatibility", "republic-present-120").apply { remove("patches") }
+    )) rejected { entry(o) }
+  }
+
   @Test fun semanticFingerprintIsDeterministicAndBindsOperationPayload() {
     val e = entry()
     val reconstructed = entry(JSONObject(json().toString()))

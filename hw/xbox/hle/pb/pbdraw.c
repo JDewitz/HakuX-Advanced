@@ -1446,6 +1446,7 @@ static void swap(void)
     g_pd.vis_unsent = false;                /* a swap submits */
     c->surf = id;
     c->dump_off = HLE_SWAP_NO_DUMP;
+    hle_host_guest_present();
     hle_hitch_pb_swap(c->swap_id);          /* before the back end stamps its stages */
     hle_fe_commit();
     const uint32_t pa = fo ? fo->d.pa : 0;
@@ -1522,6 +1523,7 @@ static void present_now(uint32_t id)
     c->surf = id;
     c->dump_off = HLE_SWAP_NO_DUMP;
     shown_part(o, ax, ay, &c->src_w, &c->src_h);
+    hle_host_guest_present();
     hle_hitch_pb_swap(c->swap_id);
     hle_hitch_frame(c->swap_id, HLE_FR_FLIP);   /* shown as it is set */
     hle_fe_commit();
@@ -1778,6 +1780,7 @@ void hle_pbd_overlay(bool show)
         s->surf = g_pd.shown_id;
         s->dump_off = HLE_SWAP_NO_DUMP;
         shown_part(obj_of(g_pd.shown_id), g_pd.shown_ax, g_pd.shown_ay, &s->src_w, &s->src_h);
+        hle_host_guest_present();
         hle_hitch_pb_swap(s->swap_id);      /* a frame to the monitor, not a gap */
         hle_hitch_frame(s->swap_id, HLE_FR_FLIP);
         hle_fe_commit();

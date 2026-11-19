@@ -135,7 +135,9 @@ class AdvancedMenu(
             "${d.entry.pack.name}: ${if (loaded) "Loaded at launch; " else ""}${d.status}" to {
               val p = d.entry.pack
               val current = activity.importedPatchLaunch.decisions.firstOrNull { it.entry.hash == d.entry.hash }?.status ?: "Not loaded in this session"
-              val details = if (p.sagacious) {
+              val details = if (p.presentLimit != null) {
+                "Guest present pacing ${p.presentLimit} FPS. ${if (loaded) "Enabled in this session." else current}\n\nRestart to apply changes. Save states are supported. Experimental and offline only."
+              } else if (p.sagacious) {
                 "${if (loaded) "Enabled in this session." else current}\n\nRestart the game to apply changes. Save states are supported."
               } else {
                 "${if (loaded) "Loaded in this session's manifest; native log confirms individual writes." else current}\n\nToggle changes require a cold start. Save states are unavailable while imported patches are loaded."

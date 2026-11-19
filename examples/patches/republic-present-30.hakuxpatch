@@ -1,0 +1,14 @@
+{
+  "schema": 1,
+  "id": "republic-present-30",
+  "name": "Republic Commando \u00b7 present pacing 30 FPS",
+  "version": "1.0-test",
+  "author": "HakuX-Advanced",
+  "description": "Experimental guest CPU pacing from presents for Republic Commando. Try 30 FPS for slow videos with excessive presented FPS. All revisions of matching title ID. Restart after toggling. Enable one pacing patch at a time. Device validation pending.",
+  "titleId": "4C410013",
+  "emulatorBase": "1.3.0",
+  "compatibility": "republic-present-30",
+  "conflicts": [
+    "republic-present-60"
+  ]
+}

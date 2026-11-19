@@ -56,6 +56,7 @@ target_compile_options(nc_slirp PRIVATE -w)
 add_library(hakux_native STATIC
   core/log.c
   core/advanced.c
+  core/framepace.c
   core/jmp.c
   core/vm.c
   core/xdvdfs.c

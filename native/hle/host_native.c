@@ -6,6 +6,7 @@
  */
 #include "native/hle/hle_native.h"
 #include "native/dev/dev.h"
+#include "native/core/framepace.h"
 
 #include "hw/xbox/hle/host.h"
 
@@ -68,6 +69,13 @@ void hle_host_guest_hold(bool on)
             nc_cpu_cycle_offset_add(g_cpu, (uint64_t)((unsigned __int128)cycles * out / held));
             nc_dev_apu_time_held(out);
         }
+    }
+}
+
+void hle_host_guest_present(void)
+{
+    if (nc_framepace_present() && g_cpu) {
+        nc_cpu_request_interrupt(g_cpu);
     }
 }
 

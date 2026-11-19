@@ -1,3 +1,4 @@
+#include "native/core/framepace.h"
 /*
  * hakuX native core, app front end — SDL_main for NativeCoreActivity.
  *
@@ -613,6 +614,7 @@ EXPORT int SDL_main(int argc, char *argv[])
     NcOptions opt;
     nc_options_init(&opt);
     hle_vk_set_no_fbfetch(false);
+    nc_framepace_request(0);
     for (int i = 3; i < argc; i++) {
         if (!strncmp(argv[i], "advanced=", 9)) {
             const char *v = argv[i] + 9;
@@ -626,6 +628,8 @@ EXPORT int SDL_main(int argc, char *argv[])
             } else if (!strcmp(v, "afp:0") || !strcmp(v, "afp:1")) {
                 setenv("NC_FEX_AFP", v + 4, 1);
                 nc_advanced_set("debug.hakux.fex_afp", v + 4);
+            } else if (!strcmp(v, "republic-present:30") || !strcmp(v, "republic-present:60")) {
+                nc_framepace_request(!strcmp(v, "republic-present:30") ? 30 : 60);
             } else if (!strcmp(v, "sagacious")) {
                 hle_vk_set_no_fbfetch(true);
                 nc_log("hakuX-app", "Sagacious: disabling framebuffer fetch for Jade Empire");

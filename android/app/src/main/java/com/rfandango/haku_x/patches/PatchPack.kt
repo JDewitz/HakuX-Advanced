@@ -16,15 +16,21 @@ data class PatchWrite(val address: Long, val expected: List<Int>, val replacemen
 }
 
 internal const val SAGACIOUS_OPTION = "sagacious"
+internal const val REPUBLIC_COMMANDO_TITLE_ID = 0x4C410013L
+private val PRESENT_OPTIONS = mapOf("republic-present-60" to 60, "republic-present-30" to 30)
 
 data class PatchPack(val id: String, val name: String, val version: String, val author: String,
   val description: String, val titleId: Long, val revisions: Set<Long>, val emulatorBase: String,
   val conflicts: Set<String>, val writes: List<PatchWrite>, val compatibility: String? = null) {
   val sagacious: Boolean get() = compatibility == SAGACIOUS_OPTION && titleId == CompatibilityProfiles.JADE_EMPIRE_TITLE_ID &&
     emulatorBase == "1.3.0" && writes.isEmpty()
+  val presentLimit: Int? get() = PRESENT_OPTIONS[compatibility]?.takeIf {
+    titleId == REPUBLIC_COMMANDO_TITLE_ID && emulatorBase == "1.3.0" && writes.isEmpty()
+  }
+  val nativeCompatibility: Boolean get() = sagacious || presentLimit != null
   fun matches(game: String?, emulator: String): Boolean {
     val identity = CompatibilityIdentity.fromGameKey(game) ?: return false
-    return identity.titleId == titleId && (identity.revision in revisions || (sagacious && revisions.isEmpty())) &&
+    return identity.titleId == titleId && (identity.revision in revisions || (nativeCompatibility && revisions.isEmpty())) &&
       emulator.substringBefore('-') == emulatorBase
   }
   companion object {
@@ -44,13 +50,18 @@ data class PatchPack(val id: String, val name: String, val version: String, val 
       val id = field("id"); require(ID.matches(id)) { "Invalid patch id" }
       val title = field("titleId"); require(title.matches(Regex("[0-9A-Fa-f]{8}")) && title.toLong(16) != 0L) { "Invalid titleId" }
       val compatibility = if (o.has("compatibility")) {
-        require(field("compatibility") == SAGACIOUS_OPTION &&
-          title.toLong(16) == CompatibilityProfiles.JADE_EMPIRE_TITLE_ID && !o.has("patches")) {
-          "Sagacious requires Jade Empire and cannot include guest writes"
+        val option = field("compatibility")
+        val validTitle = when (option) {
+          SAGACIOUS_OPTION -> title.toLong(16) == CompatibilityProfiles.JADE_EMPIRE_TITLE_ID
+          in PRESENT_OPTIONS -> title.toLong(16) == REPUBLIC_COMMANDO_TITLE_ID
+          else -> false
         }
-        SAGACIOUS_OPTION
+        require(validTitle && !o.has("patches")) {
+          "Compatibility option requires its matching title and cannot include guest writes"
+        }
+        option
       } else null
-      // A title-wide scope is allowed only for the built-in renderer option.
+      // Title-wide scope is limited to the allowlisted native compatibility options.
       val revisions = if (compatibility != null && !o.has("revisions")) org.json.JSONArray()
         else o.getJSONArray("revisions").also { require(it.length() in 1..64) { "Explicit revisions required" } }
       val versions = (0 until revisions.length()).map { i ->
@@ -101,15 +112,16 @@ object PatchPlanner {
         !e.pack.matches(game, emulator) -> "Incompatible · title, revision or core build differs"
         !on -> "Off"
         online && !e.pack.sagacious && OnlinePatchRegistry.approval(e, game, emulator, onlineApprovals) == null -> "Blocked by online play protection · patch is not reviewed for online use"
-        stateLoad && !e.pack.sagacious -> "Blocked · imported patches require a cold start"
+        stateLoad && !e.pack.nativeCompatibility -> "Blocked · imported patches require a cold start"
         eligible.size > 32 || eligible.sumOf { it.pack.writes.size } > 256 -> "Conflicting · session patch limit exceeded"
-        trainer && !e.pack.sagacious -> "Conflicting · disable the active trainer first"
-        otherMods && !e.pack.sagacious -> "Conflicting · active built-in XBE file replacement or unsupported patch syntax"
+        trainer && !e.pack.nativeCompatibility -> "Conflicting · disable the active trainer first"
+        otherMods && !e.pack.nativeCompatibility -> "Conflicting · active built-in XBE file replacement or unsupported patch syntax"
         e.pack.writes.any { a -> builtIn.any { a.overlaps(it) } } -> "Conflicting · overlaps an enabled built-in mod"
-        eligible.any { x -> x.hash != e.hash && (x.pack.id == e.pack.id || x.pack.id in e.pack.conflicts || e.pack.id in x.pack.conflicts || e.pack.writes.any { a -> x.pack.writes.any { a.overlaps(it) } }) } -> "Conflicting · another enabled imported patch"
+        eligible.any { x -> x.hash != e.hash && (x.pack.id == e.pack.id || (x.pack.presentLimit != null && e.pack.presentLimit != null) || x.pack.id in e.pack.conflicts || e.pack.id in x.pack.conflicts || e.pack.writes.any { a -> x.pack.writes.any { a.overlaps(it) } }) } -> "Conflicting · another enabled imported patch"
         else -> null
       }
       PatchDecision(e, on, reason ?: when {
+        e.pack.presentLimit != null -> "Guest present pacing ${e.pack.presentLimit} FPS · next launch"
         e.pack.sagacious -> "Sagacious enabled for next launch"
         online -> "Reviewed compatibility patch · enabled for next cold launch"
         else -> "Enabled for next cold launch"

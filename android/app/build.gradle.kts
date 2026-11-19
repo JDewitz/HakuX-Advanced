@@ -39,7 +39,7 @@ android {
 
     versionCode = 41
     versionName = if (privateRendererTrack) {
-      "1.3.0-advanced5.19.3-experimental-$privateRendererRevision-we-renderin-xisos"
+      "1.3.0-advanced5.19.3-experimental-$privateRendererRevision-we-renderin-xisos-rc-pacing"
     } else {
       "1.3.0-advanced5.19.3-vulkan-diag"
     }
