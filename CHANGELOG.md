@@ -1,5 +1,18 @@
 # Changelog
 
+## Advanced 5.2 — we renderin xisos
+
+Live experimental track on Advanced 5.19.3.
+
+- Reuse pooled framebuffer-fetch descriptor sets within a command buffer.
+- Opt-in extension local read for eligible Vulkan 1.1/1.2 drivers, with fallback.
+- Vulkan path/workaround diagnostics and optional device-fault count reporting.
+- Read deep XDVDFS directory chains in repacked/trimmed XISOs.
+- Manual test APK distribution and named experimental app identity.
+- Document render paths, active workaround rules and the seven-device in-house pool.
+
+See [5.2 testing notes](docs/EXPERIMENTAL5.2.md) for defaults, limitations and testing.
+
 ## v1.3.0
 
 Xbox Live through Insignia, and game fixes.

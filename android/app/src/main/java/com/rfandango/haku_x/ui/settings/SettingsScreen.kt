@@ -354,7 +354,7 @@ fun SettingsScreen(
 
       Section(stringResource(R.string.settings_section_updates))
       if (BuildConfig.PRIVATE_RENDERER_TRACK) {
-        Hint("Private renderer build. Install test updates from an APK.")
+        Hint("5.2 • we renderin xisos. Live experimental testing build. Install test updates from an APK.")
       } else {
         Hint("Updates come from JDewitz/HakuX-Advanced. Official hakuX and theme packs are excluded.")
         SwitchItem(

@@ -39,7 +39,7 @@ android {
 
     versionCode = 41
     versionName = if (privateRendererTrack) {
-      "1.3.0-advanced5.19.3-experimental-$privateRendererRevision"
+      "1.3.0-advanced5.19.3-experimental-$privateRendererRevision-we-renderin-xisos"
     } else {
       "1.3.0-advanced5.19.3-vulkan-diag"
     }
@@ -74,7 +74,7 @@ android {
       applicationIdSuffix = ".themes"
       // Sign the private output separately with the existing 5.19.3 certificate.
       if (privateRendererTrack) signingConfig = null
-      resValue("string", "app_name", "HakuX-Advanced")
+      resValue("string", "app_name", if (privateRendererTrack) "HakuX 5.2 • we renderin xisos" else "HakuX-Advanced")
       ndk {
         debugSymbolLevel = "NONE"
       }
