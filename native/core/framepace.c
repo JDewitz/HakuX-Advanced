@@ -29,11 +29,13 @@ void nc_framepace_request(unsigned fps)
 
 void nc_framepace_boot(uint32_t title_id)
 {
-    const unsigned fps = title_id == REPUBLIC_COMMANDO_TITLE_ID ? requested_fps : 0;
+    /* Built-in compatibility fix, all certificate revisions. Imported native
+     * pacing packs may override the rate, but are no longer required. */
+    const unsigned fps = title_id == REPUBLIC_COMMANDO_TITLE_ID ? (requested_fps ? requested_fps : 60) : 0;
     consumed = deadline_ns = 0;
     __atomic_store_n(&produced, 0, __ATOMIC_RELAXED);
     __atomic_store_n(&period_ns, fps ? 1000000000ull / fps : 0, __ATOMIC_RELEASE);
-    if (requested_fps) {
+    if (requested_fps || fps) {
         nc_log("hakuX-native", "present pacing: title=%08x requested=%u active=%u FPS; guest clock advances",
                title_id, requested_fps, fps);
     }

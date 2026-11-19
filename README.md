@@ -7,14 +7,17 @@ HakuX-Advanced is an unofficial experimental fork of
 for arm64 Android. The original authors and dependency contributors retain
 all attribution and licenses. This project is not an official hakuX release.
 
-The current runtime is **1.3.0-advanced5.19.1-updater** (versionCode **39**), built on
-**official hakuX 1.3.0**. It retains the fork's history from the original 1.2.0
-base and the subsequent 1.3.0 integration. The default development branch is
-`main`; `upstream` tracks rfandango/hakuX. The repository is public.
+The current release is **5.20 “Goin Commando”**, built on official hakuX 1.3.0.
+Android version: **1.3.0-advanced5.20-goin-commando**, versionCode **42**.
+This promotes the private 5.2 renderer/XISO work and makes Republic Commando's
+60 FPS present-pacing fix automatic for title ID **4C410013**, all revisions.
+No patch import is required. See [5.20 release notes](docs/RELEASE5.20.md),
+[render paths and testing](docs/EXPERIMENTAL5.2.md) and
+[Republic Commando pacing](docs/REPUBLIC-PACING5.2.md).
 
-Current integration: **Advanced 5.19.1 updater hotfix**, official master through `a7cdb5a` with a rebuilt native core. See [upstream merge notes](docs/UPSTREAM5.19.md).
-
-The updater now uses this fork, supports stable/preview selection, and verifies the APK package, signer, checksum, and increasing version code. Install this hotfix manually once over 5.19. See [updater notes](docs/UPDATER5.19.1.md).
+The updater uses **JDewitz/HakuX-Advanced** and verifies package, signer,
+checksum and increasing version code. This release is prepared as a normal
+release, with preview status disabled. Publishing remains a separate step.
 
 ## Current features
 
@@ -39,7 +42,7 @@ patch plugins and broader formats remain planned.
 
 ## Latest validation
 
-The 5.19.1 updater hotfix passes 157 JVM tests, with zero failures and one optional shader-archive skip. Its nine new updater tests cover Advanced ordering, stable/preview selection, theme/official release exclusion, and invalid assets. The 5.19 baseline has user-reported success on the G99-based E8 and 477M. The new Android update-install round trip remains pending.
+Historical validation: the 5.19.1 updater hotfix passes 157 JVM tests, with zero failures and one optional shader-archive skip. Its nine new updater tests cover Advanced ordering, stable/preview selection, theme/official release exclusion, and invalid assets. The 5.19 baseline has user-reported success on the G99-based E8 and 477M. The new Android update-install round trip remains pending.
 
 Advanced5.13 passed Android compilation/APK assembly, 120 JVM tests with zero
 failures and one optional shader-archive skip, and GitHub Android/native host

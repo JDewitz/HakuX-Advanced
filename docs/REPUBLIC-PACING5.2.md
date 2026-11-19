@@ -1,4 +1,26 @@
-# Republic Commando present pacing test
+# Republic Commando pacing — Advanced 5.20
+
+## Built-in release behavior
+
+Republic Commando's movie stutter has been patched with automatic 60 FPS
+present pacing for XBE certificate title ID **4C410013**, all revisions.
+No imported patch or shader is required. Fully exit and cold start after
+installing. Other titles do not receive this limiter. The same native title
+check runs for normal boots and boots preceding save-state loads.
+
+The limiter applies during gameplay as well as movies; it is not a guarantee
+of 60 unique frames per second. Fast-forward does not bypass it. Built-in
+compatibility behavior remains available with online play protection enabled;
+trainers/guest-memory mods are still blocked by that protection. This release
+has not yet been device-tested for movie playback or online timing.
+
+The old 60 FPS imported patch is redundant. Disable both imported rate patches
+for the release default. An enabled imported 30 FPS option remains an offline
+experimental override; disabling it returns to built-in 60 FPS. Disabling an
+imported 60 FPS option no longer disables the built-in compatibility fix.
+Two enabled imported rates still conflict, leaving the built-in rate in effect.
+
+## Original 5.2 experiment (historical)
 
 This build adds two importable compatibility patches for title ID 4C410013
 (Republic Commando), across all certificate revisions on emulator base 1.3.0.

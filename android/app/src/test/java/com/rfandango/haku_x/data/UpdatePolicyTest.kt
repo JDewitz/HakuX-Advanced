@@ -70,4 +70,12 @@ class UpdatePolicyTest {
   @Test fun malformedReleaseDoesNotHideValidUpdate() {
     assertNotNull(select(JSONObject(), release()))
   }
+  @Test fun goinCommandoRetainsLegacyUpdaterOrdering() {
+    val current = "1.3.0-advanced5.19.3-vulkan-diag"
+    val next = "1.3.0-advanced5.20-goin-commando"
+    val found = UpdatePolicy.select(JSONArray().put(release("5.20")), current, false)!!
+    assertEquals(UpdatePolicy.installedVersion(next), found.key)
+    assertNull(UpdatePolicy.select(JSONArray().put(release("5.19.3")), next, true))
+    assertNotNull(UpdatePolicy.select(JSONArray().put(release("5.20.1")), next, false))
+  }
 }

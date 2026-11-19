@@ -37,11 +37,11 @@ android {
     minSdk = 28
     targetSdk = 36
 
-    versionCode = 41
+    versionCode = 42
     versionName = if (privateRendererTrack) {
       "1.3.0-advanced5.19.3-experimental-$privateRendererRevision-we-renderin-xisos-rc-pacing"
     } else {
-      "1.3.0-advanced5.19.3-vulkan-diag"
+      "1.3.0-advanced5.20-goin-commando"
     }
     buildConfigField("boolean", "PRIVATE_RENDERER_TRACK", privateRendererTrack.toString())
 
@@ -73,8 +73,8 @@ android {
     debug {
       applicationIdSuffix = ".themes"
       // Sign the private output separately with the existing 5.19.3 certificate.
-      if (privateRendererTrack) signingConfig = null
-      resValue("string", "app_name", if (privateRendererTrack) "HakuX 5.2 • we renderin xisos" else "HakuX-Advanced")
+      if (privateRendererTrack || providers.gradleProperty("unsignedAdvanced").isPresent) signingConfig = null
+      resValue("string", "app_name", if (privateRendererTrack) "HakuX 5.2 • we renderin xisos" else "HakuX 5.20 • Goin Commando")
       ndk {
         debugSymbolLevel = "NONE"
       }

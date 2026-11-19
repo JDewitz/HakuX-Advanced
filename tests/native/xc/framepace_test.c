@@ -63,7 +63,7 @@ int main(void)
     assert(sleeps == 0);
     nc_framepace_request(120);
     nc_framepace_boot(0x4c410013);
-    assert(!nc_framepace_present());
+    assert(nc_framepace_present()); /* Invalid override retains built-in 60. */
 
     for (unsigned fps = 30; fps <= 60; fps += 30) {
         first_frame(fps);
@@ -110,6 +110,13 @@ int main(void)
     assert(raw - start == 2 * (1000000000ull / 60));
     nc_framepace_request(0);
     nc_framepace_boot(0x4c410013);
-    assert(!nc_framepace_present());
+    assert(nc_framepace_present());
+    nc_framepace_wait();
+    start = raw;
+    assert(nc_framepace_present());
+    nc_framepace_wait();
+    assert(raw - start == 1000000000ull / 60); /* No imported patch required. */
+    nc_framepace_boot(0x4d530004);
+    assert(!nc_framepace_present()); /* Built-in rule cannot leak to Halo. */
     puts("Frame pacing title scope, rates, queued frames, pause and idle tests passed.");
 }
