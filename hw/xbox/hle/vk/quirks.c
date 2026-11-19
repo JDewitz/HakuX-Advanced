@@ -219,8 +219,8 @@ static void names(uint32_t mask, char *out, size_t len)
     size_t n = 0;
     out[0] = 0;
     for (size_t i = 0; i < ARRAY_SIZE(k_quirks); i++) {
-        if (mask & k_quirks[i].bit) {
-            n += (size_t)snprintf(out + n, n < len ? len - n : 0, "%s%s", n ? "," : "",
+        if ((mask & k_quirks[i].bit) && n < len) {
+            n += (size_t)snprintf(out + n, len - n, "%s%s", n ? "," : "",
                                   k_quirks[i].name);
         }
     }
@@ -230,7 +230,7 @@ static void names(uint32_t mask, char *out, size_t len)
 }
 
 /* The defaults with an override's "+name" / "-name" applied. */
-static uint32_t apply(uint32_t mask, const char *spec)
+static uint32_t apply(uint32_t mask, const char *spec, uint32_t *specified)
 {
     char buf[256];
     snprintf(buf, sizeof(buf), "%s", spec ? spec : "");
@@ -251,19 +251,24 @@ static uint32_t apply(uint32_t mask, const char *spec)
         if (!bits) {
             hle_log("hakuX-hle-back", "quirks: \"%s\" is not a quirk (ignored)", name);
         }
+        *specified |= bits;
         mask = off ? mask & ~bits : mask | bits;
     }
     return mask;
 }
 
-static void set(uint32_t mask, const char *why)
+static void set(const char *spec, const char *source)
 {
-    char on[256], def[256];
+    uint32_t specified = 0;
+    const uint32_t mask = apply(g_defaults, spec, &specified);
+    char on[256], def[256], forced_on[256], forced_off[256];
     g_hle_quirks = mask;
     names(mask, on, sizeof(on));
     names(g_defaults, def, sizeof(def));
-    hle_log("hakuX-hle-back", "quirks: %s (driver defaults %s%s%s)", on, def, why ? "; " : "",
-            why ? why : "");
+    names(mask & specified, forced_on, sizeof(forced_on));
+    names(specified & ~mask, forced_off, sizeof(forced_off));
+    hle_log("hakuX-hle-back", "quirks: active=%s defaults=%s override_source=%s forced_on=%s forced_off=%s",
+            on, def, specified ? source : "none", forced_on, forced_off);
 }
 
 void hle_quirks_init(VkPhysicalDevice phys)
@@ -282,7 +287,7 @@ void hle_quirks_init(VkPhysicalDevice phys)
     hle_log("hakuX-hle-back", "vk: driver \"%s\" (id %u) %s", d.drv.driverName, d.drv.driverID,
             d.drv.driverInfo);
     const char *e = getenv("HAKUX_HLE_QUIRKS");
-    set(apply(g_defaults, e), e ? "HAKUX_HLE_QUIRKS" : NULL);
+    set(e, "HAKUX_HLE_QUIRKS");
 }
 
 void hle_quirks_poll(void)
@@ -297,7 +302,7 @@ void hle_quirks_poll(void)
     hle_prop_get("debug.hakux.quirks", v);
     if (strcmp(v, last)) {
         strcpy(last, v);
-        set(apply(g_defaults, v), v[0] ? "debug.hakux.quirks" : NULL);
+        set(v, "debug.hakux.quirks");
     }
 #endif
 }

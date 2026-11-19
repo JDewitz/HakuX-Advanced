@@ -30,6 +30,7 @@ const char *hle_vk_result_text(VkResult r)
     case VK_TIMEOUT: return "VK_TIMEOUT";
     case VK_ERROR_OUT_OF_HOST_MEMORY: return "VK_ERROR_OUT_OF_HOST_MEMORY";
     case VK_ERROR_OUT_OF_DEVICE_MEMORY: return "VK_ERROR_OUT_OF_DEVICE_MEMORY";
+    case VK_ERROR_OUT_OF_POOL_MEMORY: return "VK_ERROR_OUT_OF_POOL_MEMORY";
     case VK_ERROR_INITIALIZATION_FAILED: return "VK_ERROR_INITIALIZATION_FAILED";
     case VK_ERROR_DEVICE_LOST: return "VK_ERROR_DEVICE_LOST";
     case VK_ERROR_SURFACE_LOST_KHR: return "VK_ERROR_SURFACE_LOST_KHR";
@@ -42,6 +43,24 @@ const char *hle_vk_result_text(VkResult r)
     }
 }
 
+/* Only collect a bounded summary on actual device loss. Driver fault records
+ * can contain addresses or vendor data, which do not belong in log exports. */
+static void log_device_fault(void)
+{
+    PFN_vkGetDeviceFaultInfoEXT query = g_hvk.get_device_fault;
+    if (!query) {
+        return;
+    }
+    VkDeviceFaultCountsEXT counts = { .sType = VK_STRUCTURE_TYPE_DEVICE_FAULT_COUNTS_EXT };
+    VkResult result = query(g_hvk.dev, &counts, NULL);
+    if (result == VK_SUCCESS) {
+        hle_log("hakuX-hle-back", "vk: device fault reports %u address records, %u vendor records",
+                counts.addressInfoCount, counts.vendorInfoCount);
+    } else {
+        hle_log("hakuX-hle-back", "vk: vkGetDeviceFaultInfoEXT: %s", hle_vk_result_text(result));
+    }
+}
+
 void hle_vk_lose(VkResult r, const char *what)
 {
     if (__atomic_exchange_n(&g_lost, true, __ATOMIC_ACQ_REL)) {
@@ -51,6 +70,9 @@ void hle_vk_lose(VkResult r, const char *what)
     snprintf(why, sizeof(why), "stopped responding (%s in %s)", hle_vk_result_text(r), what);
     hle_log("hakuX-hle-back", "FATAL: the GPU %s: nothing more is drawn", why);
     hle_tl_lose();
+    if (r == VK_ERROR_DEVICE_LOST) {
+        log_device_fault();
+    }
     hle_host_gpu_lost(why);
 }
 
@@ -212,6 +234,21 @@ void hle_vk_set_no_fbfetch(bool disabled)
     no_fbfetch_for_title = disabled;
 }
 
+static bool experimental_option(const char *env_name, const char *property)
+{
+    const char *env = getenv(env_name);
+    if (env) {
+        return !strcmp(env, "1");
+    }
+#ifdef __ANDROID__
+    char value[PROP_VALUE_MAX];
+    return hle_prop_get(property, value) && !strcmp(value, "1");
+#else
+    (void)property;
+    return false;
+#endif
+}
+
 int hle_vk_init(void)
 {
     HleVk *v = &g_hvk;
@@ -268,6 +305,15 @@ int hle_vk_init(void)
     }
     vkGetPhysicalDeviceProperties(v->phys, &v->props);
     vkGetPhysicalDeviceMemoryProperties(v->phys, &v->mem);
+    char cache_uuid[2 * VK_UUID_SIZE + 1];
+    for (unsigned i = 0; i < VK_UUID_SIZE; i++) {
+        snprintf(&cache_uuid[2 * i], 3, "%02x", (unsigned)v->props.pipelineCacheUUID[i]);
+    }
+    hle_log("hakuX-hle-back", "vk: gpu=\"%s\" vendor=0x%04x device=0x%04x "
+            "api=%u.%u.%u driver_version=0x%x pipeline_cache_uuid=%s",
+            v->props.deviceName, v->props.vendorID, v->props.deviceID,
+            VK_API_VERSION_MAJOR(v->props.apiVersion), VK_API_VERSION_MINOR(v->props.apiVersion),
+            VK_API_VERSION_PATCH(v->props.apiVersion), v->props.driverVersion, cache_uuid);
 
     VkQueueFamilyProperties qf[16];
     uint32_t nq = 16;
@@ -307,6 +353,9 @@ int hle_vk_init(void)
                  has_ext(ext, ne, VK_KHR_PIPELINE_LIBRARY_EXTENSION_NAME);
     bool e_lr = has_ext(ext, ne, VK_KHR_DYNAMIC_RENDERING_LOCAL_READ_EXTENSION_NAME);
     bool e_pd = has_ext(ext, ne, VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
+    bool e_fault = has_ext(ext, ne, VK_EXT_DEVICE_FAULT_EXTENSION_NAME);
+    const bool want_fault = experimental_option("HAKUX_HLE_DEVICE_FAULT", "debug.hakux.devicefault");
+    const bool want_lr_ext = experimental_option("HAKUX_HLE_LOCAL_READ_EXT", "debug.hakux.localread");
     /* Below 1.3 (vk/compat.c): what 1.2 and 1.3 made core, from extensions;
      * a 1.2 device has 1.2's in its core (the structs are core 1.2's then) */
     const uint32_t api = force11 ? VK_API_VERSION_1_1 : v->props.apiVersion;
@@ -407,7 +456,10 @@ int hle_vk_init(void)
     if (e_iu8x || e_iu8k) chain(&tail, &q_iu8);
     if (e_eds3) chain(&tail, &q_eds3);
     if (e_gpl) chain(&tail, &q_gpl);
-    if (e_lr) chain(&tail, &q_lr);
+    VkPhysicalDeviceFaultFeaturesEXT q_fault = {
+        .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FAULT_FEATURES_EXT };
+    if (e_fault && want_fault) chain(&tail, &q_fault);
+    if (e_lr && (v13 || e_dr)) chain(&tail, &q_lr);
     vkGetPhysicalDeviceFeatures2(v->phys, &q);
     /* the limits the bindless set and the samplers need (Vulkan 1.2's: a 1.1
      * device fails the floor without them) */
@@ -519,9 +571,11 @@ int hle_vk_init(void)
               q_eds3.extendedDynamicState3LogicOpEnable;
     c->descriptor_buffer = has_ext(ext, ne, VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME);
     c->maint5 = has_ext(ext, ne, "VK_KHR_maintenance5");
-    /* local read is dynamic rendering's: 1.3 devices only */
-    c->local_read = v13 && e_lr && q_lr.dynamicRenderingLocalRead;
-    c->fbfetch = c->local_read && !no_fbfetch_for_title && !getenv("HAKUX_HLE_NO_FBFETCH");
+    /* The extension path uses real dynamic rendering and synchronization2.
+     * Keep the established 1.3 path and the 1.1/1.2 fallback as defaults. */
+    c->local_read = e_lr && q_lr.dynamicRenderingLocalRead && c->dyn_render && c->sync2;
+    const bool no_fbfetch_env = getenv("HAKUX_HLE_NO_FBFETCH") != NULL;
+    c->fbfetch = c->local_read && (v13 || want_lr_ext) && !no_fbfetch_for_title && !no_fbfetch_env;
     c->exec_props = has_ext(ext, ne, VK_KHR_PIPELINE_EXECUTABLE_PROPERTIES_EXTENSION_NAME);
     c->aniso = q.features.samplerAnisotropy;
     c->host_query_reset = v13 ? q12.hostQueryReset : e_hqr && q_hqr.hostQueryReset;
@@ -533,7 +587,17 @@ int hle_vk_init(void)
     vkGetPhysicalDeviceFormatProperties(v->phys, VK_FORMAT_R16G16_SSCALED, &fp);
     c->sscaled = fp.bufferFeatures & VK_FORMAT_FEATURE_VERTEX_BUFFER_BIT;
     caps_override(c);
-    c->fbfetch = c->fbfetch && c->dyn_render;  /* local read is dynamic rendering's */
+    c->fbfetch = c->fbfetch && c->dyn_render && c->sync2;
+    hle_log("hakuX-hle-back", "vk: local read: extension=%d feature=%d "
+            "eligible=%d; fbfetch_requested=%d reason=%s",
+            e_lr, q_lr.dynamicRenderingLocalRead != VK_FALSE, c->local_read, c->fbfetch,
+            c->fbfetch ? "eligible" :
+            !e_lr ? "extension unavailable" :
+            !c->dyn_render || !c->sync2 ? "dynamic rendering or synchronization2 unavailable" :
+            !q_lr.dynamicRenderingLocalRead ? "feature unavailable" :
+            no_fbfetch_for_title ? "title compatibility rule" :
+            no_fbfetch_env ? "HAKUX_HLE_NO_FBFETCH" :
+            !v13 && !want_lr_ext ? "extension path opt-in disabled" : "capability override");
     c->cbc_any = c->cbc_any && c->cbc;
     if (!c->bindless) {                 /* the draw sets' arrays, by the push block's index */
         need(c, q.features.shaderSampledImageArrayDynamicIndexing, "sampledImageDynamicIndexing");
@@ -647,6 +711,11 @@ int hle_vk_init(void)
     if (u_iu8) chain(&tail, &f_iu8);
     if (c->eds3) chain(&tail, &f_eds3);
     if (c->gpl) chain(&tail, &f_gpl);
+    VkPhysicalDeviceFaultFeaturesEXT f_fault = {
+        .sType = q_fault.sType, .deviceFault = VK_TRUE };
+    const bool use_fault = q_fault.deviceFault;
+    if (use_fault) chain(&tail, &f_fault);
+    VkBaseOutStructure *before_lr = tail;
     if (c->fbfetch) chain(&tail, &f_lr);
 
     const char *exts[32];
@@ -685,14 +754,18 @@ int hle_vk_init(void)
         exts[nx++] = VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME;
         exts[nx++] = VK_KHR_PIPELINE_LIBRARY_EXTENSION_NAME;
     }
-    if (c->fbfetch) {
-        exts[nx++] = VK_KHR_DYNAMIC_RENDERING_LOCAL_READ_EXTENSION_NAME;
-        if (e_pd) {
-            exts[nx++] = VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME;
-        }
-    }
     if (c->swapchain) {
         exts[nx++] = VK_KHR_SWAPCHAIN_EXTENSION_NAME;
+    }
+    if (use_fault) {
+        exts[nx++] = VK_EXT_DEVICE_FAULT_EXTENSION_NAME;
+    }
+    const uint32_t nx_without_lr = nx;
+    if (c->fbfetch) {
+        exts[nx++] = VK_KHR_DYNAMIC_RENDERING_LOCAL_READ_EXTENSION_NAME;
+        if (c->push_desc) {
+            exts[nx++] = VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME;
+        }
     }
     float prio = 1.0f;
     VkDeviceQueueCreateInfo qci = {
@@ -703,6 +776,17 @@ int hle_vk_init(void)
         .queueCreateInfoCount = 1, .pQueueCreateInfos = &qci,
         .enabledExtensionCount = nx, .ppEnabledExtensionNames = exts };
     VkResult r = vkCreateDevice(v->phys, &dci, NULL, &v->dev);
+    if (!v13 && c->fbfetch &&
+        (r == VK_ERROR_EXTENSION_NOT_PRESENT || r == VK_ERROR_FEATURE_NOT_PRESENT ||
+         r == VK_ERROR_INITIALIZATION_FAILED)) {
+        hle_log("hakuX-hle-back", "vk: extension local-read device creation returned %s; retrying without it",
+                hle_vk_result_text(r));
+        before_lr->pNext = NULL;
+        dci.enabledExtensionCount = nx_without_lr;
+        c->fbfetch = false;
+        v->dev = VK_NULL_HANDLE;
+        r = vkCreateDevice(v->phys, &dci, NULL, &v->dev);
+    }
     if (r != VK_SUCCESS) {
         hle_log("hakuX-hle-back", "vk: vkCreateDevice failed (%d)", r);
         vkDestroyInstance(v->inst, NULL);
@@ -711,7 +795,25 @@ int hle_vk_init(void)
         return -1;
     }
     volkLoadDeviceTable(&v->t, v->dev);
+    if (!v13) {
+        const bool missing_render = c->dyn_render &&
+            (!v->t.vkCmdBeginRenderingKHR || !v->t.vkCmdEndRenderingKHR);
+        const bool missing_sync = c->sync2 &&
+            (!v->t.vkCmdPipelineBarrier2KHR || !v->t.vkQueueSubmit2KHR);
+        if (missing_render || missing_sync) {
+            hle_log("hakuX-hle-back", "vk: falling back; missing KHR commands render=%d sync=%d",
+                    missing_render, missing_sync);
+            c->dyn_render &= !missing_render;
+            c->sync2 &= !missing_sync;
+            c->fbfetch = false;
+        }
+    }
     hle_compat_install(&v->t);          /* below 1.3: its parts from extensions or emulated */
+    c->push_desc = c->fbfetch && c->push_desc && v->t.vkCmdPushDescriptorSetKHR != NULL;
+    v->get_device_fault = use_fault ? (PFN_vkGetDeviceFaultInfoEXT)
+        vkGetDeviceProcAddr(v->dev, "vkGetDeviceFaultInfoEXT") : NULL;
+    hle_log("hakuX-hle-back", "vk: device fault: extension=%d opt_in=%d feature=%d active=%d",
+            e_fault, want_fault, use_fault, v->get_device_fault != NULL);
     hle_batch_install(&v->t);           /* strip batching sees every recorded command */
     g_hle_glsl_vk11 = !c->vk13;
     v->t.vkGetDeviceQueue(v->dev, v->qfam, 0, &v->queue);

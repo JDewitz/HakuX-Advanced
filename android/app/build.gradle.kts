@@ -15,6 +15,12 @@ if (hasKeystoreProperties) {
   keystorePropertiesFile.inputStream().use { keystoreProperties.load(it) }
 }
 
+val privateRendererRevision = providers.gradleProperty("privateRendererTrack").orNull
+val privateRendererTrack = privateRendererRevision != null
+require(privateRendererRevision == null || privateRendererRevision.matches(Regex("[1-9][0-9]*[.][0-9]+"))) {
+  "Use -PprivateRendererTrack=<major.minor revision>"
+}
+
 val hasReleaseKeystore = hasKeystoreProperties &&
   listOf("storeFile", "storePassword", "keyAlias", "keyPassword").all {
     !keystoreProperties.getProperty(it).isNullOrBlank()
@@ -32,7 +38,12 @@ android {
     targetSdk = 36
 
     versionCode = 41
-    versionName = "1.3.0-advanced5.19.3-sagacious"
+    versionName = if (privateRendererTrack) {
+      "1.3.0-advanced5.19.3-experimental-$privateRendererRevision"
+    } else {
+      "1.3.0-advanced5.19.3-vulkan-diag"
+    }
+    buildConfigField("boolean", "PRIVATE_RENDERER_TRACK", privateRendererTrack.toString())
 
     ndk {
       abiFilters += listOf("arm64-v8a")
@@ -61,6 +72,8 @@ android {
   buildTypes {
     debug {
       applicationIdSuffix = ".themes"
+      // Sign the private output separately with the existing 5.19.3 certificate.
+      if (privateRendererTrack) signingConfig = null
       resValue("string", "app_name", "HakuX-Advanced")
       ndk {
         debugSymbolLevel = "NONE"

@@ -353,43 +353,47 @@ fun SettingsScreen(
       )
 
       Section(stringResource(R.string.settings_section_updates))
-      Hint("Updates come from JDewitz/HakuX-Advanced. Official hakuX and theme packs are excluded.")
-      SwitchItem(
-        title = "Include preview updates",
-        summary = "On: stable and preview APKs. Off: stable Advanced APKs only.",
-        checked = updatePreviews,
-        onChange = {
-          updatePreviews = it; prefs.updatePreviews = it
-          updateRelease = null; Updates.clearAvailable()
-        },
-      )
-      ListItem(
-        headlineContent = { Text(stringResource(R.string.settings_update_check)) },
-        supportingContent = {
-          Text(
-            if (updateChecking) stringResource(R.string.settings_update_checking)
-            else stringResource(R.string.settings_update_check_desc, Updates.installedVersion(context))
-          )
-        },
-        modifier = Modifier.clickable(enabled = !updateChecking) {
-          updateChecking = true
-          scope.launch {
-            val found = runCatching { Updates.check(context) }
-            updateChecking = false
-            found.onSuccess { release ->
-              if (release != null) {
-                updateRelease = release
-              } else {
-                snackbar.notify(scope, context.getString(R.string.update_none, Updates.installedVersion(context)))
+      if (BuildConfig.PRIVATE_RENDERER_TRACK) {
+        Hint("Private renderer build. Install test updates from an APK.")
+      } else {
+        Hint("Updates come from JDewitz/HakuX-Advanced. Official hakuX and theme packs are excluded.")
+        SwitchItem(
+          title = "Include preview updates",
+          summary = "On: stable and preview APKs. Off: stable Advanced APKs only.",
+          checked = updatePreviews,
+          onChange = {
+            updatePreviews = it; prefs.updatePreviews = it
+            updateRelease = null; Updates.clearAvailable()
+          },
+        )
+        ListItem(
+          headlineContent = { Text(stringResource(R.string.settings_update_check)) },
+          supportingContent = {
+            Text(
+              if (updateChecking) stringResource(R.string.settings_update_checking)
+              else stringResource(R.string.settings_update_check_desc, Updates.installedVersion(context))
+            )
+          },
+          modifier = Modifier.clickable(enabled = !updateChecking) {
+            updateChecking = true
+            scope.launch {
+              val found = runCatching { Updates.check(context) }
+              updateChecking = false
+              found.onSuccess { release ->
+                if (release != null) {
+                  updateRelease = release
+                } else {
+                  snackbar.notify(scope, context.getString(R.string.update_none, Updates.installedVersion(context)))
+                }
+              }.onFailure {
+                snackbar.notify(
+                  scope, context.getString(R.string.update_check_failed, it.message ?: it.javaClass.simpleName),
+                )
               }
-            }.onFailure {
-              snackbar.notify(
-                scope, context.getString(R.string.update_check_failed, it.message ?: it.javaClass.simpleName),
-              )
             }
-          }
-        },
-      )
+          },
+        )
+      }
 
       Section(stringResource(R.string.settings_section_logs))
       ListItem(

@@ -110,7 +110,9 @@ void nc_vk_driver_load(const char *spec)
         if (gipa) {
             nc_hle_set_vk_loader(nc_vk_layers(gipa));
         }
-        nc_log("hakuX-app", "Vulkan driver %s from %s%s: %s", lib, from, from == sel ? " (debug.hakux.vkdriver)" : "",
+        const char *basename = strrchr(lib, '/');
+        nc_log("hakuX-app", "Vulkan driver %s%s: %s", basename ? basename + 1 : lib,
+               from == sel ? " (debug.hakux.vkdriver override)" : "",
                gipa ? "loaded" : "failed, the system driver it is");
         if (gipa && prio > 0) {
             g_kgsl_prio = prio;

@@ -104,6 +104,7 @@ typedef struct HleVk {
     VkPhysicalDeviceProperties props;
     VkPhysicalDeviceMemoryProperties mem;
     PFN_vkGetAndroidHardwareBufferPropertiesANDROID get_ahb_props;
+    PFN_vkGetDeviceFaultInfoEXT get_device_fault;
     HleCaps caps;
 } HleVk;
 

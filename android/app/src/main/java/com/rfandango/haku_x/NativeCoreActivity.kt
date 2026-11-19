@@ -341,9 +341,14 @@ class NativeCoreActivity : SDLActivity(), InputManager.InputDeviceListener {
     /* The custom Vulkan driver installed in the settings (Turnip), loaded
      * by the core through adrenotools; none: the system driver. */
     GpuDriverHelper.init(this)
-    val driverLib = GpuDriverHelper.getInstalledDriverLibrary()
-    if (!driverLib.isNullOrEmpty() && GpuDriverHelper.supportsCustomDriverLoading()) {
+    val selectedDriver = GpuDriverHelper.getActiveDriver()
+    val driverLib = selectedDriver?.libraryName
+    if (selectedDriver != null && !driverLib.isNullOrEmpty() && GpuDriverHelper.supportsCustomDriverLoading()) {
+      Log.i(TAG, "Vulkan driver requested: name=${selectedDriver.name}, " +
+        "driverVersion=${selectedDriver.driverVersion}, packageVersion=${selectedDriver.packageVersion}")
       args += "vkdriver=${GpuDriverHelper.driverInstallDir}|$driverLib|${GpuDriverHelper.hookLibDir}"
+    } else {
+      Log.i(TAG, "Vulkan driver requested: system")
     }
     launchArguments = args.toList()
     return args.toTypedArray()

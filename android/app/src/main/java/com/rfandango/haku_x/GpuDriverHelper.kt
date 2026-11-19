@@ -192,8 +192,6 @@ object GpuDriverHelper {
 
   fun getInstalledDriverName(): String? = getActiveDriver()?.name
 
-  fun getInstalledDriverLibrary(): String? = getActiveDriver()?.libraryName
-
   /**
    * The stored package is the driver in use: by the package name the install keeps, else (a driver
    * put in use before it did, or brought over from the previous release) by the driver's name.

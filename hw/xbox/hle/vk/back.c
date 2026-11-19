@@ -1930,7 +1930,7 @@ static void back_props_poll(uint64_t swap)
         g_vis_dbg.nlog = atoi(v);
     }
     if (hle_prop_new(&lose_prop, "debug.hakux.gpulose", v)) {
-        hle_vk_lose(VK_ERROR_DEVICE_LOST, "debug.hakux.gpulose");
+        hle_vk_lose(VK_ERROR_UNKNOWN, "debug.hakux.gpulose (simulated loss)");
     }
     v[0] = 0;
     hle_prop_get("debug.hakux.dryhold", v);
@@ -2514,22 +2514,22 @@ static void dispatch(const HleCmdHdr *h)
                 open_pass(true);        /* debug: the passes alone, no draw state */
             }
         } else if (g_back.pass_open || open_pass(hle_draw_lrz_off())) {
-            vis_draw(g_back.fr[g_back.cur].cb);
+            VkCommandBuffer cb = g_back.fr[g_back.cur].cb;
             VkImageView zv = zds ? hle_zread_depth_view(zds) : VK_NULL_HANDLE;
-            if (fbrt || zv) {
-                /* the depth read waits for the pass's depth writes since the last */
-                bool zbar = zv && zds->wgen != g_back.zeq_wgen;
-                hle_draw_fb_bind(g_back.fr[g_back.cur].cb, fbrt, zds, zv, zbar);
+            /* The depth read waits for the pass's depth writes since the last. */
+            bool zbar = zv && zds->wgen != g_back.zeq_wgen;
+            if ((!fbrt && !zv) || hle_draw_fb_bind(cb, fbrt, zds, zv, zbar)) {
                 if (zbar) {
                     g_back.zeq_wgen = zds->wgen;
                 }
-                g_pt.fb++;
-            }
-            g_hle_zeq = zv ? zq : 0;
-            hle_draw_cmd_draw(p, g_back.fr[g_back.cur].cb, g_back.rt, g_back.ds, &g_back.vp);
-            g_back.st.draws++;
-            if (g_pix.active) {
-                pix_after(p);
+                g_pt.fb += fbrt != NULL || zv != VK_NULL_HANDLE;
+                vis_draw(cb);
+                g_hle_zeq = zv ? zq : 0;
+                hle_draw_cmd_draw(p, cb, g_back.rt, g_back.ds, &g_back.vp);
+                g_back.st.draws++;
+                if (g_pix.active) {
+                    pix_after(p);
+                }
             }
         } else {
             draw_nopass();

@@ -67,6 +67,7 @@ object Updates {
    * Network and format failures throw.
    */
   suspend fun check(context: Context): Release? = withContext(Dispatchers.IO) {
+    if (BuildConfig.PRIVATE_RENDERER_TRACK) return@withContext null
     val previews = AppPrefs(context).updatePreviews
     val releases = JSONArray()
     // GitHub lists by publication time, not our version. Inspect a bounded five pages.
@@ -110,7 +111,7 @@ object Updates {
    * Leftover downloads go first. The release found, or null.
    */
   suspend fun checkAtStart(context: Context): Release? {
-    if (!startChecked.compareAndSet(false, true)) return null
+    if (BuildConfig.PRIVATE_RENDERER_TRACK || !startChecked.compareAndSet(false, true)) return null
     withContext(Dispatchers.IO) { File(context.cacheDir, "updates").deleteRecursively() }
     return runCatching { check(context) }
       .onFailure { Log.w(TAG, "check at start: ${it.message}") }

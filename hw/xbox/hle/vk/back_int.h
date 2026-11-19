@@ -184,7 +184,7 @@ extern unsigned g_hle_zeq;
 /* In the open pass: rt's view as input attachment 0 and depth view zv as the
  * depth one (set 2; either may be absent), after the earlier draws' writes
  * (the depth's: zbar). */
-void hle_draw_fb_bind(VkCommandBuffer cb, HleVkSurf *rt, HleVkSurf *ds, VkImageView zv,
+bool hle_draw_fb_bind(VkCommandBuffer cb, HleVkSurf *rt, HleVkSurf *ds, VkImageView zv,
                       bool zbar);
 extern bool g_hle_fbbar_off;            /* debug (debug.hakux.fbbar=0): no barrier */
 /* debug (debug.hakux.gpucut): 1 (frag) draws scissored to one pixel, 2 (draw)

@@ -143,6 +143,16 @@ typedef struct FixedKey {
 #define FX_POOLS 16                     /* a command buffer's pools of draw sets */
 #define FX_SETS  1024                   /* sets a pool */
 
+/* Entries live only for the current command buffer. Replacing a cache
+ * entry never modifies or frees a descriptor set already recorded. */
+#define FB_CACHE_ENTRIES 128
+
+typedef struct FbSet {
+    VkImageView rt, z;
+    VkImageLayout rl, zl;
+    VkDescriptorSet set;
+} FbSet;
+
 static struct {
     bool ready;
     VkDescriptorSetLayout dsl;          /* caps.bindless off: the draws' own sets' */
@@ -192,7 +202,8 @@ static struct {
     bool fb_pooled;
     VkDescriptorPool fbpool[HLE_FRAMES];
     unsigned fbslot;
-    struct { VkImageView rt, z; VkImageLayout rl, zl; VkDescriptorSet set; } fblast;
+    bool fb_pool_ready;
+    FbSet fb_cache[FB_CACHE_ENTRIES];
     struct { uint64_t hash; uint32_t nslots; uint32_t *tok; } prog[HLE_MAX_PROGS];
     uint32_t nprog;
     int8_t vfmt[256];                   /* vertex-buffer support: 0 unknown, 1 yes, -1 no */
@@ -612,9 +623,10 @@ void hle_draw_slot(unsigned slot)
     g_dr.pbase = (slot % HLE_FRAMES) * PUSH_PART_BYTES;
     g_dr.ppos = 0;
     g_dr.fbslot = slot % HLE_FRAMES;
-    memset(&g_dr.fblast, 0, sizeof(g_dr.fblast));
-    if (g_dr.fb_pooled && g_dr.fbpool[g_dr.fbslot]) {
-        T.vkResetDescriptorPool(g_hvk.dev, g_dr.fbpool[g_dr.fbslot], 0);
+    if (g_hvk.caps.fbfetch && g_dr.fb_pooled) {
+        memset(g_dr.fb_cache, 0, sizeof(g_dr.fb_cache));
+        VkResult result = T.vkResetDescriptorPool(g_hvk.dev, g_dr.fbpool[g_dr.fbslot], 0);
+        g_dr.fb_pool_ready = hle_vk_check(result, "vkResetDescriptorPool (fbfetch)");
     }
     if (!g_hvk.caps.bindless && g_dr.mirror) {  /* its previous recording has completed */
         __typeof__(g_dr.fx[0]) *f = &g_dr.fx[g_dr.fxslot = slot % HLE_FRAMES];
@@ -732,7 +744,10 @@ int hle_draw_init(void)
             .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
             .flags = g_dr.fb_pooled ? 0 : VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR,
             .bindingCount = 2, .pBindings = fb };
-        if (T.vkCreateDescriptorSetLayout(g_hvk.dev, &fci, NULL, &g_dr.fbdsl) != VK_SUCCESS) {
+        VkResult result = T.vkCreateDescriptorSetLayout(g_hvk.dev, &fci, NULL, &g_dr.fbdsl);
+        if (result != VK_SUCCESS) {
+            hle_log("hakuX-hle-back", "fbfetch: disabled; vkCreateDescriptorSetLayout: %s",
+                    hle_vk_result_text(result));
             g_hvk.caps.fbfetch = false;
         }
         VkDescriptorPoolSize fps = { VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 2 * FB_SETS };
@@ -740,16 +755,16 @@ int hle_draw_init(void)
             .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO, .maxSets = FB_SETS,
             .poolSizeCount = 1, .pPoolSizes = &fps };
         for (unsigned i = 0; g_hvk.caps.fbfetch && g_dr.fb_pooled && i < HLE_FRAMES; i++) {
-            if (T.vkCreateDescriptorPool(g_hvk.dev, &fpi, NULL, &g_dr.fbpool[i]) != VK_SUCCESS) {
+            result = T.vkCreateDescriptorPool(g_hvk.dev, &fpi, NULL, &g_dr.fbpool[i]);
+            if (result != VK_SUCCESS) {
+                hle_log("hakuX-hle-back", "fbfetch: disabled; vkCreateDescriptorPool (slot %u): %s",
+                        i, hle_vk_result_text(result));
                 g_hvk.caps.fbfetch = false;
             }
         }
-        if (g_hvk.caps.fbfetch && g_dr.fb_pooled) {
-            hle_log("hakuX-hle-back", "fbfetch: input attachments from pooled sets (%s)",
-                    g_hvk.caps.push_desc ? "the driver's push descriptors are avoided" :
-                    "no push descriptors");
-        }
     }
+    hle_log("hakuX-hle-back", "fbfetch: effective=%d descriptors=%s", g_hvk.caps.fbfetch,
+            !g_hvk.caps.fbfetch ? "none" : g_dr.fb_pooled ? "pooled" : "push");
     VkDescriptorSetLayout sets[4] = { g_dr.dsl, g_dr.cdsl,
                                       g_hvk.caps.fbfetch ? g_dr.fbdsl : g_dr.edsl, g_dr.pdsl };
     VkPipelineLayoutCreateInfo lci = {
@@ -1293,46 +1308,51 @@ unsigned hle_draw_zeq(const HleCmdDraw *c, uint32_t ds_id)
     }
 }
 
-/* fbfetch's set 2 without push descriptors: a set from the command buffer's
- * pool, the last one again while the attachments are the same */
-static void fb_bind_pooled(VkCommandBuffer cb, HleVkSurf *rt, VkImageView zv,
+/* Reuse a previously written set when alternating between attachments. */
+static bool fb_bind_pooled(VkCommandBuffer cb, HleVkSurf *rt, VkImageView zv,
                            const VkDescriptorImageInfo *ii, VkWriteDescriptorSet *w, unsigned nw)
 {
-    VkImageView rv = rt ? ii[0].imageView : VK_NULL_HANDLE;
-    VkImageLayout rl = rt ? ii[0].imageLayout : VK_IMAGE_LAYOUT_UNDEFINED;
-    VkImageLayout zl = zv ? ii[nw - 1].imageLayout : VK_IMAGE_LAYOUT_UNDEFINED;
-    VkDescriptorSet set = g_dr.fblast.set;
-    if (!set || g_dr.fblast.rt != rv || g_dr.fblast.z != zv || g_dr.fblast.rl != rl ||
-        g_dr.fblast.zl != zl) {
+    if (!g_dr.fb_pool_ready) {
+        return false;
+    }
+    FbSet key = {
+        .rt = rt ? ii[0].imageView : VK_NULL_HANDLE,
+        .z = zv,
+        .rl = rt ? ii[0].imageLayout : VK_IMAGE_LAYOUT_UNDEFINED,
+        .zl = zv ? ii[nw - 1].imageLayout : VK_IMAGE_LAYOUT_UNDEFINED,
+    };
+    uint64_t hash = (uint64_t)(uintptr_t)key.rt * UINT64_C(0x9e3779b97f4a7c15) +
+                    (uint64_t)(uintptr_t)key.z * UINT64_C(0x94d049bb133111eb) +
+                    ((uint64_t)key.rl << 32) + key.zl;
+    FbSet *entry = &g_dr.fb_cache[(hash ^ (hash >> 29)) % FB_CACHE_ENTRIES];
+    VkDescriptorSet set = entry->set;
+    if (!set || entry->rt != key.rt || entry->z != key.z || entry->rl != key.rl ||
+        entry->zl != key.zl) {
         VkDescriptorSetAllocateInfo ai = {
             .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
             .descriptorPool = g_dr.fbpool[g_dr.fbslot], .descriptorSetCount = 1,
             .pSetLayouts = &g_dr.fbdsl };
-        if (T.vkAllocateDescriptorSets(g_hvk.dev, &ai, &set) != VK_SUCCESS) {
-            static bool s_said;
-            if (!s_said) {
-                s_said = true;
-                hle_log("hakuX-hle-back", "fbfetch: a command buffer's %u sets are used up: its "
-                        "later draws keep the last (logged once)", FB_SETS);
-            }
-            return;
+        VkResult result = T.vkAllocateDescriptorSets(g_hvk.dev, &ai, &set);
+        if (!hle_vk_check(result, "vkAllocateDescriptorSets (fbfetch; draw skipped)")) {
+            return false;
         }
         for (unsigned i = 0; i < nw; i++) {
             w[i].dstSet = set;
         }
         T.vkUpdateDescriptorSets(g_hvk.dev, nw, w, 0, NULL);
-        g_dr.fblast.rt = rv;
-        g_dr.fblast.z = zv;
-        g_dr.fblast.rl = rl;
-        g_dr.fblast.zl = zl;
-        g_dr.fblast.set = set;
+        key.set = set;
+        *entry = key;
     }
     T.vkCmdBindDescriptorSets(cb, VK_PIPELINE_BIND_POINT_GRAPHICS, g_dr.layout, 2, 1, &set, 0, NULL);
+    return true;
 }
 
-void hle_draw_fb_bind(VkCommandBuffer cb, HleVkSurf *rt, HleVkSurf *ds, VkImageView zv,
+bool hle_draw_fb_bind(VkCommandBuffer cb, HleVkSurf *rt, HleVkSurf *ds, VkImageView zv,
                       bool zbar)
 {
+    if (rt && !rt->view) {
+        return false;
+    }
     /* by region: each fragment reads its own pixel, as the earlier draws
      * left it */
     VkMemoryBarrier2 mb[2];
@@ -1376,13 +1396,16 @@ void hle_draw_fb_bind(VkCommandBuffer cb, HleVkSurf *rt, HleVkSurf *ds, VkImageV
             .pImageInfo = &ii[nw] };
         nw++;
     }
-    g_dr.fb_draws += rt != NULL;
     if (g_dr.fb_pooled) {
-        fb_bind_pooled(cb, rt, zv, ii, w, nw);
+        if (!fb_bind_pooled(cb, rt, zv, ii, w, nw)) {
+            return false;
+        }
     } else {
         T.vkCmdPushDescriptorSetKHR(cb, VK_PIPELINE_BIND_POINT_GRAPHICS, g_dr.layout, 2, nw, w);
     }
+    g_dr.fb_draws += rt != NULL;
     g_dr.emits[EM_FB]++;
+    return true;
 }
 
 bool hle_draw_tex_needs_prep(const HleCmdDraw *c, uint32_t rt_id)
