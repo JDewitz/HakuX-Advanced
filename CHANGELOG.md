@@ -7,13 +7,14 @@
 - Show the specific compatibility switch online; retain existing selection.
 - Hold the earlier offline-only release kit pending device validation.
 
-## Advanced 5.21
+## Advanced 5.21 — Super Trooper
 
 - Promote the user-confirmed 5.2.h / Preview 2 integration.
 - Optional Rogue Trooper cache-write rule handles cache partitions 3–5.
 - Reusable mod rule, one-time diagnostics and cache-path regression tests.
 - Concise README/current compatibility notes; existing native binaries retained.
-- Normal release identity, versionCode 45, increasing updater version.
+- Earlier offline-only code 45 kit superseded by online test code 46.
+- Final stable APK and increasing versionCode to be assigned after device confirmation.
 
 See [5.21 release notes](docs/releases/5.21.md).
 

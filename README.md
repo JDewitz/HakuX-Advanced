@@ -6,7 +6,7 @@ Original authors, contributors and dependency licenses retain their attribution.
 
 ## Current online-compatibility test
 
-**5.21 Online Compatibility Test**, based on the confirmed working cache fix.
+**5.21 “Super Trooper” — Online Compatibility Test**, based on the confirmed working cache fix.
 Android version: `1.3.0-advanced5.21-preview.1-onlinecompat`, versionCode **46**.
 The earlier offline-only 5.21 release kit is on hold pending this test.
 See [release notes](docs/releases/5.21.md) and [compatibility](docs/COMPATIBILITY.md).
