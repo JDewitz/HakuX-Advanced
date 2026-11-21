@@ -6,9 +6,9 @@ Original authors, contributors and dependency licenses retain their attribution.
 
 ## Current test build
 
-**5.20.1 Preview 1**, integrating the 5.2.h cache-write compatibility work into
-Advanced 5.20. Android version: `1.3.0-advanced5.20.1-preview.1-cache-write`,
-versionCode **43**. Device testing is pending; this is not a published release.
+**5.20.1 Preview 2**, integrating the 5.2.h cache-write compatibility work into
+Advanced 5.20. Android version: `1.3.0-advanced5.20.1-preview.2-cache-write`,
+versionCode **44**. Device testing is pending; this is not a published release.
 
 Install the signed arm64 APK over Advanced. The separately installed 5.2.h
 experimental app is a different package and keeps separate data/settings.

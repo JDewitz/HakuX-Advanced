@@ -114,6 +114,6 @@ For example, Rogue Trooper revision 1 uses this section in mod.txt:
 Enable the mod in Mods & cheats before a fresh boot. A queued asynchronous
 disc read of the named file with a completion event arms the rule. Subsequent
 successful asynchronous writes of 1–131072 bytes to the same filename in the
-root of Partition5 report pending after completing normally. Filenames are
+root of cache Partition3, Partition4 or Partition5 report pending after completing normally. Filenames are
 case-insensitive ASCII letters, digits, dot, underscore or hyphen (127 bytes
 maximum). Configure one rule per game. Protected online sessions omit mods.

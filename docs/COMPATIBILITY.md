@@ -1,6 +1,6 @@
 # Compatibility and current testing
 
-## 5.20.1 Preview 1 — 5.2.h integration
+## 5.20.1 Preview 2 — 5.2.h integration
 
 5.2.g received a user-reported successful Rogue Trooper loading result. The
 retained diagnostic run shows repeated disc reads completing and successful
@@ -10,8 +10,8 @@ fault or a general event-scheduler defect.
 
 5.2.h removes the diagnostic dependency and exposes a per-game, per-filename
 rule through the existing mod browser. This preview integrates that source
-patch into Advanced 5.20 without the experimental trace patch. The generalized
-5.2.h behavior and this exact APK still require a device test.
+patch into Advanced 5.20 without the experimental trace patch. The user confirms 5.2.h works in its separate experimental installation.
+The regular APK integration still requires a device retest.
 
 | Compatibility | Selection |
 | --- | --- |
@@ -31,7 +31,7 @@ patch into Advanced 5.20 without the experimental trace patch. The generalized
 
 The option arms after a queued asynchronous disc read of the configured leaf
 filename with a completion event. Matching successful asynchronous writes of
-1–131072 bytes to that filename directly under Partition5 retain their normal
+1–131072 bytes to that filename directly under cache Partition3, Partition4 or Partition5 retain their normal
 host write, IOSB completion and event/APC behavior, but return pending. Failed,
 partial, synchronous, unrelated-title and unrelated-path operations retain their
 normal results. This is a scoped compatibility convention, not general async I/O.
@@ -48,3 +48,20 @@ results: 166 tests, zero failures/errors, one optional skip. The new native
 fixture checks rule parsing, disabled defaults, title/path matching, arming and
 reset behavior; it also passes address/undefined-behavior sanitizers. These
 checks do not replace the pending Rogue Trooper device test.
+
+## Preview 1 regression and Preview 2 correction
+
+The 2026-11-21 15:34 failed run confirms offline mode and one enabled mod for
+5343000E.1. Its sound bank is written to Partition4, whereas the successful
+5.2.g run wrote to Partition5. The 5.2.h source rule retained the experimental
+Partition5-only guard; it therefore missed a legitimate alternate cache target.
+
+Preview 2 keeps the .h implementation and accepts the same selected filename
+at the root of cache partitions 3, 4 and 5. Data/system partitions 1 and 2,
+other partitions, nested paths and unrelated filenames remain excluded.
+The asynchronous, full-success and IOSB checks remain unchanged. One-time
+native logs report rule enablement, arming and the first matching cache path.
+
+Regression fixtures now cover Partition4 and all allowed cache partitions,
+as well as rejected data/system, malformed and nested paths. This correction
+is source/host-tested; a successful device retest remains required.

@@ -23,7 +23,7 @@ static char g_manifest[512];
 /* One opt-in cache file per game. Consume the manifest selection at XBE bind. */
 static char cache_leaf[128];
 static uint32_t cache_title;
-static bool cache_enabled, cache_armed;
+static bool cache_enabled, cache_armed, cache_hit_logged;
 
 static void cache_rule(const char *rule)
 {
@@ -41,15 +41,31 @@ void nc_mods_cache_disc_read(const char *path)
 {
     const char *leaf = strrchr(path, '\\');
     if (cache_enabled && leaf && !strcasecmp(leaf + 1, cache_leaf)) {
+        if (!cache_armed) {
+            nc_log("hakuX-native-mods", "cache-write rule armed: %s", cache_leaf);
+        }
         cache_armed = true;
     }
 }
 
 bool nc_mods_cache_pending(const char *path)
 {
-    static const char prefix[] = "\\Device\\Harddisk0\\Partition5\\";
-    return cache_armed && !strncasecmp(path, prefix, sizeof(prefix) - 1) &&
-           !strcasecmp(path + sizeof(prefix) - 1, cache_leaf);
+    static const char prefix[] = "\\Device\\Harddisk0\\Partition";
+    if (!cache_armed || strncasecmp(path, prefix, sizeof(prefix) - 1)) {
+        return false;
+    }
+    const char *part = path + sizeof(prefix) - 1;
+    /* X:, Y: and Z: are disposable cache partitions. The chosen cache
+     * partition varies with the console's HDD state; never include C:/E:. */
+    if (part[0] < '3' || part[0] > '5' || part[1] != '\\' ||
+        strcasecmp(part + 2, cache_leaf)) {
+        return false;
+    }
+    if (!cache_hit_logged) {
+        nc_log("hakuX-native-mods", "cache-write rule matched: %s", path);
+        cache_hit_logged = true;
+    }
+    return true;
 }
 
 static NcVm *g_vm;
@@ -646,6 +662,11 @@ void nc_mods_bind(NcVm *vm, NcCpu *cpu, const HleXbeInfo *xbe)
 {
     cache_enabled = cache_title && cache_title == xbe->title_id;
     cache_armed = false;
+    cache_hit_logged = false;
+    if (cache_enabled) {
+        nc_log("hakuX-native-mods", "cache-write rule enabled: title=%08x file=%s partitions=3-5",
+               xbe->title_id, cache_leaf);
+    }
     cache_title = 0;
     g_vm = vm;
     g_cpu = cpu;

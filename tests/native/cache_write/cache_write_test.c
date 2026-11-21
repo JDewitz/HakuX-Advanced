@@ -2,6 +2,8 @@
 #include "native/core/mods.c"
 #include <assert.h>
 
+void nc_log(const char *tag, const char *fmt, ...) { (void)tag; (void)fmt; }
+
 /* Unrelated callbacks retained by sanitizer metadata must never run here. */
 void hle_host_mem_set_dirty(uint32_t pa, uint32_t len)
 {
@@ -30,7 +32,15 @@ int main(void)
     nc_mods_cache_disc_read("\\Device\\CdRom0\\Sounds\\BANK_EN.XWB");
     assert(nc_mods_cache_pending(target));
     assert(!nc_mods_cache_pending("\\Device\\Harddisk0\\Partition5\\sub\\Bank_en.xwb"));
-    assert(!nc_mods_cache_pending("\\Device\\Harddisk0\\Partition4\\Bank_en.xwb"));
+    assert(nc_mods_cache_pending("\\Device\\Harddisk0\\Partition3\\Bank_en.xwb"));
+    assert(nc_mods_cache_pending("\\Device\\Harddisk0\\Partition4\\Bank_en.xwb"));
+    assert(!nc_mods_cache_pending("\\Device\\Harddisk0\\Partition1\\Bank_en.xwb"));
+    assert(!nc_mods_cache_pending("\\Device\\Harddisk0\\Partition2\\Bank_en.xwb"));
+    assert(!nc_mods_cache_pending("\\Device\\Harddisk0\\Partition6\\Bank_en.xwb"));
+    assert(!nc_mods_cache_pending("\\Device\\Harddisk0\\Partition45\\Bank_en.xwb"));
+    assert(!nc_mods_cache_pending("\\Device\\Harddisk0\\Partition"));
+    assert(!nc_mods_cache_pending("\\Device\\Harddisk0\\Partition4"));
+    assert(!nc_mods_cache_pending("\\Device\\Harddisk0\\Partition4\\sub\\Bank_en.xwb"));
     assert(!nc_mods_cache_pending("\\Device\\Harddisk0\\Partition5\\Bank_en.xwb.bak"));
     bind_rule("5343000E Bank_en.xwb", 0x4d530004);
     nc_mods_cache_disc_read("\\Device\\CdRom0\\Sounds\\Bank_en.xwb");

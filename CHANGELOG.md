@@ -1,5 +1,12 @@
 # Changelog
 
+## Advanced 5.20.1 Preview 2
+
+- Keep the 5.2.h cache-write implementation and accept cache partitions 3–5.
+- Fix Preview 1's missed Partition4 target, confirmed in the failed-run log.
+- Add cache-rule activation/match logs and cache-partition regression tests.
+- Android versionCode 44; device retest pending.
+
 ## Advanced 5.20.1 Preview 1
 
 - Integrate the 5.2.h opt-in cache-write completion rule and Rogue Trooper revision 1 mod.
