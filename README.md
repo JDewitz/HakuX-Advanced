@@ -4,11 +4,12 @@ An unofficial Android arm64 fork of [rfandango/hakuX](https://github.com/rfandan
 AI was a significant factor in the development of this project.
 Original authors, contributors and dependency licenses retain their attribution.
 
-## Current online-compatibility test
+## Current release candidate
 
-**5.21 “Super Trooper” — Online Compatibility Test**, based on the confirmed working cache fix.
-Android version: `1.3.0-advanced5.21-preview.1-onlinecompat`, versionCode **46**.
-The earlier offline-only 5.21 release kit is on hold pending this test.
+**5.21 “Super Trooper”**, based on the confirmed working cache fix.
+Android version: `1.3.0-advanced5.21`, versionCode **47**.
+Prepared for an unpublished GitHub draft; protected-online device testing remains pending.
+The earlier offline-only 5.21 release kit is superseded.
 See [release notes](docs/releases/5.21.md) and [compatibility](docs/COMPATIBILITY.md).
 
 Install the signed arm64 APK over Advanced. The separately installed 5.2.h

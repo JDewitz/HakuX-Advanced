@@ -37,11 +37,11 @@ android {
     minSdk = 28
     targetSdk = 36
 
-    versionCode = 46
+    versionCode = 47
     versionName = if (privateRendererTrack) {
       "1.3.0-advanced5.19.3-experimental-$privateRendererRevision-we-renderin-xisos-rc-pacing"
     } else {
-      "1.3.0-advanced5.21-preview.1-onlinecompat"
+      "1.3.0-advanced5.21"
     }
     buildConfigField("boolean", "PRIVATE_RENDERER_TRACK", privateRendererTrack.toString())
 
@@ -74,7 +74,7 @@ android {
       applicationIdSuffix = ".themes"
       // Sign the private output separately with the existing 5.19.3 certificate.
       if (privateRendererTrack || providers.gradleProperty("unsignedAdvanced").isPresent) signingConfig = null
-      resValue("string", "app_name", if (privateRendererTrack) "HakuX 5.2 • we renderin xisos" else "HakuX 5.21 Online Test")
+      resValue("string", "app_name", if (privateRendererTrack) "HakuX 5.2 • we renderin xisos" else "HakuX-Advanced")
       ndk {
         debugSymbolLevel = "NONE"
       }

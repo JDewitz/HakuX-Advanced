@@ -1,20 +1,20 @@
 # Changelog
 
-## 5.21 protected-online test (code 46)
+## Advanced 5.21 — Super Trooper (release candidate, code 47)
 
 - Honor the Rogue Trooper cache compatibility switch in protected sessions.
 - Emit only its release-owned canonical native rule; preserve trainer/cheat blocks.
 - Show the specific compatibility switch online; retain existing selection.
 - Hold the earlier offline-only release kit pending device validation.
 
-## Advanced 5.21 — Super Trooper
+## Earlier 5.21 integration
 
 - Promote the user-confirmed 5.2.h / Preview 2 integration.
 - Optional Rogue Trooper cache-write rule handles cache partitions 3–5.
 - Reusable mod rule, one-time diagnostics and cache-path regression tests.
 - Concise README/current compatibility notes; existing native binaries retained.
 - Earlier offline-only code 45 kit superseded by online test code 46.
-- Final stable APK and increasing versionCode to be assigned after device confirmation.
+- Final candidate uses stable version identity and code 47; leave GitHub draft unpublished pending device confirmation.
 
 See [5.21 release notes](docs/releases/5.21.md).
 
