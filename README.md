@@ -4,11 +4,11 @@ An unofficial Android arm64 fork of [rfandango/hakuX](https://github.com/rfandan
 AI was a significant factor in the development of this project.
 Original authors, contributors and dependency licenses retain their attribution.
 
-## Current test build
+## Current release
 
-**5.20.1 Preview 2**, integrating the 5.2.h cache-write compatibility work into
-Advanced 5.20. Android version: `1.3.0-advanced5.20.1-preview.2-cache-write`,
-versionCode **44**. Device testing is pending; this is not a published release.
+**5.21**, promoting the confirmed working 5.2.h / Preview 2 integration.
+Android version: `1.3.0-advanced5.21`, versionCode **45**.
+See [release notes](docs/releases/5.21.md) and [compatibility](docs/COMPATIBILITY.md).
 
 Install the signed arm64 APK over Advanced. The separately installed 5.2.h
 experimental app is a different package and keeps separate data/settings.
@@ -29,4 +29,4 @@ See [compatibility and test notes](docs/COMPATIBILITY.md).
 [Rendering reference](docs/EXPERIMENTAL5.2.md)
 
 Test feedback: device/driver, game revision, option on/off and result.
-Public release/update packages will be prepared after APK testing.
+Publishing instructions are included in the separate release kit.

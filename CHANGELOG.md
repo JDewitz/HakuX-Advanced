@@ -1,5 +1,15 @@
 # Changelog
 
+## Advanced 5.21
+
+- Promote the user-confirmed 5.2.h / Preview 2 integration.
+- Optional Rogue Trooper cache-write rule handles cache partitions 3–5.
+- Reusable mod rule, one-time diagnostics and cache-path regression tests.
+- Concise README/current compatibility notes; existing native binaries retained.
+- Normal release identity, versionCode 45, increasing updater version.
+
+See [5.21 release notes](docs/releases/5.21.md).
+
 ## Advanced 5.20.1 Preview 2
 
 - Keep the 5.2.h cache-write implementation and accept cache partitions 3–5.

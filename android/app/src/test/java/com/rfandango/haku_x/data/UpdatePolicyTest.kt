@@ -78,4 +78,13 @@ class UpdatePolicyTest {
     assertNull(UpdatePolicy.select(JSONArray().put(release("5.19.3")), next, true))
     assertNotNull(UpdatePolicy.select(JSONArray().put(release("5.20.1")), next, false))
   }
+  @Test fun release521UpgradesStableAndConfirmedPreview() {
+    val releases = JSONArray().put(release("5.21"))
+    for (current in listOf("1.3.0-advanced5.20-goin-commando",
+      "1.3.0-advanced5.20.1-preview.2-cache-write")) {
+      val found = UpdatePolicy.select(releases, current, false)!!
+      assertEquals(UpdatePolicy.installedVersion("1.3.0-advanced5.21"), found.key)
+    }
+    assertNull(UpdatePolicy.select(JSONArray().put(release("5.20")), "1.3.0-advanced5.21", true))
+  }
 }
