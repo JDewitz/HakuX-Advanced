@@ -1,5 +1,11 @@
 # Changelog
 
+## Advanced 5.21.1 — Super Trooper: Default-on Hotfix (code 48)
+
+- Default Rogue Trooper revision 1 sound-bank compatibility ON, offline and protected online.
+- Keep manual OFF persistent; other mods/trainers retain their existing defaults and protection.
+- Native libraries unchanged from 5.21.
+
 ## Advanced 5.21 — Super Trooper (release candidate, code 47)
 
 - Honor the Rogue Trooper cache compatibility switch in protected sessions.

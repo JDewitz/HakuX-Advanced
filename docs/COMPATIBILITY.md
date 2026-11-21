@@ -2,7 +2,7 @@
 
 | Workaround | Selection |
 | --- | --- |
-| Rogue Trooper sound-bank loading | Optional mod for 5343000E.1; off by default |
+| Rogue Trooper sound-bank loading | Automatic for 5343000E.1; user can turn it off |
 | Republic Commando pacing | Built-in 60 guest presents/sec for 4C410013, all revisions |
 | Jade Empire Sagacious | Existing title defaults and per-game override |
 | Halo pool placement | Existing Auto/On/Off; Auto matches 4D530004 revision 8 |

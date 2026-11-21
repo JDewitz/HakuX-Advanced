@@ -37,11 +37,11 @@ android {
     minSdk = 28
     targetSdk = 36
 
-    versionCode = 47
+    versionCode = 48
     versionName = if (privateRendererTrack) {
       "1.3.0-advanced5.19.3-experimental-$privateRendererRevision-we-renderin-xisos-rc-pacing"
     } else {
-      "1.3.0-advanced5.21"
+      "1.3.0-advanced5.21.1"
     }
     buildConfigField("boolean", "PRIVATE_RENDERER_TRACK", privateRendererTrack.toString())
 

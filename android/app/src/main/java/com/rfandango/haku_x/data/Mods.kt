@@ -183,7 +183,7 @@ class ModChoices(context: Context, private val game: String) {
   private val file = File(context.filesDir, FILE)
   private val app = context.applicationContext
 
-  fun mod(id: String) = read().optBoolean("$game/mod/$id", false)
+  fun mod(id: String) = modEnabled(read(), game, id)
   fun setMod(id: String, on: Boolean) = write("$game/mod/$id", on)
   fun cheat(name: String) = read().optBoolean("$game/cheat/$name", false)
   fun setCheat(name: String, on: Boolean) = write("$game/cheat/$name", on)
@@ -204,7 +204,7 @@ class ModChoices(context: Context, private val game: String) {
   private fun write(key: String, on: Boolean) {
     synchronized(LOCK) {
       val o = read()
-      if (on) o.put(key, true) else o.remove(key)
+      storeChoice(o, key, on)
       val tmp = File(file.parentFile, "$FILE.${android.os.Process.myPid()}.tmp")
       tmp.writeText(o.toString())
       tmp.renameTo(file)
@@ -212,6 +212,14 @@ class ModChoices(context: Context, private val game: String) {
   }
 
   companion object {
+    internal fun modEnabled(choices: JSONObject, game: String, id: String): Boolean =
+      choices.optBoolean("$game/mod/$id", BuiltInCompatibilityMods.defaultEnabled(game, id))
+
+    // A saved false must remain distinguishable from an unset, default-on choice.
+    internal fun storeChoice(choices: JSONObject, key: String, on: Boolean) {
+      choices.put(key, on)
+    }
+
     const val NAME = "per_game_mods"
     private const val FILE = "mod_choices.json"
     private val LOCK = Any()

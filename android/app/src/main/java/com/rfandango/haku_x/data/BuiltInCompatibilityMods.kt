@@ -14,6 +14,10 @@ object BuiltInCompatibilityMods {
   private fun matches(game: String, emulator: String) =
     game.equals(ROGUE_GAME, ignoreCase = true) && emulator.substringBefore('-') == "1.3.0"
 
+  /** Auto-enable the known compatibility fix; an explicit saved OFF still wins. */
+  fun defaultEnabled(game: String, id: String): Boolean =
+    game.equals(ROGUE_GAME, ignoreCase = true) && id == CACHE_MOD
+
   fun isAllowedOnline(game: String, mod: ModInfo, emulator: String): Boolean =
     matches(game, emulator) && mod.id == CACHE_MOD && mod.refresh == 0 &&
       mod.patches == listOf(SECTION to RULE)

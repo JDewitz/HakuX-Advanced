@@ -4,6 +4,7 @@ import com.rfandango.haku_x.advanced.OnlinePlayPolicy
 import com.rfandango.haku_x.patches.PatchLaunch
 import org.junit.Assert.*
 import org.junit.Test
+import org.json.JSONObject
 
 class BuiltInCompatibilityModsTest {
   private val game = "5343000E.1"
@@ -11,6 +12,33 @@ class BuiltInCompatibilityModsTest {
   private val line = "patch\thakux:cache-write-pending\tcache-write-pending\t5343000E Bank_en.xwb"
   private val mod = ModInfo("cache-write-pending", "Sound bank loading fix", "", "",
     listOf("hakux:cache-write-pending" to "5343000E Bank_en.xwb"))
+
+  @Test fun rogueCompatibilityDefaultsOnOfflineAndProtected() {
+    val choices = JSONObject()
+    assertTrue(ModChoices.modEnabled(choices, game, "cache-write-pending"))
+    assertTrue(ModChoices.modEnabled(choices, "5343000e.1", "cache-write-pending"))
+    assertEquals(listOf(line), BuiltInCompatibilityMods.protectedManifest(game, emulator, null) {
+      ModChoices.modEnabled(choices, game, it)
+    })
+    for (key in listOf("4D530004.8", "5343000E.2", "5343000E")) {
+      assertFalse(ModChoices.modEnabled(choices, key, "cache-write-pending"))
+    }
+    assertFalse(ModChoices.modEnabled(choices, game, "trainer"))
+  }
+
+  @Test fun explicitOffPersistsAndCanBeReenabled() {
+    val choices = JSONObject()
+    val key = "$game/mod/cache-write-pending"
+    ModChoices.storeChoice(choices, key, false)
+    val restored = JSONObject(choices.toString())
+    assertTrue(restored.has(key))
+    assertFalse(ModChoices.modEnabled(restored, game, "cache-write-pending"))
+    assertTrue(BuiltInCompatibilityMods.protectedManifest(game, emulator, null) {
+      ModChoices.modEnabled(restored, game, it)
+    }.isEmpty())
+    ModChoices.storeChoice(restored, key, true)
+    assertTrue(ModChoices.modEnabled(restored, game, "cache-write-pending"))
+  }
 
   @Test fun protectedRogueSelectionProducesOnlyTheCanonicalNativeRule() {
     assertEquals(listOf(line), BuiltInCompatibilityMods.protectedManifest(game, emulator, null) {

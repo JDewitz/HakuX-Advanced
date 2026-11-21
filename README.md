@@ -6,8 +6,8 @@ Original authors, contributors and dependency licenses retain their attribution.
 
 ## Current release candidate
 
-**5.21 “Super Trooper”**, based on the confirmed working cache fix.
-Android version: `1.3.0-advanced5.21`, versionCode **47**.
+**5.21.1 “Super Trooper — Default-on Hotfix”**, based on the confirmed working cache fix.
+Android version: `1.3.0-advanced5.21.1`, versionCode **48**.
 Prepared for an unpublished GitHub draft; protected-online device testing remains pending.
 The earlier offline-only 5.21 release kit is superseded.
 See [release notes](docs/releases/5.21.md) and [compatibility](docs/COMPATIBILITY.md).
@@ -15,8 +15,8 @@ See [release notes](docs/releases/5.21.md) and [compatibility](docs/COMPATIBILIT
 Install the signed arm64 APK over Advanced. The separately installed 5.2.h
 experimental app is a different package and keeps separate data/settings.
 
-For Rogue Trooper revision 1 (`5343000E.1`), enable
-**Mods & cheats → Sound bank loading fix**, then cold start. It is off by default. Online protection may stay on; trainers remain blocked.
+For Rogue Trooper revision 1 (`5343000E.1`),
+**Sound bank loading fix** activates automatically. Cold start after updating. It is on by default; an explicit OFF choice is retained. Online protection may stay on; trainers remain blocked.
 See [compatibility and test notes](docs/COMPATIBILITY.md).
 
 ## Features
