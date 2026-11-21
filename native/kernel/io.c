@@ -13,6 +13,7 @@
  */
 #include "native/kernel/kernel.h"
 #include "native/core/irq.h"
+#include "native/core/mods.h"
 #include "native/core/xdvdfs.h"
 
 #include <ctype.h>
@@ -885,6 +886,9 @@ static bool disc_read_later(NcKernel *k, const NcFile *nf, const uint32_t *a, co
         }
         free(j.seg);
     }
+    if (queued && event && !sync && nf->kind == F_DISC) {
+        nc_mods_cache_disc_read(j.path);
+    }
     if (queued && event) {
         nc_ke_clear_event(k, event);
     }
@@ -1693,7 +1697,13 @@ static uint64_t NtWriteFile(NcKernel *k, NcFrame *f, const uint32_t *a)
                (unsigned long long)off, a[6], a[5], st, b[0], b[1], b[2], b[3], b[4], b[5], b[6], b[7]);
     }
     io_moved(k, nf, a[7], off + (n > 0 ? (uint64_t)n : 0));
-    return io_finish(k, nf, a, st, n > 0 ? (uint32_t)n : 0, nf->no_buffering);   /* cached: in the call */
+    uint32_t result = io_finish(k, nf, a, st, n > 0 ? (uint32_t)n : 0, nf->no_buffering);
+    if (result == NC_STATUS_SUCCESS && nf->async && a[4] && a[6] && a[6] <= 131072 &&
+        nc_mods_cache_pending(nf->path) && nc_vm_rd32(k->vm, a[4]) == NC_STATUS_SUCCESS &&
+        nc_vm_rd32(k->vm, a[4] + 4) == a[6]) {
+        return STATUS_PENDING;
+    }
+    return result;
 }
 
 /* ---------------------------------------------------------- information */

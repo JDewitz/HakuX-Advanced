@@ -33,6 +33,8 @@ struct NcKernel;
 void nc_mods_set_manifest(const char *path);
 /* After the disc opens: its overlay (files, patches) and the cheats. */
 void nc_mods_install(NcDisc *disc);
+void nc_mods_cache_disc_read(const char *path);
+bool nc_mods_cache_pending(const char *path);
 /* The patches of [$u\...] sections (a title update's XBE, a host file) over
  * len bytes read at off of the host file host. */
 void nc_mods_host_patch(const char *host, uint64_t off, void *buf, size_t len);

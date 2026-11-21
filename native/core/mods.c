@@ -20,6 +20,38 @@
 #include <unistd.h>
 
 static char g_manifest[512];
+/* One opt-in cache file per game. Consume the manifest selection at XBE bind. */
+static char cache_leaf[128];
+static uint32_t cache_title;
+static bool cache_enabled, cache_armed;
+
+static void cache_rule(const char *rule)
+{
+    char title[9], leaf[sizeof(cache_leaf)], extra;
+    if (sscanf(rule, "%8[0123456789abcdefABCDEF] %127[A-Za-z0-9_.-] %c",
+               title, leaf, &extra) != 2 || strlen(title) != 8 || rule[8] != ' ' ||
+        !strcmp(leaf, ".") || !strcmp(leaf, "..")) {
+        return;
+    }
+    cache_title = (uint32_t)strtoul(title, NULL, 16);
+    strcpy(cache_leaf, leaf);
+}
+
+void nc_mods_cache_disc_read(const char *path)
+{
+    const char *leaf = strrchr(path, '\\');
+    if (cache_enabled && leaf && !strcasecmp(leaf + 1, cache_leaf)) {
+        cache_armed = true;
+    }
+}
+
+bool nc_mods_cache_pending(const char *path)
+{
+    static const char prefix[] = "\\Device\\Harddisk0\\Partition5\\";
+    return cache_armed && !strncasecmp(path, prefix, sizeof(prefix) - 1) &&
+           !strcasecmp(path + sizeof(prefix) - 1, cache_leaf);
+}
+
 static NcVm *g_vm;
 static NcCpu *g_cpu;
 static struct { uint32_t lo, hi; } g_exec[HLE_XBE_MAX_SECTIONS];  /* executable sections' VAs */
@@ -496,6 +528,7 @@ static char *field(char **s)
 
 void nc_mods_install(NcDisc *disc)
 {
+    cache_title = 0;
     nc_trainer_config("", "");
     if (!g_manifest[0]) {
         return;
@@ -538,7 +571,13 @@ void nc_mods_install(NcDisc *disc)
         }
         if (!strcmp(kind, "patch") || !strcmp(kind, "patchoff")) {
             const char *xbe = field(&s), *mod = field(&s);
-            patch(disc, xbe, mod, s, kind[5] != 'o');
+            if (!strcmp(xbe, "hakux:cache-write-pending")) {
+                if (!strcmp(kind, "patch")) {
+                    cache_rule(s);
+                }
+            } else {
+                patch(disc, xbe, mod, s, kind[5] != 'o');
+            }
         } else if (!strcmp(kind, "cheat")) {
             const bool on = atoi(field(&s)) != 0, once = atoi(field(&s)) != 0;
             have_cheat = nc_cheat_add(s, on, once) >= 0;
@@ -605,6 +644,9 @@ static bool mem_write(void *opaque, uint32_t va, const void *buf, unsigned n)
 
 void nc_mods_bind(NcVm *vm, NcCpu *cpu, const HleXbeInfo *xbe)
 {
+    cache_enabled = cache_title && cache_title == xbe->title_id;
+    cache_armed = false;
+    cache_title = 0;
     g_vm = vm;
     g_cpu = cpu;
     g_base = xbe->base;

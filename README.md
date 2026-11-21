@@ -1,125 +1,32 @@
 # HakuX-Advanced
 
-AI Use Discolosure: AI was used heavily in this project.
+An unofficial Android arm64 fork of [rfandango/hakuX](https://github.com/rfandango/hakuX).
+AI was a significant factor in the development of this project.
+Original authors, contributors and dependency licenses retain their attribution.
 
-HakuX-Advanced is an unofficial experimental fork of
-[rfandango/hakuX](https://github.com/rfandango/hakuX), an original Xbox emulator
-for arm64 Android. The original authors and dependency contributors retain
-all attribution and licenses. This project is not an official hakuX release.
+## Current test build
 
-The current release is **5.20 “Goin Commando”**, built on official hakuX 1.3.0.
-Android version: **1.3.0-advanced5.20-goin-commando**, versionCode **42**.
-This promotes the private 5.2 renderer/XISO work and makes Republic Commando's
-60 FPS present-pacing fix automatic for title ID **4C410013**, all revisions.
-No patch import is required. See [5.20 release notes](docs/RELEASE5.20.md),
-[render paths and testing](docs/EXPERIMENTAL5.2.md) and
-[Republic Commando pacing](docs/REPUBLIC-PACING5.2.md).
+**5.20.1 Preview 1**, integrating the 5.2.h cache-write compatibility work into
+Advanced 5.20. Android version: `1.3.0-advanced5.20.1-preview.1-cache-write`,
+versionCode **43**. Device testing is pending; this is not a published release.
 
-The updater uses **JDewitz/HakuX-Advanced** and verifies package, signer,
-checksum and increasing version code. This release is prepared as a normal
-release, with preview status disabled. Publishing remains a separate step.
+Install the signed arm64 APK over Advanced. The separately installed 5.2.h
+experimental app is a different package and keeps separate data/settings.
 
-## Current features
+For Rogue Trooper revision 1 (`5343000E.1`), select offline mode and enable
+**Mods & cheats → Sound bank loading fix**, then cold start. It is off by default.
+See [compatibility and test notes](docs/COMPATIBILITY.md).
 
-- Mappable fast forward (toggle/hold), small `>>` indicator, and next-shader hotkey.
-- Advanced global and per-game memory, CPU and GPU-workaround settings.
-- Pause menu with dated screenshot save-state slots; mapped save/load actions.
-- Experimental RetroArch Slang shaders, folder browser, ZIP import, download and root-level pack deletion.
-- Shared app/pause themes, imported presets, multi-select import and live preview.
-- Cards, list, stats, info/play and icon library layouts, with trainer/config badges.
-- Experimental EvoX ETM trainer import, persistent metadata index and per-game trainer browser.
-- Online protection: save-state loading allowed; trainers/cheats blocked; built-in fixes and release-reviewed compatibility patches remain eligible online.
-  The imported-patch approval registry is currently empty.
-- Importable guarded XBE patch packs, folder scanning and persistent per-game toggles.
-- Optional high initial kernel pool placement for the Halo CE 1.3.0 crash.
+## Features
 
-Fast-forward frame skipping was removed. Auto/On/Off compatibility profiles now
-control the pool-layout experiment, with an effective-setting reason and launch
-logging. Auto enables the Halo pool workaround for the user-reported revision
-`4D530004.8` on the 1.3.0 core; other revisions remain off.
-The first guarded default.xbe patch-pack loader is implemented; native/rendering
-patch plugins and broader formats remain planned.
+- Advanced rendering and Slang shaders, shader browsing and pack management.
+- Mappable emulator hotkeys, performance HUD and screenshot save-state browser.
+- Shared importable themes, game-library layouts, trainer indexing and game mods.
+- Per-game compatibility profiles and protected online mode with trainer blocking.
 
-## Latest validation
+[Changelog](CHANGELOG.md) · [Compatibility](docs/COMPATIBILITY.md) ·
+[Mod format](mods/README.md) ·
+[Rendering reference](docs/EXPERIMENTAL5.2.md)
 
-Historical validation: the 5.19.1 updater hotfix passes 157 JVM tests, with zero failures and one optional shader-archive skip. Its nine new updater tests cover Advanced ordering, stable/preview selection, theme/official release exclusion, and invalid assets. The 5.19 baseline has user-reported success on the G99-based E8 and 477M. The new Android update-install round trip remains pending.
-
-Advanced5.13 passed Android compilation/APK assembly, 120 JVM tests with zero
-failures and one optional shader-archive skip, and GitHub Android/native host
-checks. Advanced5.12 shader deletion has a user device confirmation. The
-Advanced5.14 trainer index moves parsing to import/refresh and migrates older
-catalogs once; see [trainer indexing](docs/TRAINER-INDEX5.14.md) for behavior and
-validation. The native libraries are reused unchanged from the tested baseline.
-The Halo workaround has a successful initial user report; broader repeatability
-and Insignia gameplay checks remain pending.
-
-For Halo, choose **On** for **High kernel pool placement** in the per-game Advanced
-settings, retain retail **64 MiB**, fully exit and launch fresh. Compare OFF/ON;
-do not use an emulator save state for that comparison. New profiles default to
-Auto (On for Halo revision 8 on the 1.3.0 core; otherwise Off); existing explicit
-choices are preserved.
-Recorded state placement takes precedence when a state is loaded.
-
-## Documentation
-
-- [RenderUpdate features, testing and implementation pipeline](docs/RENDERUPDATE5.15.md)
-
-- [Trainer import-time indexing](docs/TRAINER-INDEX5.14.md)
-
-- [Online compatibility policy and approval registry](docs/ONLINE5.11.md)
-- [Importable patch browser and format](docs/PATCHES5.10.md)
-- [Halo revision 8 Auto update](docs/HALO5.9.1.md)
-- [Compatibility profiles and Halo controls](docs/COMPATIBILITY5.9.md)
-- [Current project status and release record](docs/PROJECT-STATUS.md)
-- [Roadmap](docs/ROADMAP.md)
-- [Halo test instructions and implementation](docs/HALO5.8.md)
-- [First user test and upstream handoff](docs/HALO5.8-USER-VALIDATION.md)
-- [Online protection](docs/ONLINE5.7.md)
-- [Trainer browser](docs/TRAINERS5.6.md)
-- [Shader runtime](docs/ADVANCED4.md)
-- [Theme system](docs/THEMES.md)
-- [Fork history and attribution](docs/FORK.md)
-- [Native/Android build prerequisites](android/README.md)
-- [Private GitHub setup and maintenance](docs/GITHUB.md)
-- [Contributing](CONTRIBUTING.md)
-
-## Building and testing
-
-Use Linux x86_64, JDK 21, Android SDK 36, Build Tools 36.1.0,
-NDK 29.0.14206865, CMake >=3.20, Ninja, and a Rust toolchain compatible with the
-pinned librashader source and its aarch64-linux-android target. The dependency
-helper pins native sources; follow android/README.md for the full native build.
-Build libhakuxcore.so and refresh jniLibs before packaging the Android app.
-
-```bash
-bash tools/native/prepare-deps.sh /path/to/native-deps
-bash tools/native/build-slang.sh /path/to/native-deps
-# Configure/build the native core as documented in android/README.md.
-bash tools/native/app-libs.sh
-bash tests/native/mm/run-pool-boot-test.sh
-bash tests/native/advanced/run.sh
-cd android
-./gradlew -Dorg.gradle.java.home="$JAVA_HOME" -Pkotlin.incremental=false \
-  testDebugUnitTest assembleDebug
-```
-
-The debug application ID remains **com.rfandango.haku_x.themes**, preserving
-updates from Advanced5.7/5.8. Its displayed name is now **HakuX-Advanced** in
-source and the signed 5.19 preview APK.
-The former `themeTestApp` property remains accepted but is no longer needed
-for choosing the current debug package identity.
-
-Use the existing signing key privately when making an update. A newly generated
-key cannot update the distributed APK. No signing key or password belongs in
-Git, Actions logs, source packages or releases. The 5.19 preview includes a rebuilt native core; its device validation remains pending.
-
-## License and distribution
-
-HakuX-Advanced remains **GPL-3.0-or-later**. See [COPYING](COPYING),
-[LICENSE](LICENSE), and [licenses](licenses). Keep complete corresponding source
-and dependency licenses available when distributing binaries, including private
-RH testing distributions. Keeping development private does not change those
-existing licenses. Preserve the original authors' credits.
-
-The repository excludes Xbox games, BIOS/dashboard files, user HDD/save data,
-private signing material and generated APKs. Supply your own game dumps.
+Test feedback: device/driver, game revision, option on/off and result.
+Public release/update packages will be prepared after APK testing.

@@ -1,5 +1,18 @@
 # Changelog
 
+## Advanced 5.20.1 Preview 1
+
+- Integrate the 5.2.h opt-in cache-write completion rule and Rogue Trooper revision 1 mod.
+- Keep the normal I/O completion path; return pending only for selected, successful cache writes.
+- Omit the trace-heavy 5.2.g instrumentation; document its successful loading report and test limits.
+- Shorten the project introduction and retain one current compatibility/test reference.
+- Android versionCode 43; APK testing before release/Git packaging.
+
+## Advanced 5.20 — Goin Commando
+
+- Built-in Republic Commando 60 FPS present pacing.
+- Promote the renderer/XDVDFS updates from the private 5.2 track.
+
 ## Advanced 5.2 — we renderin xisos
 
 Live experimental track on Advanced 5.19.3.

@@ -27,5 +27,7 @@ jobs:
         run: bash tests/native/mm/run-pool-boot-test.sh
       - name: Advanced controls and memory tests
         run: bash tests/native/advanced/run.sh
+      - name: Cache-write compatibility guards
+        run: bash tests/native/cache_write/run.sh
       - name: Whitespace check
         run: git diff --check

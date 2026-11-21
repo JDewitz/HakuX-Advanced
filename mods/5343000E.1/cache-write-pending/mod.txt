@@ -1,0 +1,5 @@
+name: Sound bank loading fix
+description: Use pending completion for the streamed sound bank cache copy. Restart the game after changing this setting.
+
+[hakux:cache-write-pending]
+5343000E Bank_en.xwb
