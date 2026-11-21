@@ -9,8 +9,9 @@
 
 ## Rogue Trooper — 5.21
 
-Select Offline mode, enable **Mods & cheats → Sound bank loading fix**, then
-fully exit and cold start. Protected online sessions exclude this mod.
+Enable **Mods & cheats → Sound bank loading fix**, then
+fully exit and cold start. The bundled Rogue Trooper rule remains available with online protection on;
+trainers, cheats and other gameplay mods remain excluded.
 
 The selected rule arms after a queued asynchronous disc read of its filename
 with a completion event. Successful asynchronous writes of 1–131072 bytes to
@@ -37,3 +38,24 @@ The new guard tests cover all cache partitions, rejected system/data and nested
 paths, malformed rules, title matching, arming and resets. ASan/UBSan and the
 existing host checks passed for Preview 2. Current Android/updater test results
 and binary identity checks are in the release kit's VALIDATION.json.
+
+## Protected-online integration
+
+The first prepared 5.21 kit still excluded the cache rule in protected sessions;
+that kit is on hold. VersionCode 46 is a sideload test of the integration.
+
+Protected launch serialization honors only the existing Sound bank loading fix
+switch for 5343000E.1 on core 1.3.0. It emits a compile-time canonical cache rule,
+not lines from mod metadata, and combines it only with the existing reviewed
+imported-compatibility serializer. It returns no cheats and does not load ETM
+trainers or extract mod files. Other titles, revisions and arbitrary filenames
+remain outside this exception. The selected generic rules for other games
+continue to require offline mode unless explicitly reviewed in a future release.
+
+The exact bundled option stays visible under Mods & cheats while online
+protection is enabled. Its selection is preserved between offline and protected
+sessions; changing it still requires a cold start. Save-state loading policy is
+unchanged. Tests cover canonical-only payloads, malicious callback lines,
+wrong identities/base versions, UI eligibility, and retained trainer/memory blocks.
+Native libraries are byte-identical to the confirmed cache-fix build. Protected
+mode game startup and actual networking still require device confirmation.

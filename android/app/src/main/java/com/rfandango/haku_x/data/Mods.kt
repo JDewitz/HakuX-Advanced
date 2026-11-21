@@ -4,7 +4,6 @@ import android.content.Context
 import android.content.res.AssetManager
 import android.util.Log
 import com.rfandango.haku_x.BuildConfig
-import com.rfandango.haku_x.patches.OnlineCompatibilityManifest
 import com.rfandango.haku_x.patches.PatchLaunch
 import org.json.JSONObject
 import java.io.File
@@ -231,13 +230,15 @@ object ModRun {
 
   /** The manifest written (null: the game has none), and the run's cheats. */
   fun write(context: Context, gameKey: String, policy: com.rfandango.haku_x.advanced.OnlinePlayPolicy, imported: ((List<ModInfo>, Boolean) -> PatchLaunch)? = null): Pair<File, List<CheatInfo>>? {
-    // Protected sessions never read the legacy trainer/mod/cheat selections.
-    // Rebuild the only allowed payload from reviewed typed entries, not callback lines.
+    // Protected sessions skip trainers, cheats, file extraction and arbitrary mod lines.
+    // Only the release-owned native compatibility toggle and reviewed typed entries may pass.
     if (!policy.allowGuestMods) {
-      val compatibility = imported?.invoke(emptyList(), false) ?: return null
-      val lines = OnlineCompatibilityManifest.forLaunch(compatibility, gameKey, BuildConfig.VERSION_NAME)
+      val compatibility = imported?.invoke(emptyList(), false)
+      val lines = BuiltInCompatibilityMods.protectedManifest(gameKey, BuildConfig.VERSION_NAME, compatibility) {
+        choicesFor(context, gameKey, it)
+      }
       if (lines.isEmpty()) return null
-      Log.i(TAG, "$gameKey: protected online session; ${compatibility.loadedEntries.size} reviewed compatibility patches; trainers/cheats/mods excluded")
+      Log.i(TAG, "$gameKey: protected online session; native/reviewed compatibility only; trainers/cheats/gameplay mods excluded")
       return writeManifest(context, lines) to emptyList()
     }
     val game = ModCatalog.load(context, gameKey)

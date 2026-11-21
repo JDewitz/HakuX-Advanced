@@ -12,6 +12,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import com.rfandango.haku_x.R
+import com.rfandango.haku_x.BuildConfig
+import com.rfandango.haku_x.data.BuiltInCompatibilityMods
 import com.rfandango.haku_x.data.ModCatalog
 import com.rfandango.haku_x.data.ModChoices
 import com.rfandango.haku_x.ui.common.EmptyText
@@ -30,6 +32,7 @@ fun ModsScreen(gameKey: String, title: String, onBack: () -> Unit, onTrainers: (
   val context = LocalContext.current
   val online = com.rfandango.haku_x.advanced.AdvancedStore(context).onlinePlay
   val game = remember(gameKey) { ModCatalog.load(context, gameKey) }
+  val visibleMods = game.mods.filter { !online || BuiltInCompatibilityMods.isAllowedOnline(gameKey, it, BuildConfig.VERSION_NAME) }
   val choices = remember(gameKey) { ModChoices(context, gameKey) }
   val mods = remember(gameKey) { mutableStateMapOf<String, Boolean>().apply { game.mods.forEach { put(it.id, choices.mod(it.id)) } } }
   val cheats = remember(gameKey) {
@@ -44,10 +47,10 @@ fun ModsScreen(gameKey: String, title: String, onBack: () -> Unit, onTrainers: (
         EmptyText(stringResource(R.string.mods_none))
       }
       if (online) Hint("Online play protection blocks gameplay mods, cheats and trainers. Built-in compatibility fixes remain allowed; imported fixes need release-registry approval. Use Advanced to choose an offline trainer session; networking will be forced off.")
-      if (game.mods.isNotEmpty() && !online) {
-        Section(stringResource(R.string.mods_section_mods))
-        Hint(stringResource(R.string.mods_mods_desc))
-        for (mod in game.mods) {
+      if (visibleMods.isNotEmpty()) {
+        Section(if (online) "Compatibility fixes" else stringResource(R.string.mods_section_mods))
+        Hint(if (online) "These compatibility settings are available with online protection on. Fully exit and restart the game after changing them." else stringResource(R.string.mods_mods_desc))
+        for (mod in visibleMods) {
           val by = if (mod.author.isNotEmpty()) stringResource(R.string.mods_by, mod.author) else ""
           SwitchItem(
             title = mod.name,

@@ -116,4 +116,7 @@ disc read of the named file with a completion event arms the rule. Subsequent
 successful asynchronous writes of 1–131072 bytes to the same filename in the
 root of cache Partition3, Partition4 or Partition5 report pending after completing normally. Filenames are
 case-insensitive ASCII letters, digits, dot, underscore or hyphen (127 bytes
-maximum). Configure one rule per game. Protected online sessions omit mods.
+maximum). Configure one rule per game. Protected online sessions omit ordinary mods. The release-owned Rogue Trooper
+5343000E.1 / Bank_en.xwb compatibility rule is the specific exception when its
+existing switch is enabled; trainers and cheats remain blocked. Other rules
+are not approved for protected sessions.

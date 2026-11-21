@@ -1,5 +1,12 @@
 # Changelog
 
+## 5.21 protected-online test (code 46)
+
+- Honor the Rogue Trooper cache compatibility switch in protected sessions.
+- Emit only its release-owned canonical native rule; preserve trainer/cheat blocks.
+- Show the specific compatibility switch online; retain existing selection.
+- Hold the earlier offline-only release kit pending device validation.
+
 ## Advanced 5.21
 
 - Promote the user-confirmed 5.2.h / Preview 2 integration.

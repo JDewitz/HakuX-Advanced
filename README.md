@@ -4,17 +4,18 @@ An unofficial Android arm64 fork of [rfandango/hakuX](https://github.com/rfandan
 AI was a significant factor in the development of this project.
 Original authors, contributors and dependency licenses retain their attribution.
 
-## Current release
+## Current online-compatibility test
 
-**5.21**, promoting the confirmed working 5.2.h / Preview 2 integration.
-Android version: `1.3.0-advanced5.21`, versionCode **45**.
+**5.21 Online Compatibility Test**, based on the confirmed working cache fix.
+Android version: `1.3.0-advanced5.21-preview.1-onlinecompat`, versionCode **46**.
+The earlier offline-only 5.21 release kit is on hold pending this test.
 See [release notes](docs/releases/5.21.md) and [compatibility](docs/COMPATIBILITY.md).
 
 Install the signed arm64 APK over Advanced. The separately installed 5.2.h
 experimental app is a different package and keeps separate data/settings.
 
-For Rogue Trooper revision 1 (`5343000E.1`), select offline mode and enable
-**Mods & cheats → Sound bank loading fix**, then cold start. It is off by default.
+For Rogue Trooper revision 1 (`5343000E.1`), enable
+**Mods & cheats → Sound bank loading fix**, then cold start. It is off by default. Online protection may stay on; trainers remain blocked.
 See [compatibility and test notes](docs/COMPATIBILITY.md).
 
 ## Features
